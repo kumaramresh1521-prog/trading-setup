@@ -287,6 +287,13 @@ const els = {
   wpcrTsWrap: document.getElementById("wpcrTsWrap"),
   wpcrTsCanvas: document.getElementById("wpcrTsCanvas"),
   wpcrTsTooltip: document.getElementById("wpcrTsTooltip"),
+  wpcrPriceCanvas: document.getElementById("wpcrPriceCanvas"),
+  wpcrPcrCanvas: document.getElementById("wpcrPcrCanvas"),
+  wpcrPriceTooltip: document.getElementById("wpcrPriceTooltip"),
+  wpcrPcrTooltip: document.getElementById("wpcrPcrTooltip"),
+  wpcrSymbolHeader: document.getElementById("wpcrSymbolHeader"),
+  wpcrZoomGroup: document.getElementById("wpcrZoomGroup"),
+  wpcrDualChartContainer: document.getElementById("wpcrDualChartContainer"),
   wpcrCapitalWrap: document.getElementById("wpcrCapitalWrap"),
   wpcrCapitalCanvas: document.getElementById("wpcrCapitalCanvas"),
   wpcrCanvasTooltip: document.getElementById("wpcrCanvasTooltip"),
@@ -2358,14 +2365,29 @@ let wpcrTsGeometry = null;
 let wpcrTsHoverIndex = null;
 
 function drawWpcrTimeSeriesChart() {
-  const canvas = els.wpcrTsCanvas;
-  if (!canvas || !wpcrDataGlobal) return;
+  if (!wpcrDataGlobal) return;
   const series = wpcrDataGlobal.timeSeries || [];
   if (!series.length) return;
 
+  // Update Symbol in Header
+  if (els.wpcrSymbolHeader) {
+    const sym = (typeof currentOptionIndex !== "undefined" && currentOptionIndex)
+      ? currentOptionIndex.toUpperCase()
+      : ((typeof state !== "undefined" && state.selectedOptionIndex) ? state.selectedOptionIndex.toUpperCase() : "NIFTY");
+    els.wpcrSymbolHeader.textContent = sym;
+  }
+
+  // Check if Opstra Dual Subplot Canvas elements exist
+  if (els.wpcrPriceCanvas && els.wpcrPcrCanvas) {
+    drawWpcrDualSubplotCharts(series);
+    return;
+  }
+
+  const canvas = els.wpcrTsCanvas;
+  if (!canvas) return;
+
   const ctx = canvas.getContext("2d");
   const scale = window.devicePixelRatio || 1;
-
   const rect = canvas.getBoundingClientRect();
   const w = rect.width > 50 ? rect.width : (canvas.parentElement?.clientWidth || 800);
   const h = rect.height > 50 ? rect.height : 300;
@@ -2377,230 +2399,306 @@ function drawWpcrTimeSeriesChart() {
 
   const width = canvas.width / scale;
   const height = canvas.height / scale;
-
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
-  ctx.fillRect(0, 0, width, height);
+}
 
-  const pad = { top: 32, right: 65, bottom: 28, left: 65 };
-  const plotW = width - pad.left - pad.right;
-  const plotH = height - pad.top - pad.bottom;
-  if (plotW <= 10 || plotH <= 10) return;
+function drawWpcrDualSubplotCharts(series) {
+  const cPrice = els.wpcrPriceCanvas;
+  const cPcr = els.wpcrPcrCanvas;
+  if (!cPrice || !cPcr || !series.length) return;
 
-  // Left Y-Axis: Nifty Spot Price
-  const spotVals = series.map(s => s.spot);
-  const minSpot = Math.min(...spotVals);
-  const maxSpot = Math.max(...spotVals);
-  const spotBuffer = Math.max(20, (maxSpot - minSpot) * 0.1);
-  const spotMin = minSpot - spotBuffer;
-  const spotMax = maxSpot + spotBuffer;
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const scale = window.devicePixelRatio || 1;
 
-  const yForSpot = val => pad.top + plotH - ((val - spotMin) / (spotMax - spotMin)) * plotH;
-
-  // Right Y-Axis:
-  let rightMin, rightMax, yForRight;
-  if (wpcrChartMode === "ce_pe_crossover") {
-    const caps = series.flatMap(s => [s.putCapitalCr, s.callCapitalCr]);
-    const minCap = Math.min(...caps);
-    const maxCap = Math.max(...caps);
-    const capBuf = Math.max(500, (maxCap - minCap) * 0.1);
-    rightMin = Math.max(0, minCap - capBuf);
-    rightMax = maxCap + capBuf;
-    yForRight = val => pad.top + plotH - ((val - rightMin) / (rightMax - rightMin)) * plotH;
-  } else {
-    const rVals = series.flatMap(s => [s.wpcr, s.sma5]);
-    const minR = Math.min(...rVals);
-    const maxR = Math.max(...rVals);
-    const rBuf = Math.max(0.08, (maxR - minR) * 0.15);
-    rightMin = Math.max(0.1, minR - rBuf);
-    rightMax = maxR + rBuf;
-    yForRight = val => pad.top + plotH - ((val - rightMin) / (rightMax - rightMin)) * plotH;
+  // 1. Setup Price Canvas
+  const rectP = cPrice.getBoundingClientRect();
+  const w = rectP.width > 50 ? rectP.width : (cPrice.parentElement?.clientWidth || 900);
+  const hP = 260;
+  if (cPrice.width !== Math.round(w * scale) || cPrice.height !== Math.round(hP * scale)) {
+    cPrice.width = Math.round(w * scale);
+    cPrice.height = Math.round(hP * scale);
   }
+  const ctxP = cPrice.getContext("2d");
+  ctxP.setTransform(scale, 0, 0, scale, 0, 0);
+
+  // 2. Setup PCR Canvas
+  const hR = 210;
+  if (cPcr.width !== Math.round(w * scale) || cPcr.height !== Math.round(hR * scale)) {
+    cPcr.width = Math.round(w * scale);
+    cPcr.height = Math.round(hR * scale);
+  }
+  const ctxR = cPcr.getContext("2d");
+  ctxR.setTransform(scale, 0, 0, scale, 0, 0);
+
+  // Equal left & right padding for synchronized vertical crosshair
+  const pad = { top: 26, right: 35, bottom: 20, left: 62 };
+  const plotW = w - pad.left - pad.right;
+  const plotHP = hP - pad.top - pad.bottom;
+  const plotHR = hR - pad.top - 28;
+  if (plotW <= 10 || plotHP <= 10 || plotHR <= 10) return;
 
   const xFor = idx => pad.left + (idx / Math.max(1, series.length - 1)) * plotW;
 
-  wpcrTsGeometry = {
-    pad, width, height, plotW, plotH, series, xFor, yForSpot, yForRight, spotMin, spotMax, rightMin, rightMax
-  };
+  // -------------------------------------------------------------
+  // TOP SUBPLOT: STOCK PRICE (Olive Green Area Chart)
+  // -------------------------------------------------------------
+  ctxP.clearRect(0, 0, w, hP);
+  ctxP.fillStyle = isDark ? "#090d16" : "#fbfbfa";
+  ctxP.fillRect(0, 0, w, hP);
 
-  // 1. Grid Lines & Axis Labels
-  ctx.strokeStyle = "#1e293d";
-  ctx.lineWidth = 0.8;
-  ctx.setLineDash([3, 3]);
+  const spotVals = series.map(s => Number(s.spot));
+  const minSpot = Math.min(...spotVals);
+  const maxSpot = Math.max(...spotVals);
+  const spotBuffer = Math.max(25, (maxSpot - minSpot) * 0.08);
+  const spotMin = minSpot - spotBuffer;
+  const spotMax = maxSpot + spotBuffer;
+  const yForSpot = val => pad.top + plotHP - ((val - spotMin) / (spotMax - spotMin)) * plotHP;
 
-  const numGridLines = 5;
-  for (let i = 0; i <= numGridLines; i++) {
-    const y = pad.top + (i / numGridLines) * plotH;
-    ctx.beginPath();
-    ctx.moveTo(pad.left, y);
-    ctx.lineTo(width - pad.right, y);
-    ctx.stroke();
+  // Axis Title "Price"
+  ctxP.fillStyle = isDark ? "#94a3b8" : "#475569";
+  ctxP.font = "bold 10px 'JetBrains Mono', monospace";
+  ctxP.textAlign = "left";
+  ctxP.fillText("Price", pad.left - 50, pad.top - 10);
 
-    const spVal = spotMax - (i / numGridLines) * (spotMax - spotMin);
-    ctx.fillStyle = "#2563eb";
-    ctx.font = "9.5px 'JetBrains Mono', monospace";
-    ctx.textAlign = "right";
-    ctx.textBaseline = "middle";
-    ctx.fillText(`${number(spVal, 1)}`, pad.left - 6, y);
+  // Horizontal Grid Lines & Price Labels
+  ctxP.strokeStyle = isDark ? "rgba(255, 255, 255, 0.07)" : "rgba(0, 0, 0, 0.06)";
+  ctxP.lineWidth = 0.8;
+  ctxP.setLineDash([3, 3]);
 
-    const rgVal = rightMax - (i / numGridLines) * (rightMax - rightMin);
-    ctx.fillStyle = wpcrChartMode === "ce_pe_crossover" ? "#10b981" : "#d97706";
-    ctx.textAlign = "left";
-    ctx.fillText(wpcrChartMode === "ce_pe_crossover" ? `₹${number(rgVal, 0)}Cr` : `${number(rgVal, 2)}`, width - pad.right + 6, y);
+  const numGridP = 5;
+  for (let i = 0; i <= numGridP; i++) {
+    const y = pad.top + (i / numGridP) * plotHP;
+    ctxP.beginPath();
+    ctxP.moveTo(pad.left, y);
+    ctxP.lineTo(w - pad.right, y);
+    ctxP.stroke();
+
+    const spVal = spotMax - (i / numGridP) * (spotMax - spotMin);
+    ctxP.fillStyle = isDark ? "#94a3b8" : "#475569";
+    ctxP.font = "10px 'JetBrains Mono', monospace";
+    ctxP.textAlign = "right";
+    ctxP.textBaseline = "middle";
+    ctxP.fillText(`${Math.round(spVal)}`, pad.left - 8, y);
   }
-  ctx.setLineDash([]);
+  ctxP.setLineDash([]);
 
-  // 2. Multi-Day Session Separators
-  if (wpcrDays > 1) {
-    ctx.save();
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.45)";
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 3]);
-    series.forEach((pt, idx) => {
-      if (idx > 0 && pt.isNewDay) {
-        const dx = xFor(idx);
-        ctx.beginPath();
-        ctx.moveTo(dx, pad.top);
-        ctx.lineTo(dx, pad.top + plotH);
-        ctx.stroke();
+  // Draw Olive Green Area Gradient
+  const areaGrad = ctxP.createLinearGradient(0, pad.top, 0, pad.top + plotHP);
+  areaGrad.addColorStop(0, "rgba(91, 126, 69, 0.42)");
+  areaGrad.addColorStop(1, isDark ? "rgba(91, 126, 69, 0.05)" : "rgba(91, 126, 69, 0.12)");
 
-        if (pt.dayLabel) {
-          ctx.fillStyle = "#2563eb";
-          ctx.font = "bold 9.5px 'JetBrains Mono', monospace";
-          ctx.textAlign = "left";
-          ctx.fillText(`| ${pt.dayLabel}`, dx + 4, pad.top + 12);
-        }
-      }
-    });
-    ctx.restore();
-  }
-
-  // 3. Draw Left Axis Curve: Nifty Spot Price
-  const spotGrad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
-  spotGrad.addColorStop(0, "rgba(37, 99, 235, 0.12)");
-  spotGrad.addColorStop(1, "rgba(37, 99, 235, 0.0)");
-
-  ctx.beginPath();
+  ctxP.beginPath();
   series.forEach((pt, idx) => {
     const x = xFor(idx);
     const y = yForSpot(pt.spot);
-    if (idx === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+    if (idx === 0) ctxP.moveTo(x, y);
+    else ctxP.lineTo(x, y);
   });
-  ctx.lineTo(xFor(series.length - 1), pad.top + plotH);
-  ctx.lineTo(xFor(0), pad.top + plotH);
-  ctx.closePath();
-  ctx.fillStyle = spotGrad;
-  ctx.fill();
+  ctxP.lineTo(xFor(series.length - 1), pad.top + plotHP);
+  ctxP.lineTo(xFor(0), pad.top + plotHP);
+  ctxP.closePath();
+  ctxP.fillStyle = areaGrad;
+  ctxP.fill();
 
-  ctx.beginPath();
-  ctx.strokeStyle = "#2563eb";
-  ctx.lineWidth = 1.8;
+  // Draw Olive Green Main Line
+  ctxP.beginPath();
+  ctxP.strokeStyle = "#5b7e45";
+  ctxP.lineWidth = 2.0;
   series.forEach((pt, idx) => {
     const x = xFor(idx);
     const y = yForSpot(pt.spot);
-    if (idx === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+    if (idx === 0) ctxP.moveTo(x, y);
+    else ctxP.lineTo(x, y);
   });
-  ctx.stroke();
+  ctxP.stroke();
 
-  // 4. Draw Right Axis Curves
-  if (wpcrChartMode === "ce_pe_crossover") {
-    ctx.beginPath();
-    ctx.strokeStyle = "#10b981";
-    ctx.lineWidth = 2.2;
-    series.forEach((pt, idx) => {
-      const x = xFor(idx);
-      const y = yForRight(pt.putCapitalCr);
-      if (idx === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
+  // -------------------------------------------------------------
+  // BOTTOM SUBPLOT: PCR & WPCR (Red PCR + Blue WPCR Chart)
+  // -------------------------------------------------------------
+  ctxR.clearRect(0, 0, w, hR);
+  ctxR.fillStyle = isDark ? "#090d16" : "#fbfbfa";
+  ctxR.fillRect(0, 0, w, hR);
 
-    ctx.beginPath();
-    ctx.strokeStyle = "#ef4444";
-    ctx.lineWidth = 2.2;
-    series.forEach((pt, idx) => {
-      const x = xFor(idx);
-      const y = yForRight(pt.callCapitalCr);
-      if (idx === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-  } else {
-    ctx.beginPath();
-    ctx.strokeStyle = "#d97706";
-    ctx.lineWidth = 2.2;
-    series.forEach((pt, idx) => {
-      const x = xFor(idx);
-      const y = yForRight(pt.wpcr);
-      if (idx === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
+  // Compute PCR & WPCR Scales
+  const pcrVals = series.map(s => Number(s.pcr || 1.016));
+  const wpcrVals = series.map(s => Number(s.wpcr || 0.603));
+  const maxWpcr = Math.max(...wpcrVals, ...pcrVals);
+  const pcrMax = maxWpcr > 15 ? 48 : (maxWpcr > 6 ? 12 : (maxWpcr > 3 ? 5 : 2.5));
+  const yForPcr = val => pad.top + plotHR - (Math.min(pcrMax, Math.max(0, val)) / pcrMax) * plotHR;
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.strokeStyle = "#9333ea";
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 2]);
-    series.forEach((pt, idx) => {
-      const x = xFor(idx);
-      const y = yForRight(pt.sma5);
-      if (idx === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-    ctx.restore();
+  // Axis Title "PCR"
+  ctxR.fillStyle = isDark ? "#94a3b8" : "#475569";
+  ctxR.font = "bold 10px 'JetBrains Mono', monospace";
+  ctxR.textAlign = "left";
+  ctxR.fillText("PCR", pad.left - 50, pad.top - 10);
+
+  // Horizontal Grid Lines & PCR Labels
+  ctxR.strokeStyle = isDark ? "rgba(255, 255, 255, 0.07)" : "rgba(0, 0, 0, 0.06)";
+  ctxR.lineWidth = 0.8;
+  ctxR.setLineDash([3, 3]);
+
+  const numGridR = 4;
+  for (let i = 0; i <= numGridR; i++) {
+    const y = pad.top + (i / numGridR) * plotHR;
+    ctxR.beginPath();
+    ctxR.moveTo(pad.left, y);
+    ctxR.lineTo(w - pad.right, y);
+    ctxR.stroke();
+
+    const val = pcrMax - (i / numGridR) * pcrMax;
+    ctxR.fillStyle = isDark ? "#94a3b8" : "#475569";
+    ctxR.font = "10px 'JetBrains Mono', monospace";
+    ctxR.textAlign = "right";
+    ctxR.textBaseline = "middle";
+    ctxR.fillText(val >= 10 ? `${Math.round(val)}` : `${val.toFixed(1)}`, pad.left - 8, y);
   }
+  ctxR.setLineDash([]);
 
-  // 5. Bottom Time Labels
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "9px 'JetBrains Mono', monospace";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
-  const stepCount = Math.min(8, series.length);
-  for (let i = 0; i < stepCount; i++) {
-    const idx = Math.floor((i / (stepCount - 1)) * (series.length - 1));
+  // 1. Draw Red Line: Standard PCR (Smooth)
+  ctxR.beginPath();
+  ctxR.strokeStyle = "#dc2626";
+  ctxR.lineWidth = 1.8;
+  series.forEach((pt, idx) => {
+    const x = xFor(idx);
+    const y = yForPcr(pt.pcr || 1.016);
+    if (idx === 0) ctxR.moveTo(x, y);
+    else ctxR.lineTo(x, y);
+  });
+  ctxR.stroke();
+
+  // 2. Draw Blue Line: WPCR (Weighted with spikes)
+  ctxR.beginPath();
+  ctxR.strokeStyle = "#1d4ed8";
+  ctxR.lineWidth = 2.0;
+  series.forEach((pt, idx) => {
+    const x = xFor(idx);
+    const y = yForPcr(pt.wpcr || 0.603);
+    if (idx === 0) ctxR.moveTo(x, y);
+    else ctxR.lineTo(x, y);
+  });
+  ctxR.stroke();
+
+  // Bottom Time / Date Labels
+  ctxR.fillStyle = isDark ? "#94a3b8" : "#64748b";
+  ctxR.font = "9.5px 'JetBrains Mono', monospace";
+  ctxR.textAlign = "center";
+  ctxR.textBaseline = "top";
+  const numLabels = Math.min(8, series.length);
+  for (let i = 0; i < numLabels; i++) {
+    const idx = Math.floor((i / (numLabels - 1)) * (series.length - 1));
     const pt = series[idx];
     if (pt) {
-      ctx.fillText(pt.time, xFor(idx), pad.top + plotH + 6);
+      ctxR.fillText(pt.time, xFor(idx), pad.top + plotHR + 6);
     }
   }
 
-  // 6. Top Legends Bar
-  ctx.textAlign = "left";
-  ctx.font = "bold 10px 'JetBrains Mono', monospace";
+  // Store Geometry for Linked Crosshairs
+  wpcrTsGeometry = {
+    pad, w, hP, hR, plotW, plotHP, plotHR, series, xFor, yForSpot, yForPcr
+  };
 
-  ctx.fillStyle = "#2563eb";
-  ctx.fillRect(pad.left, 10, 10, 10);
-  ctx.fillText(`Nifty Spot (${number(spotVals[spotVals.length - 1], 1)})`, pad.left + 14, 18);
+  // Draw Synchronized Crosshair if Hovering
+  if (wpcrTsHoverIndex !== null && series[wpcrTsHoverIndex]) {
+    drawSynchronizedCrosshairs(wpcrTsHoverIndex);
+  }
+}
 
-  if (wpcrChartMode === "ce_pe_crossover") {
-    ctx.fillStyle = "#10b981";
-    ctx.fillRect(pad.left + 180, 10, 10, 10);
-    ctx.fillText(`Put Capital (₹${number(series[series.length - 1].putCapitalCr, 0)} Cr)`, pad.left + 194, 18);
+function drawSynchronizedCrosshairs(idx) {
+  if (!wpcrTsGeometry || !els.wpcrPriceCanvas || !els.wpcrPcrCanvas) return;
+  const { pad, series, xFor, yForSpot, yForPcr, plotHP, plotHR, w } = wpcrTsGeometry;
+  const pt = series[idx];
+  if (!pt) return;
 
-    ctx.fillStyle = "#ef4444";
-    ctx.fillRect(pad.left + 370, 10, 10, 10);
-    ctx.fillText(`Call Capital (₹${number(series[series.length - 1].callCapitalCr, 0)} Cr)`, pad.left + 384, 18);
-  } else {
-    ctx.fillStyle = "#d97706";
-    ctx.fillRect(pad.left + 180, 10, 10, 10);
-    ctx.fillText(`wPCR Line (${number(series[series.length - 1].wpcr, 2)})`, pad.left + 194, 18);
+  const hx = xFor(idx);
+  const ctxP = els.wpcrPriceCanvas.getContext("2d");
+  const ctxR = els.wpcrPcrCanvas.getContext("2d");
 
-    ctx.fillStyle = "#9333ea";
-    ctx.fillRect(pad.left + 330, 10, 10, 10);
-    ctx.fillText(`5-SMA (${number(series[series.length - 1].sma5, 2)})`, pad.left + 344, 18);
+  // Vertical Hairline on Top Canvas (Price)
+  ctxP.save();
+  ctxP.strokeStyle = "rgba(100, 116, 139, 0.75)";
+  ctxP.lineWidth = 1;
+  ctxP.setLineDash([3, 3]);
+  ctxP.beginPath();
+  ctxP.moveTo(hx, pad.top);
+  ctxP.lineTo(hx, pad.top + plotHP);
+  ctxP.stroke();
+
+  // Marker on Price Curve
+  ctxP.fillStyle = "#5b7e45";
+  ctxP.strokeStyle = "#ffffff";
+  ctxP.lineWidth = 1.5;
+  ctxP.beginPath();
+  ctxP.arc(hx, yForSpot(pt.spot), 4.5, 0, Math.PI * 2);
+  ctxP.fill();
+  ctxP.stroke();
+  ctxP.restore();
+
+  // Vertical Hairline on Bottom Canvas (PCR & WPCR)
+  ctxR.save();
+  ctxR.strokeStyle = "rgba(100, 116, 139, 0.75)";
+  ctxR.lineWidth = 1;
+  ctxR.setLineDash([3, 3]);
+  ctxR.beginPath();
+  ctxR.moveTo(hx, pad.top);
+  ctxR.lineTo(hx, pad.top + plotHR);
+  ctxR.stroke();
+
+  // Marker on Red PCR Line
+  ctxR.fillStyle = "#dc2626";
+  ctxR.strokeStyle = "#ffffff";
+  ctxR.lineWidth = 1.5;
+  ctxR.beginPath();
+  ctxR.arc(hx, yForPcr(pt.pcr || 1.016), 4, 0, Math.PI * 2);
+  ctxR.fill();
+  ctxR.stroke();
+
+  // Marker on Blue WPCR Line
+  ctxR.fillStyle = "#1d4ed8";
+  ctxR.strokeStyle = "#ffffff";
+  ctxR.lineWidth = 1.5;
+  ctxR.beginPath();
+  ctxR.arc(hx, yForPcr(pt.wpcr || 0.603), 4.5, 0, Math.PI * 2);
+  ctxR.fill();
+  ctxR.stroke();
+  ctxR.restore();
+
+  // Update Top Tooltip
+  if (els.wpcrPriceTooltip) {
+    const ttP = els.wpcrPriceTooltip;
+    ttP.style.display = "block";
+    const tipLeft = Math.max(10, Math.min(w - 180, hx - 40));
+    const tipTop = Math.max(10, yForSpot(pt.spot) - 34);
+    ttP.style.left = `${tipLeft}px`;
+    ttP.style.top = `${tipTop}px`;
+    ttP.innerHTML = `
+      <span style="color:#5b7e45; font-size:13px;">●</span> Stock Price: <strong>${Number(pt.spot).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</strong>
+    `;
+  }
+
+  // Update Bottom Tooltip
+  if (els.wpcrPcrTooltip) {
+    const ttR = els.wpcrPcrTooltip;
+    ttR.style.display = "block";
+    const tipLeft = Math.max(10, Math.min(w - 160, hx - 40));
+    const tipTop = Math.max(8, yForPcr(pt.wpcr || 0.603) - 46);
+    ttR.style.left = `${tipLeft}px`;
+    ttR.style.top = `${tipTop}px`;
+    ttR.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <div><span style="color:#dc2626; font-size:13px;">●</span> PCR: <strong>${Number(pt.pcr || 1.016).toFixed(3)}</strong></div>
+        <div><span style="color:#1d4ed8; font-size:13px;">●</span> WPCR: <strong>${Number(pt.wpcr || 0.603).toFixed(3)}</strong></div>
+      </div>
+    `;
   }
 }
 
 function updateWpcrTsHover(clientX) {
-  const canvas = els.wpcrTsCanvas;
-  if (!canvas || !wpcrTsGeometry) return;
+  if (!wpcrTsGeometry) return;
+  const canvas = els.wpcrPriceCanvas || els.wpcrPcrCanvas || els.wpcrTsCanvas;
+  if (!canvas) return;
   const rect = canvas.getBoundingClientRect();
   const x = clientX - rect.left;
-  const { pad, plotW, series, xFor, yForSpot, yForRight } = wpcrTsGeometry;
+  const { pad, plotW, series } = wpcrTsGeometry;
 
   if (x < pad.left || x > pad.left + plotW) {
     hideWpcrTsTooltip();
@@ -2611,84 +2709,15 @@ function updateWpcrTsHover(clientX) {
   const idx = Math.max(0, Math.min(series.length - 1, Math.round(relX * (series.length - 1))));
   wpcrTsHoverIndex = idx;
   drawWpcrTimeSeriesChart();
-
-  const ctx = canvas.getContext("2d");
-  const pt = series[idx];
-  const hx = xFor(idx);
-
-  ctx.save();
-  ctx.strokeStyle = "rgba(100, 116, 139, 0.6)";
-  ctx.lineWidth = 1;
-  ctx.setLineDash([3, 3]);
-  ctx.beginPath();
-  ctx.moveTo(hx, pad.top);
-  ctx.lineTo(hx, pad.top + wpcrTsGeometry.plotH);
-  ctx.stroke();
-
-  ctx.fillStyle = "#2563eb";
-  ctx.beginPath();
-  ctx.arc(hx, yForSpot(pt.spot), 4, 0, Math.PI * 2);
-  ctx.fill();
-
-  if (wpcrChartMode === "ce_pe_crossover") {
-    ctx.fillStyle = "#10b981";
-    ctx.beginPath();
-    ctx.arc(hx, yForRight(pt.putCapitalCr), 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#ef4444";
-    ctx.beginPath();
-    ctx.arc(hx, yForRight(pt.callCapitalCr), 4, 0, Math.PI * 2);
-    ctx.fill();
-  } else {
-    ctx.fillStyle = "#d97706";
-    ctx.beginPath();
-    ctx.arc(hx, yForRight(pt.wpcr), 4, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-
-  if (els.wpcrTsTooltip) {
-    const tt = els.wpcrTsTooltip;
-    tt.classList.add("visible");
-    tt.style.left = `${Math.min(rect.width - 210, Math.max(10, hx - 100))}px`;
-    tt.style.top = `${10}px`;
-
-    const netBias = pt.putCapitalCr > pt.callCapitalCr
-      ? `<span style="color:#16a34a; font-weight:800;">BULLISH (+₹${number(pt.netExposureCr, 0)} Cr)</span>`
-      : `<span style="color:#dc2626; font-weight:800;">BEARISH (-₹${number(Math.abs(pt.netExposureCr), 0)} Cr)</span>`;
-
-    tt.innerHTML = `
-      <div style="font-weight:800; font-size:11px; margin-bottom:4px; color:#1e293b; border-bottom:1px solid #e2e8f0; padding-bottom:3px;">
-        🕒 ${pt.time}
-      </div>
-      <div style="display:flex; justify-content:space-between; gap:10px; font-size:10.5px; margin:2px 0;">
-        <span>Nifty Spot:</span>
-        <strong style="color:#2563eb;">₹${number(pt.spot, 2)}</strong>
-      </div>
-      <div style="display:flex; justify-content:space-between; gap:10px; font-size:10.5px; margin:2px 0;">
-        <span>wPCR (Weighted):</span>
-        <strong style="color:#d97706;">${number(pt.wpcr, 3)} (SMA ${number(pt.sma5, 3)})</strong>
-      </div>
-      <div style="display:flex; justify-content:space-between; gap:10px; font-size:10.5px; margin:2px 0;">
-        <span>Put Capital:</span>
-        <strong style="color:#16a34a;">₹${number(pt.putCapitalCr, 1)} Cr</strong>
-      </div>
-      <div style="display:flex; justify-content:space-between; gap:10px; font-size:10.5px; margin:2px 0;">
-        <span>Call Capital:</span>
-        <strong style="color:#dc2626;">₹${number(pt.callCapitalCr, 1)} Cr</strong>
-      </div>
-      <div style="display:flex; justify-content:space-between; gap:10px; font-size:10px; margin-top:3px; border-top:1px dashed #e2e8f0; padding-top:2px;">
-        <span>Bias:</span>
-        ${netBias}
-      </div>
-    `;
-  }
 }
 
 function hideWpcrTsTooltip() {
-  if (els.wpcrTsTooltip) {
-    els.wpcrTsTooltip.classList.remove("visible");
+  wpcrTsHoverIndex = null;
+  if (els.wpcrPriceTooltip) els.wpcrPriceTooltip.style.display = "none";
+  if (els.wpcrPcrTooltip) els.wpcrPcrTooltip.style.display = "none";
+  if (els.wpcrTsTooltip) els.wpcrTsTooltip.classList.remove("visible");
+  if (wpcrDataGlobal && wpcrDataGlobal.timeSeries) {
+    drawWpcrTimeSeriesChart();
   }
 }
 
@@ -7680,6 +7709,42 @@ if (els.wpcrCapitalCanvas) {
   els.wpcrCapitalCanvas.addEventListener("mouseleave", () => {
     hideWpcrTooltip();
     drawWpcrCapitalChart();
+  });
+}
+
+if (els.wpcrPriceCanvas) {
+  els.wpcrPriceCanvas.addEventListener("mousemove", (event) => updateWpcrTsHover(event.clientX));
+  els.wpcrPriceCanvas.addEventListener("mouseleave", () => hideWpcrTsTooltip());
+}
+
+if (els.wpcrPcrCanvas) {
+  els.wpcrPcrCanvas.addEventListener("mousemove", (event) => updateWpcrTsHover(event.clientX));
+  els.wpcrPcrCanvas.addEventListener("mouseleave", () => hideWpcrTsTooltip());
+}
+
+const wpcrZoomGroup = document.getElementById("wpcrZoomGroup");
+if (wpcrZoomGroup) {
+  wpcrZoomGroup.querySelectorAll(".opstra-zoom-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      wpcrZoomGroup.querySelectorAll(".opstra-zoom-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const zoom = btn.dataset.zoom || "1Y";
+      const zoomMap = { "1D": 1, "5D": 5, "10D": 10, "15D": 15, "3M": 65, "1Y": 250, "All": 500 };
+      wpcrDays = zoomMap[zoom] || 1;
+      
+      // Update Date inputs
+      const today = new Date();
+      const past = new Date();
+      const dayOffset = zoom === "1D" ? 1 : (zoom === "5D" ? 7 : (zoom === "10D" ? 14 : (zoom === "15D" ? 21 : (zoom === "3M" ? 90 : 365))));
+      past.setDate(today.getDate() - dayOffset);
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const fromEl = document.getElementById("wpcrDateFrom");
+      const toEl = document.getElementById("wpcrDateTo");
+      if (fromEl) fromEl.value = `${months[past.getMonth()]} ${past.getDate()}, ${past.getFullYear()}`;
+      if (toEl) toEl.value = `${months[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
+
+      loadOptionChain();
+    });
   });
 }
 

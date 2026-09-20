@@ -1101,39 +1101,60 @@
             </div>
           </div>
 
-          <!-- Section 2: Opstra-Style wPCR & Capital Dynamics Chart Section -->
+          <!-- Section 2: Opstra-Style Synchronized Dual-Subplot Stock Price vs PCR & WPCR Chart -->
           <div class="wpcr-chart-section">
-            <div class="matrix-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-              <div>
-                <h4 id="wpcrChartTitle">📈 Intraday wPCR &amp; Put-Call Capital Dynamics (Opstra Style)</h4>
-                <span class="matrix-subtitle" id="wpcrChartSubtitle">Dual-axis time-series tracking institutional Rupee-weighted PCR vs Nifty Spot Price</span>
+            <!-- Opstra Header Toolbar -->
+            <div class="opstra-header-row">
+              <div class="opstra-zoom-group" id="wpcrZoomGroup">
+                <span class="opstra-zoom-label">Zoom</span>
+                <button type="button" class="opstra-zoom-btn" data-zoom="1D">1D</button>
+                <button type="button" class="opstra-zoom-btn" data-zoom="5D">5D</button>
+                <button type="button" class="opstra-zoom-btn" data-zoom="10D">10D</button>
+                <button type="button" class="opstra-zoom-btn" data-zoom="15D">15D</button>
+                <button type="button" class="opstra-zoom-btn" data-zoom="3M">3M</button>
+                <button type="button" class="opstra-zoom-btn active" data-zoom="1Y">1Y</button>
+                <button type="button" class="opstra-zoom-btn" data-zoom="All">All</button>
               </div>
-              
-              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                <!-- Timeframe Selector -->
-                <div class="straddle-tf-group" id="wpcrTfGroup">
-                  <button type="button" class="straddle-tf-btn active" data-days="1">1D (Today)</button>
-                  <button type="button" class="straddle-tf-btn" data-days="2">2D</button>
-                  <button type="button" class="straddle-tf-btn" data-days="3">3D</button>
-                  <button type="button" class="straddle-tf-btn" data-days="5">5D (Weekly)</button>
-                </div>
 
-                <!-- View Mode Selector -->
-                <div class="edge-filter-group" id="wpcrModeGroup">
-                  <button type="button" class="edge-filter-btn active" data-mode="wpcr_spot">📈 wPCR vs Spot</button>
-                  <button type="button" class="edge-filter-btn" data-mode="ce_pe_crossover">⚔️ CE vs PE Dynamics</button>
-                  <button type="button" class="edge-filter-btn" data-mode="strike_bars">📊 Strike Matrix</button>
-                </div>
+              <div class="opstra-symbol-title" id="wpcrSymbolHeader">NIFTY</div>
+
+              <div class="opstra-date-group">
+                <span class="opstra-date-label">From</span>
+                <input type="text" id="wpcrDateFrom" class="opstra-date-box" value="Sep 18, 2025">
+                <span class="opstra-date-label">To</span>
+                <input type="text" id="wpcrDateTo" class="opstra-date-box" value="Sep 18, 2026">
+                <button type="button" class="opstra-menu-btn" title="Export Chart" id="wpcrExportMenuBtn">☰</button>
               </div>
             </div>
 
-            <!-- Time-Series Canvas Container (Opstra Style) -->
-            <div class="canvas-wrap" id="wpcrTsWrap" style="position:relative; margin-top:8px;">
-              <canvas id="wpcrTsCanvas" width="1200" height="300" style="width:100%; height:300px;"></canvas>
-              <div class="straddle-chart-tooltip" id="wpcrTsTooltip"></div>
+            <!-- View Mode Switcher (Secondary Pill Strip) -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+              <div class="matrix-subtitle" id="wpcrChartSubtitle" style="font-size:11px;">
+                Synchronized Dual-Axis Tracking: Stock Price (Olive Area) vs PCR (Red) &amp; WPCR (Blue Spikes)
+              </div>
+              <div class="edge-filter-group" id="wpcrModeGroup">
+                <button type="button" class="edge-filter-btn active" data-mode="wpcr_spot">📈 Dual Subplot View</button>
+                <button type="button" class="edge-filter-btn" data-mode="ce_pe_crossover">⚔️ CE vs PE Dynamics</button>
+                <button type="button" class="edge-filter-btn" data-mode="strike_bars">📊 Strike Matrix</button>
+              </div>
             </div>
 
-            <!-- Strike-Wise Bar Canvas Container (Hidden when in Time-Series mode) -->
+            <!-- Dual Subplot Canvas Container (Exact Match to Opstra Screenshot) -->
+            <div class="opstra-dual-chart-container" id="wpcrDualChartContainer">
+              <!-- Top Subplot: Stock Price Area Chart -->
+              <div class="opstra-pane opstra-pane-price" id="opstraPriceWrap">
+                <canvas id="wpcrPriceCanvas" width="1200" height="260" style="width:100%; height:260px; display:block;"></canvas>
+                <div class="opstra-chart-tooltip" id="wpcrPriceTooltip" style="display:none;"></div>
+              </div>
+
+              <!-- Bottom Subplot: Synchronized PCR (Red) vs WPCR (Blue) -->
+              <div class="opstra-pane opstra-pane-pcr" id="opstraPcrWrap">
+                <canvas id="wpcrPcrCanvas" width="1200" height="210" style="width:100%; height:210px; display:block;"></canvas>
+                <div class="opstra-chart-tooltip" id="wpcrPcrTooltip" style="display:none;"></div>
+              </div>
+            </div>
+
+            <!-- Strike-Wise Bar Canvas Container (Visible in Strike Matrix mode) -->
             <div class="canvas-wrap" id="wpcrCapitalWrap" style="position:relative; margin-top:8px; display:none;">
               <canvas id="wpcrCapitalCanvas" width="1200" height="280" style="width:100%; height:280px;"></canvas>
               <div class="straddle-chart-tooltip" id="wpcrCanvasTooltip"></div>

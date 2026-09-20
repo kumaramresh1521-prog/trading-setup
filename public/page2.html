@@ -273,9 +273,45 @@
         </div>
       </div>
       <div class="p2-metrics-row" id="pcrMetricCards"></div>
-      <div class="p2-card">
-        <div class="p2-card-header"><span class="p2-card-title">PCR Dial & Historical Intraday Curve</span></div>
-        <div class="p2-chart-container" style="height:320px;"><canvas id="chartPcrCurve"></canvas></div>
+
+      <!-- Opstra-Style Synchronized Dual-Subplot Stock Price vs PCR & WPCR Chart -->
+      <div class="p2-card" style="margin-top:16px;">
+        <div class="opstra-header-row">
+          <div class="opstra-zoom-group" id="p2PcrZoomGroup">
+            <span class="opstra-zoom-label">Zoom</span>
+            <button type="button" class="opstra-zoom-btn" data-zoom="1D">1D</button>
+            <button type="button" class="opstra-zoom-btn" data-zoom="5D">5D</button>
+            <button type="button" class="opstra-zoom-btn" data-zoom="10D">10D</button>
+            <button type="button" class="opstra-zoom-btn" data-zoom="15D">15D</button>
+            <button type="button" class="opstra-zoom-btn" data-zoom="3M">3M</button>
+            <button type="button" class="opstra-zoom-btn active" data-zoom="1Y">1Y</button>
+            <button type="button" class="opstra-zoom-btn" data-zoom="All">All</button>
+          </div>
+          <div class="opstra-symbol-title" id="p2PcrSymbolTitle">NIFTY</div>
+          <div class="opstra-date-group">
+            <span class="opstra-date-label">From</span>
+            <input type="text" id="p2PcrDateFrom" class="opstra-date-box" value="Sep 18, 2025">
+            <span class="opstra-date-label">To</span>
+            <input type="text" id="p2PcrDateTo" class="opstra-date-box" value="Sep 18, 2026">
+            <button type="button" class="opstra-menu-btn" title="Export">☰</button>
+          </div>
+        </div>
+
+        <div class="opstra-dual-chart-container">
+          <div class="opstra-pane opstra-pane-price">
+            <canvas id="p2PcrPriceCanvas" width="1200" height="250" style="width:100%; height:250px; display:block;"></canvas>
+            <div class="opstra-chart-tooltip" id="p2PcrPriceTooltip" style="display:none;"></div>
+          </div>
+          <div class="opstra-pane opstra-pane-pcr">
+            <canvas id="p2PcrPcrCanvas" width="1200" height="210" style="width:100%; height:210px; display:block;"></canvas>
+            <div class="opstra-chart-tooltip" id="p2PcrPcrTooltip" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p2-card" style="margin-top:14px;">
+        <div class="p2-card-header"><span class="p2-card-title">Intraday PCR Trajectory (30-Min Timeline)</span></div>
+        <div class="p2-chart-container" style="height:260px;"><canvas id="chartPcrCurve"></canvas></div>
       </div>
     </div>
 
@@ -728,9 +764,10 @@
             <input type="text" id="gmSearchInput" placeholder="🔍 Search asset, symbol, country..." class="page2-ctrl-select" style="min-width:230px; padding:6px 12px;">
           </div>
 
-          <!-- View Toggle: Cards vs Table -->
+          <!-- View Toggle: Grid vs List vs Table -->
           <div class="nt-exchange-selector">
-            <button id="gmViewCardsBtn" class="nt-exch-btn active" type="button">🔲 Cards</button>
+            <button id="gmViewCardsBtn" class="nt-exch-btn active" type="button">🔲 Grid</button>
+            <button id="gmViewListBtn" class="nt-exch-btn" type="button">📋 List</button>
             <button id="gmViewTableBtn" class="nt-exch-btn" type="button">📑 Table</button>
           </div>
 

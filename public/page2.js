@@ -96,6 +96,7 @@
     setupGlobalControls();
     setupStraddleControls();
     setupGlobalMarketsControls();
+    setupPage2OpstraPcrControls();
     setupFiiDiiControls();
     initBreadthContribution();
 
@@ -507,33 +508,416 @@
     return "p2-badge-red";
   }
 
+  let p2PcrSeries = [];
+  let p2PcrGeometry = null;
+  let p2PcrHoverIndex = null;
+  let p2PcrDays = 250;
+
   function renderDefinedgePcr(data) {
     const cards = document.getElementById("pcrMetricCards");
-    cards.innerHTML = `
-      <div class="p2-metric-box">
-        <div class="p2-metric-label">Total OI PCR</div>
-        <div class="p2-metric-val ${data.oiPcr >= 1.0 ? 'text-put' : 'text-call'}">${data.oiPcr}</div>
-        <div class="p2-metric-sub" style="color:var(--p2-text-muted)">${data.sentiment || "Neutral"}</div>
-      </div>
-      <div class="p2-metric-box">
-        <div class="p2-metric-label">Volume PCR</div>
-        <div class="p2-metric-val">${data.volumePcr || 1.0}</div>
-        <div class="p2-metric-sub" style="color:var(--p2-text-muted)">Traded Volume Bias</div>
-      </div>
-      <div class="p2-metric-box">
-        <div class="p2-metric-label">Overbought Zone</div>
-        <div class="p2-metric-val text-call">&gt; 1.40</div>
-        <div class="p2-metric-sub" style="color:var(--p2-text-muted)">Mean Reversion Alert</div>
-      </div>
-      <div class="p2-metric-box">
-        <div class="p2-metric-label">Oversold Zone</div>
-        <div class="p2-metric-val text-put">&lt; 0.70</div>
-        <div class="p2-metric-sub" style="color:var(--p2-text-muted)">Support Bounce Alert</div>
-      </div>
-    `;
+    if (cards) {
+      cards.innerHTML = `
+        <div class="p2-metric-box">
+          <div class="p2-metric-label">Total OI PCR</div>
+          <div class="p2-metric-val ${data.oiPcr >= 1.0 ? 'text-put' : 'text-call'}">${data.oiPcr}</div>
+          <div class="p2-metric-sub" style="color:var(--p2-text-muted)">${data.sentiment || "Neutral"}</div>
+        </div>
+        <div class="p2-metric-box">
+          <div class="p2-metric-label">Volume PCR</div>
+          <div class="p2-metric-val">${data.volumePcr || 1.0}</div>
+          <div class="p2-metric-sub" style="color:var(--p2-text-muted)">Traded Volume Bias</div>
+        </div>
+        <div class="p2-metric-box">
+          <div class="p2-metric-label">Overbought Zone</div>
+          <div class="p2-metric-val text-call">&gt; 1.40</div>
+          <div class="p2-metric-sub" style="color:var(--p2-text-muted)">Mean Reversion Alert</div>
+        </div>
+        <div class="p2-metric-box">
+          <div class="p2-metric-label">Oversold Zone</div>
+          <div class="p2-metric-val text-put">&lt; 0.70</div>
+          <div class="p2-metric-sub" style="color:var(--p2-text-muted)">Support Bounce Alert</div>
+        </div>
+      `;
+    }
+
+    // Set Symbol in Opstra Chart Header
+    const symTitle = document.getElementById("p2PcrSymbolTitle");
+    if (symTitle) {
+      symTitle.textContent = (currentSymbol || "NIFTY").toUpperCase().replace("50", "");
+    }
+
+    // Draw Opstra Synchronized Dual Subplot Chart
+    if (data.opstraSeries && data.opstraSeries.length) {
+      p2PcrSeries = data.opstraSeries;
+      drawPage2OpstraPcr(p2PcrSeries);
+    }
 
     const timeline = data.timeline || [];
     renderSingleLineChart("chartPcrCurve", timeline.map(t => t.time), timeline.map(t => t.pcr), "Intraday PCR Curve", getThemeColors().teal);
+  }
+
+  function drawPage2OpstraPcr(series) {
+    const cPrice = document.getElementById("p2PcrPriceCanvas");
+    const cPcr = document.getElementById("p2PcrPcrCanvas");
+    if (!cPrice || !cPcr || !series || !series.length) return;
+
+    const isDark = !isLight();
+    const scale = window.devicePixelRatio || 1;
+
+    // 1. Setup Price Canvas
+    const rectP = cPrice.getBoundingClientRect();
+    const w = rectP.width > 50 ? rectP.width : (cPrice.parentElement?.clientWidth || 900);
+    const hP = 250;
+    if (cPrice.width !== Math.round(w * scale) || cPrice.height !== Math.round(hP * scale)) {
+      cPrice.width = Math.round(w * scale);
+      cPrice.height = Math.round(hP * scale);
+    }
+    const ctxP = cPrice.getContext("2d");
+    ctxP.setTransform(scale, 0, 0, scale, 0, 0);
+
+    // 2. Setup PCR Canvas
+    const hR = 210;
+    if (cPcr.width !== Math.round(w * scale) || cPcr.height !== Math.round(hR * scale)) {
+      cPcr.width = Math.round(w * scale);
+      cPcr.height = Math.round(hR * scale);
+    }
+    const ctxR = cPcr.getContext("2d");
+    ctxR.setTransform(scale, 0, 0, scale, 0, 0);
+
+    const pad = { top: 26, right: 35, bottom: 20, left: 62 };
+    const plotW = w - pad.left - pad.right;
+    const plotHP = hP - pad.top - pad.bottom;
+    const plotHR = hR - pad.top - 28;
+    if (plotW <= 10 || plotHP <= 10 || plotHR <= 10) return;
+
+    const xFor = idx => pad.left + (idx / Math.max(1, series.length - 1)) * plotW;
+
+    // -------------------------------------------------------------
+    // TOP SUBPLOT: STOCK PRICE (Olive Green Area Chart)
+    // -------------------------------------------------------------
+    ctxP.clearRect(0, 0, w, hP);
+    ctxP.fillStyle = isDark ? "#090d16" : "#fbfbfa";
+    ctxP.fillRect(0, 0, w, hP);
+
+    const spotVals = series.map(s => Number(s.spot));
+    const minSpot = Math.min(...spotVals);
+    const maxSpot = Math.max(...spotVals);
+    const spotBuffer = Math.max(25, (maxSpot - minSpot) * 0.08);
+    const spotMin = minSpot - spotBuffer;
+    const spotMax = maxSpot + spotBuffer;
+    const yForSpot = val => pad.top + plotHP - ((val - spotMin) / (spotMax - spotMin)) * plotHP;
+
+    // Axis Title "Price"
+    ctxP.fillStyle = isDark ? "#94a3b8" : "#475569";
+    ctxP.font = "bold 10px 'JetBrains Mono', monospace";
+    ctxP.textAlign = "left";
+    ctxP.fillText("Price", pad.left - 50, pad.top - 10);
+
+    // Horizontal Grid Lines & Price Labels
+    ctxP.strokeStyle = isDark ? "rgba(255, 255, 255, 0.07)" : "rgba(0, 0, 0, 0.06)";
+    ctxP.lineWidth = 0.8;
+    ctxP.setLineDash([3, 3]);
+
+    const numGridP = 5;
+    for (let i = 0; i <= numGridP; i++) {
+      const y = pad.top + (i / numGridP) * plotHP;
+      ctxP.beginPath();
+      ctxP.moveTo(pad.left, y);
+      ctxP.lineTo(w - pad.right, y);
+      ctxP.stroke();
+
+      const spVal = spotMax - (i / numGridP) * (spotMax - spotMin);
+      ctxP.fillStyle = isDark ? "#94a3b8" : "#475569";
+      ctxP.font = "10px 'JetBrains Mono', monospace";
+      ctxP.textAlign = "right";
+      ctxP.textBaseline = "middle";
+      ctxP.fillText(`${Math.round(spVal)}`, pad.left - 8, y);
+    }
+    ctxP.setLineDash([]);
+
+    // Draw Olive Green Area Gradient
+    const areaGrad = ctxP.createLinearGradient(0, pad.top, 0, pad.top + plotHP);
+    areaGrad.addColorStop(0, "rgba(91, 126, 69, 0.42)");
+    areaGrad.addColorStop(1, isDark ? "rgba(91, 126, 69, 0.05)" : "rgba(91, 126, 69, 0.12)");
+
+    ctxP.beginPath();
+    series.forEach((pt, idx) => {
+      const x = xFor(idx);
+      const y = yForSpot(pt.spot);
+      if (idx === 0) ctxP.moveTo(x, y);
+      else ctxP.lineTo(x, y);
+    });
+    ctxP.lineTo(xFor(series.length - 1), pad.top + plotHP);
+    ctxP.lineTo(xFor(0), pad.top + plotHP);
+    ctxP.closePath();
+    ctxP.fillStyle = areaGrad;
+    ctxP.fill();
+
+    // Draw Olive Green Main Line
+    ctxP.beginPath();
+    ctxP.strokeStyle = "#5b7e45";
+    ctxP.lineWidth = 2.0;
+    series.forEach((pt, idx) => {
+      const x = xFor(idx);
+      const y = yForSpot(pt.spot);
+      if (idx === 0) ctxP.moveTo(x, y);
+      else ctxP.lineTo(x, y);
+    });
+    ctxP.stroke();
+
+    // -------------------------------------------------------------
+    // BOTTOM SUBPLOT: PCR & WPCR (Red PCR + Blue WPCR Chart)
+    // -------------------------------------------------------------
+    ctxR.clearRect(0, 0, w, hR);
+    ctxR.fillStyle = isDark ? "#090d16" : "#fbfbfa";
+    ctxR.fillRect(0, 0, w, hR);
+
+    // Compute PCR & WPCR Scales
+    const pcrVals = series.map(s => Number(s.pcr || 1.016));
+    const wpcrVals = series.map(s => Number(s.wpcr || 0.603));
+    const maxWpcr = Math.max(...wpcrVals, ...pcrVals);
+    const pcrMax = maxWpcr > 15 ? 48 : (maxWpcr > 6 ? 12 : (maxWpcr > 3 ? 5 : 2.5));
+    const yForPcr = val => pad.top + plotHR - (Math.min(pcrMax, Math.max(0, val)) / pcrMax) * plotHR;
+
+    // Axis Title "PCR"
+    ctxR.fillStyle = isDark ? "#94a3b8" : "#475569";
+    ctxR.font = "bold 10px 'JetBrains Mono', monospace";
+    ctxR.textAlign = "left";
+    ctxR.fillText("PCR", pad.left - 50, pad.top - 10);
+
+    // Horizontal Grid Lines & PCR Labels
+    ctxR.strokeStyle = isDark ? "rgba(255, 255, 255, 0.07)" : "rgba(0, 0, 0, 0.06)";
+    ctxR.lineWidth = 0.8;
+    ctxR.setLineDash([3, 3]);
+
+    const numGridR = 4;
+    for (let i = 0; i <= numGridR; i++) {
+      const y = pad.top + (i / numGridR) * plotHR;
+      ctxR.beginPath();
+      ctxR.moveTo(pad.left, y);
+      ctxR.lineTo(w - pad.right, y);
+      ctxR.stroke();
+
+      const val = pcrMax - (i / numGridR) * pcrMax;
+      ctxR.fillStyle = isDark ? "#94a3b8" : "#475569";
+      ctxR.font = "10px 'JetBrains Mono', monospace";
+      ctxR.textAlign = "right";
+      ctxR.textBaseline = "middle";
+      ctxR.fillText(val >= 10 ? `${Math.round(val)}` : `${val.toFixed(1)}`, pad.left - 8, y);
+    }
+    ctxR.setLineDash([]);
+
+    // 1. Draw Red Line: Standard PCR (Smooth)
+    ctxR.beginPath();
+    ctxR.strokeStyle = "#dc2626";
+    ctxR.lineWidth = 1.8;
+    series.forEach((pt, idx) => {
+      const x = xFor(idx);
+      const y = yForPcr(pt.pcr || 1.016);
+      if (idx === 0) ctxR.moveTo(x, y);
+      else ctxR.lineTo(x, y);
+    });
+    ctxR.stroke();
+
+    // 2. Draw Blue Line: WPCR (Weighted with spikes)
+    ctxR.beginPath();
+    ctxR.strokeStyle = "#1d4ed8";
+    ctxR.lineWidth = 2.0;
+    series.forEach((pt, idx) => {
+      const x = xFor(idx);
+      const y = yForPcr(pt.wpcr || 0.603);
+      if (idx === 0) ctxR.moveTo(x, y);
+      else ctxR.lineTo(x, y);
+    });
+    ctxR.stroke();
+
+    // Bottom Time / Date Labels
+    ctxR.fillStyle = isDark ? "#94a3b8" : "#64748b";
+    ctxR.font = "9.5px 'JetBrains Mono', monospace";
+    ctxR.textAlign = "center";
+    ctxR.textBaseline = "top";
+    const numLabels = Math.min(8, series.length);
+    for (let i = 0; i < numLabels; i++) {
+      const idx = Math.floor((i / (numLabels - 1)) * (series.length - 1));
+      const pt = series[idx];
+      if (pt) {
+        ctxR.fillText(pt.time, xFor(idx), pad.top + plotHR + 6);
+      }
+    }
+
+    // Store Geometry for Linked Crosshairs
+    p2PcrGeometry = {
+      pad, w, hP, hR, plotW, plotHP, plotHR, series, xFor, yForSpot, yForPcr
+    };
+
+    // Draw Synchronized Crosshair if Hovering
+    if (p2PcrHoverIndex !== null && series[p2PcrHoverIndex]) {
+      drawPage2SynchronizedCrosshairs(p2PcrHoverIndex);
+    }
+  }
+
+  function drawPage2SynchronizedCrosshairs(idx) {
+    const cPrice = document.getElementById("p2PcrPriceCanvas");
+    const cPcr = document.getElementById("p2PcrPcrCanvas");
+    if (!p2PcrGeometry || !cPrice || !cPcr) return;
+    const { pad, series, xFor, yForSpot, yForPcr, plotHP, plotHR, w } = p2PcrGeometry;
+    const pt = series[idx];
+    if (!pt) return;
+
+    const hx = xFor(idx);
+    const ctxP = cPrice.getContext("2d");
+    const ctxR = cPcr.getContext("2d");
+
+    // Vertical Hairline on Top Canvas (Price)
+    ctxP.save();
+    ctxP.strokeStyle = "rgba(100, 116, 139, 0.75)";
+    ctxP.lineWidth = 1;
+    ctxP.setLineDash([3, 3]);
+    ctxP.beginPath();
+    ctxP.moveTo(hx, pad.top);
+    ctxP.lineTo(hx, pad.top + plotHP);
+    ctxP.stroke();
+
+    // Marker on Price Curve
+    ctxP.fillStyle = "#5b7e45";
+    ctxP.strokeStyle = "#ffffff";
+    ctxP.lineWidth = 1.5;
+    ctxP.beginPath();
+    ctxP.arc(hx, yForSpot(pt.spot), 4.5, 0, Math.PI * 2);
+    ctxP.fill();
+    ctxP.stroke();
+    ctxP.restore();
+
+    // Vertical Hairline on Bottom Canvas (PCR / WPCR)
+    ctxR.save();
+    ctxR.strokeStyle = "rgba(100, 116, 139, 0.75)";
+    ctxR.lineWidth = 1;
+    ctxR.setLineDash([3, 3]);
+    ctxR.beginPath();
+    ctxR.moveTo(hx, pad.top);
+    ctxR.lineTo(hx, pad.top + plotHR);
+    ctxR.stroke();
+
+    // Marker on Red PCR Line
+    ctxR.fillStyle = "#dc2626";
+    ctxR.strokeStyle = "#ffffff";
+    ctxR.lineWidth = 1.5;
+    ctxR.beginPath();
+    ctxR.arc(hx, yForPcr(pt.pcr || 1.016), 4, 0, Math.PI * 2);
+    ctxR.fill();
+    ctxR.stroke();
+
+    // Marker on Blue WPCR Line
+    ctxR.fillStyle = "#1d4ed8";
+    ctxR.strokeStyle = "#ffffff";
+    ctxR.lineWidth = 1.5;
+    ctxR.beginPath();
+    ctxR.arc(hx, yForPcr(pt.wpcr || 0.603), 4.5, 0, Math.PI * 2);
+    ctxR.fill();
+    ctxR.stroke();
+    ctxR.restore();
+
+    // Update Top Tooltip
+    const ttP = document.getElementById("p2PcrPriceTooltip");
+    if (ttP) {
+      ttP.style.display = "block";
+      const tipLeft = Math.max(10, Math.min(w - 180, hx - 40));
+      const tipTop = Math.max(10, yForSpot(pt.spot) - 34);
+      ttP.style.left = `${tipLeft}px`;
+      ttP.style.top = `${tipTop}px`;
+      ttP.innerHTML = `
+        <span style="color:#5b7e45; font-size:13px;">●</span> Stock Price: <strong>${Number(pt.spot).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</strong>
+      `;
+    }
+
+    // Update Bottom Tooltip
+    const ttR = document.getElementById("p2PcrPcrTooltip");
+    if (ttR) {
+      ttR.style.display = "block";
+      const tipLeft = Math.max(10, Math.min(w - 160, hx - 40));
+      const tipTop = Math.max(8, yForPcr(pt.wpcr || 0.603) - 46);
+      ttR.style.left = `${tipLeft}px`;
+      ttR.style.top = `${tipTop}px`;
+      ttR.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <div><span style="color:#dc2626; font-size:13px;">●</span> PCR: <strong>${Number(pt.pcr || 1.016).toFixed(3)}</strong></div>
+          <div><span style="color:#1d4ed8; font-size:13px;">●</span> WPCR: <strong>${Number(pt.wpcr || 0.603).toFixed(3)}</strong></div>
+        </div>
+      `;
+    }
+  }
+
+  function updatePage2PcrHover(clientX) {
+    if (!p2PcrGeometry) return;
+    const canvas = document.getElementById("p2PcrPriceCanvas") || document.getElementById("p2PcrPcrCanvas");
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const { pad, plotW, series } = p2PcrGeometry;
+
+    if (x < pad.left || x > pad.left + plotW) {
+      hidePage2PcrTooltip();
+      return;
+    }
+
+    const relX = (x - pad.left) / plotW;
+    const idx = Math.max(0, Math.min(series.length - 1, Math.round(relX * (series.length - 1))));
+    p2PcrHoverIndex = idx;
+    drawPage2OpstraPcr(series);
+  }
+
+  function hidePage2PcrTooltip() {
+    p2PcrHoverIndex = null;
+    const ttP = document.getElementById("p2PcrPriceTooltip");
+    const ttR = document.getElementById("p2PcrPcrTooltip");
+    if (ttP) ttP.style.display = "none";
+    if (ttR) ttR.style.display = "none";
+    if (p2PcrSeries && p2PcrSeries.length) {
+      drawPage2OpstraPcr(p2PcrSeries);
+    }
+  }
+
+  function setupPage2OpstraPcrControls() {
+    const cPrice = document.getElementById("p2PcrPriceCanvas");
+    const cPcr = document.getElementById("p2PcrPcrCanvas");
+    if (cPrice) {
+      cPrice.addEventListener("mousemove", (e) => updatePage2PcrHover(e.clientX));
+      cPrice.addEventListener("mouseleave", () => hidePage2PcrTooltip());
+    }
+    if (cPcr) {
+      cPcr.addEventListener("mousemove", (e) => updatePage2PcrHover(e.clientX));
+      cPcr.addEventListener("mouseleave", () => hidePage2PcrTooltip());
+    }
+
+    const zoomGroup = document.getElementById("p2PcrZoomGroup");
+    if (zoomGroup) {
+      zoomGroup.querySelectorAll(".opstra-zoom-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          zoomGroup.querySelectorAll(".opstra-zoom-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          const zoom = btn.dataset.zoom || "1Y";
+          const zoomMap = { "1D": 1, "5D": 5, "10D": 10, "15D": 15, "3M": 65, "1Y": 250, "All": 500 };
+          p2PcrDays = zoomMap[zoom] || 250;
+
+          // Update Date inputs
+          const today = new Date();
+          const past = new Date();
+          const dayOffset = zoom === "1D" ? 1 : (zoom === "5D" ? 7 : (zoom === "10D" ? 14 : (zoom === "15D" ? 21 : (zoom === "3M" ? 90 : 365))));
+          past.setDate(today.getDate() - dayOffset);
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          const fromEl = document.getElementById("p2PcrDateFrom");
+          const toEl = document.getElementById("p2PcrDateTo");
+          if (fromEl) fromEl.value = `${months[past.getMonth()]} ${past.getDate()}, ${past.getFullYear()}`;
+          if (toEl) toEl.value = `${months[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
+
+          // Slice series according to zoom
+          if (p2PcrSeries && p2PcrSeries.length) {
+            const count = Math.min(p2PcrSeries.length, p2PcrDays);
+            drawPage2OpstraPcr(p2PcrSeries.slice(-count));
+          }
+        });
+      });
+    }
   }
 
   function renderDefinedgeStraddles(data) {
@@ -3678,8 +4062,9 @@
       });
     }
 
-    // 4. View Switcher (Cards vs Table)
+    // 4. View Switcher (Grid vs List vs Table)
     const cardsBtn = document.getElementById("gmViewCardsBtn");
+    const listBtn = document.getElementById("gmViewListBtn");
     const tableBtn = document.getElementById("gmViewTableBtn");
     const cardsGrid = document.getElementById("gmCardsGrid");
     const tableWrap = document.getElementById("gmTableWrapper");
@@ -3688,15 +4073,30 @@
       cardsBtn.addEventListener("click", () => {
         currentGmView = "cards";
         cardsBtn.classList.add("active");
+        if (listBtn) listBtn.classList.remove("active");
         tableBtn.classList.remove("active");
+        cardsGrid.classList.remove("gm-list-view");
         cardsGrid.style.display = "grid";
         tableWrap.style.display = "none";
       });
+
+      if (listBtn) {
+        listBtn.addEventListener("click", () => {
+          currentGmView = "list";
+          listBtn.classList.add("active");
+          cardsBtn.classList.remove("active");
+          tableBtn.classList.remove("active");
+          cardsGrid.classList.add("gm-list-view");
+          cardsGrid.style.display = "grid";
+          tableWrap.style.display = "none";
+        });
+      }
 
       tableBtn.addEventListener("click", () => {
         currentGmView = "table";
         tableBtn.classList.add("active");
         cardsBtn.classList.remove("active");
+        if (listBtn) listBtn.classList.remove("active");
         cardsGrid.style.display = "none";
         tableWrap.style.display = "block";
       });

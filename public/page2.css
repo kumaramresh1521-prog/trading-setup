@@ -2014,6 +2014,10 @@ body.theme-light .contrib-mini-track {
   margin-bottom: 24px;
 }
 
+.gm-cards-grid.gm-list-view {
+  grid-template-columns: 1fr;
+}
+
 .gm-card {
   background: var(--p2-bg-card);
   border: 1px solid var(--p2-border);
@@ -2256,6 +2260,151 @@ body.theme-light .gm-table-range-track {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* ==========================================================================
+   Opstra-Style Synchronized Dual-Subplot WPCR & Stock Price Chart
+   ========================================================================== */
+.opstra-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px 10px;
+  border-bottom: 1px solid var(--p2-border);
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.opstra-zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.opstra-zoom-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--p2-text-dim);
+  margin-right: 2px;
+}
+
+.opstra-zoom-btn {
+  background: var(--p2-bg-card);
+  border: 1px solid var(--p2-border);
+  color: var(--p2-text-main);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.opstra-zoom-btn:hover {
+  background: var(--p2-bg-card-hover);
+  color: var(--p2-text-bright);
+}
+
+.opstra-zoom-btn.active {
+  background: var(--p2-teal);
+  border-color: var(--p2-teal-light);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.opstra-symbol-title {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--p2-text-bright);
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.opstra-date-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--p2-text-dim);
+}
+
+.opstra-date-label {
+  font-weight: 600;
+}
+
+.opstra-date-box {
+  background: var(--p2-bg-surface) !important;
+  border: 1px solid var(--p2-border) !important;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--p2-text-main) !important;
+  width: 105px;
+  text-align: center;
+}
+
+.opstra-menu-btn {
+  background: transparent;
+  border: 1px solid var(--p2-border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--p2-text-dim);
+}
+
+.opstra-dual-chart-container {
+  display: flex;
+  flex-direction: column;
+  background: #fbfbfa;
+  border: 1px solid var(--p2-border);
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+body.page2-body:not(.theme-light) .opstra-dual-chart-container {
+  background: #090d16;
+}
+
+.opstra-pane {
+  position: relative;
+  width: 100%;
+}
+
+.opstra-pane-price {
+  height: 250px;
+}
+
+.opstra-pane-pcr {
+  height: 210px;
+  border-top: 1px solid var(--p2-border);
+}
+
+.opstra-chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  padding: 4px 9px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: #0f172a;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+body.page2-body:not(.theme-light) .opstra-chart-tooltip {
+  background: rgba(15, 23, 42, 0.96);
+  border-color: #334155;
+  color: #f8fafc;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 
