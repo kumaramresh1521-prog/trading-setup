@@ -1,0 +1,12 @@
+.cache/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+scratch/
+*.log
+.DS_Store
+cookies.txt
+temp_body.json
+test_*.py

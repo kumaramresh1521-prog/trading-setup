@@ -1,0 +1,977 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Breadth Lab | Executive Admin Command Center</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css?v=20260919_v3">
+    <style>
+      :root {
+        --adm-bg: #070c18;
+        --adm-card: #0b1329;
+        --adm-border: #1e2d4d;
+        --adm-primary: #3b82f6;
+        --adm-success: #10b981;
+        --adm-danger: #ef4444;
+        --adm-warning: #f59e0b;
+        --adm-text: #f8fafc;
+        --adm-muted: #94a3b8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #070c18 !important;
+        color: #f8fafc !important;
+        font-family: 'Inter', sans-serif !important;
+        min-height: 100vh;
+      }
+      h1, h2, h3, h4, h5, h6 {
+        color: #f8fafc !important;
+      }
+      p, span, div {
+        color: inherit;
+      }
+      label {
+        color: #cbd5e1 !important;
+      }
+
+      /* Admin Lock Screen Overlay */
+      #adminLockOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(3, 7, 18, 0.96);
+        backdrop-filter: blur(12px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+      }
+      .lock-card {
+        width: 100%;
+        max-width: 420px;
+        background: var(--adm-card);
+        border: 1px solid var(--adm-border);
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        text-align: center;
+      }
+      .lock-icon {
+        font-size: 40px;
+        margin-bottom: 12px;
+        display: inline-block;
+      }
+      .lock-title {
+        font-size: 20px;
+        font-weight: 800;
+        margin: 0 0 6px 0;
+        letter-spacing: -0.02em;
+      }
+      .lock-subtitle {
+        font-size: 13px;
+        color: var(--adm-muted);
+        margin: 0 0 24px 0;
+      }
+      .lock-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 16px;
+        background: #060b17;
+        border: 1px solid var(--adm-border);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 15px;
+        font-family: 'JetBrains Mono', monospace;
+        margin-bottom: 16px;
+        text-align: center;
+        letter-spacing: 2px;
+      }
+      .lock-input:focus {
+        outline: none;
+        border-color: var(--adm-primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+      }
+      .btn-unlock {
+        width: 100%;
+        padding: 12px;
+        background: var(--adm-primary);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .btn-unlock:hover {
+        background: #2563eb;
+      }
+
+      /* Admin Shell Layout */
+      .admin-layout {
+        display: flex;
+        min-height: 100vh;
+      }
+      .admin-sidebar {
+        width: 260px;
+        background: #050a16;
+        border-right: 1px solid var(--adm-border);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+      }
+      .admin-brand {
+        padding: 24px 20px;
+        border-bottom: 1px solid var(--adm-border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .admin-brand-icon {
+        font-size: 24px;
+      }
+      .admin-brand h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      .admin-brand span {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        background: rgba(59, 130, 246, 0.2);
+        color: var(--adm-primary);
+        border-radius: 4px;
+        border: 1px solid rgba(59, 130, 246, 0.4);
+      }
+      .admin-nav {
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+      }
+      .admin-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        color: var(--adm-muted);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+      }
+      .admin-nav-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: #fff;
+      }
+      .admin-nav-item.active {
+        background: rgba(59, 130, 246, 0.12);
+        color: #60a5fa;
+        border-color: rgba(59, 130, 246, 0.3);
+      }
+      .admin-nav-item span.icon {
+        font-size: 16px;
+      }
+      .admin-sidebar-footer {
+        padding: 16px 20px;
+        border-top: 1px solid var(--adm-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .btn-adm-logout {
+        background: transparent;
+        border: 1px solid var(--adm-border);
+        color: var(--adm-muted);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .btn-adm-logout:hover {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: var(--adm-danger);
+        color: var(--adm-danger);
+      }
+
+      /* Main Content Area */
+      .admin-main {
+        flex: 1;
+        padding: 32px;
+        overflow-y: auto;
+      }
+      .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 28px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--adm-border);
+      }
+      .admin-header h1 {
+        margin: 0 0 6px 0;
+        font-size: 24px;
+        font-weight: 800;
+      }
+      .admin-header p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--adm-muted);
+      }
+      .admin-panel-view {
+        display: none;
+      }
+      .admin-panel-view.active {
+        display: block;
+      }
+
+      /* Cards & Grids */
+      .adm-card {
+        background: var(--adm-card);
+        border: 1px solid var(--adm-border);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+      .adm-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--adm-border);
+      }
+      .adm-card-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .stat-box {
+        background: #060b17;
+        border: 1px solid var(--adm-border);
+        border-radius: 10px;
+        padding: 18px;
+      }
+      .stat-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--adm-muted);
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .stat-val {
+        font-size: 22px;
+        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      /* Form controls */
+      .adm-form-group {
+        margin-bottom: 16px;
+      }
+      .adm-form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--adm-muted);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+      }
+      .adm-input, .adm-textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 14px;
+        background: #060b17;
+        border: 1px solid var(--adm-border);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 13px;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .adm-input:focus, .adm-textarea:focus {
+        outline: none;
+        border-color: var(--adm-primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+      }
+      .adm-textarea {
+        resize: vertical;
+        min-height: 80px;
+        font-family: 'Inter', sans-serif;
+      }
+      .btn-adm-primary {
+        padding: 10px 20px;
+        background: var(--adm-primary);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-adm-primary:hover {
+        background: #2563eb;
+      }
+      .btn-adm-danger {
+        padding: 10px 20px;
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .btn-adm-danger:hover {
+        background: var(--adm-danger);
+        color: #fff;
+      }
+      .alert-adm {
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: none;
+      }
+      .alert-adm.success {
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #34d399;
+      }
+      .alert-adm.error {
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #f87171;
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- 1. PIN Security Gate Overlay -->
+    <div id="adminLockOverlay">
+      <div class="lock-card">
+        <span class="lock-icon">🔒</span>
+        <h2 class="lock-title">Admin Command Center</h2>
+        <p class="lock-subtitle">Enter your master administrator secret key to proceed.</p>
+        <form id="adminLockForm" onsubmit="event.preventDefault(); verifyAdminKey();">
+          <input type="password" id="adminSecretInput" class="lock-input" placeholder="••••••••••••••••" autofocus autocomplete="current-password" />
+          <div id="lockErrorMsg" style="color:#ef4444; font-size:12px; margin-bottom:12px; display:none;"></div>
+          <button type="submit" class="btn-unlock" id="btnUnlockAdmin">Unlock Console ➔</button>
+        </form>
+        <div style="margin-top:20px;">
+          <a href="/" style="color:var(--adm-muted); text-decoration:none; font-size:12px;">&larr; Back to Breadth Lab Terminal</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Admin Dashboard Layout -->
+    <div class="admin-layout" id="adminLayout" style="display:none;">
+      
+      <!-- Left Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="admin-brand">
+          <span class="admin-brand-icon">⚡</span>
+          <div>
+            <h2>Breadth Lab</h2>
+          </div>
+          <span>ADMIN</span>
+        </div>
+
+        <nav class="admin-nav">
+          <div class="admin-nav-item active" data-tab="telemetry" onclick="switchAdminTab('telemetry')">
+            <span class="icon">📊</span> Overview &amp; Health
+          </div>
+          <div class="admin-nav-item" data-tab="brokers" onclick="switchAdminTab('brokers')">
+            <span class="icon">🔑</span> Master Broker APIs
+          </div>
+          <div class="admin-nav-item" data-tab="seo" onclick="switchAdminTab('seo')">
+            <span class="icon">🔍</span> SEO &amp; Google Console
+          </div>
+          <div class="admin-nav-item" data-tab="cache" onclick="switchAdminTab('cache')">
+            <span class="icon">⚡</span> Cache &amp; Market Engine
+          </div>
+          <div class="admin-nav-item" data-tab="security" onclick="switchAdminTab('security')">
+            <span class="icon">🛡️</span> Security &amp; PIN
+          </div>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+          <a href="/" target="_blank" style="color:var(--adm-muted); font-size:12px; text-decoration:none;">View Site ↗</a>
+          <button type="button" class="btn-adm-logout" onclick="logoutAdmin()">Log Out</button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="adminGlobalAlert" class="alert-adm"></div>
+
+        <!-- TAB 1: TELEMETRY & SYSTEM HEALTH -->
+        <section id="panelTelemetry" class="admin-panel-view active">
+          <div class="admin-header">
+            <div>
+              <h1>📊 System Telemetry &amp; Health</h1>
+              <p>Real-time server uptime, background daemons, and cloud synchronization status.</p>
+            </div>
+            <button type="button" class="btn-adm-primary" onclick="loadTelemetry()">🔄 Refresh Stats</button>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-box">
+              <div class="stat-label">Server Uptime</div>
+              <div class="stat-val" id="statUptime" style="color:#60a5fa;">--</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Active Broker</div>
+              <div class="stat-val" id="statActiveBroker" style="color:#34d399;">--</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Disk Cache Files</div>
+              <div class="stat-val" id="statCacheFiles" style="color:#fbbf24;">--</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Cache Storage Size</div>
+              <div class="stat-val" id="statCacheSize">-- MB</div>
+            </div>
+          </div>
+
+          <div class="adm-card">
+            <div class="adm-card-header">
+              <h3>☁️ Supabase Cloud Synchronization</h3>
+              <span id="statSbBadge" style="padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700;">Checking...</span>
+            </div>
+            <div style="font-size:13px; color:var(--adm-muted); line-height:1.6;">
+              <p><strong>Cloud Endpoint:</strong> <code id="statSbUrl" style="color:#60a5fa;">--</code></p>
+              <p>Supabase manages authentication, user accounts, and cross-device state sync for watchlists and desks.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: MASTER BROKER APIS -->
+        <section id="panelBrokers" class="admin-panel-view">
+          <div class="admin-header">
+            <div>
+              <h1>🔑 Master Server Broker APIs</h1>
+              <p>Configure the backend server's active broker credentials. Normal users will never see these keys.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button type="button" class="btn-adm-danger" onclick="testActiveBroker()">🧪 Test Active Broker</button>
+              <button type="button" class="btn-adm-primary" onclick="saveMasterBrokers()">💾 Save Master Configuration</button>
+            </div>
+          </div>
+
+          <div class="adm-card">
+            <div class="adm-card-header">
+              <h3>Active Broker Selection</h3>
+            </div>
+            <div style="display:flex; gap:16px; flex-wrap:wrap;">
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                <input type="radio" name="admActiveBroker" value="UPSTOX" /> <span>📈 Upstox API v2 (Default)</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                <input type="radio" name="admActiveBroker" value="ANGEL" /> <span>🪽 Angel One SmartAPI</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                <input type="radio" name="admActiveBroker" value="KOTAK" /> <span>⚡ Kotak Neo</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                <input type="radio" name="admActiveBroker" value="FYERS" /> <span>🎯 Fyers API v3</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="adm-card">
+            <div class="adm-card-header"><h3>📈 Upstox Configuration</h3></div>
+            <div class="adm-form-group">
+              <label>Upstox Access Token</label>
+              <input type="password" id="admUpstoxToken" class="adm-input" />
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="adm-form-group">
+                <label>API Key</label>
+                <input type="text" id="admUpstoxKey" class="adm-input" />
+              </div>
+              <div class="adm-form-group">
+                <label>API Secret</label>
+                <input type="password" id="admUpstoxSecret" class="adm-input" />
+              </div>
+            </div>
+          </div>
+
+          <div class="adm-card">
+            <div class="adm-card-header"><h3>🪽 Angel One SmartAPI Configuration</h3></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="adm-form-group">
+                <label>API Key</label>
+                <input type="text" id="admAngelKey" class="adm-input" />
+              </div>
+              <div class="adm-form-group">
+                <label>Client Code</label>
+                <input type="text" id="admAngelClient" class="adm-input" />
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="adm-form-group">
+                <label>MPIN / Password</label>
+                <input type="password" id="admAngelPin" class="adm-input" />
+              </div>
+              <div class="adm-form-group">
+                <label>TOTP Secret (Base32)</label>
+                <input type="password" id="admAngelTotp" class="adm-input" />
+              </div>
+            </div>
+          </div>
+
+          <div class="adm-card">
+            <div class="adm-card-header"><h3>⚡ Kotak Neo Configuration</h3></div>
+            <div class="adm-form-group">
+              <label>Kotak Access Token</label>
+              <input type="password" id="admKotakToken" class="adm-input" />
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+              <div class="adm-form-group">
+                <label>Consumer Key</label>
+                <input type="text" id="admKotakKey" class="adm-input" />
+              </div>
+              <div class="adm-form-group">
+                <label>Mobile Number</label>
+                <input type="text" id="admKotakMobile" class="adm-input" />
+              </div>
+              <div class="adm-form-group">
+                <label>MPIN</label>
+                <input type="password" id="admKotakMpin" class="adm-input" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: SEO & GOOGLE SEARCH CONSOLE -->
+        <section id="panelSeo" class="admin-panel-view">
+          <div class="admin-header">
+            <div>
+              <h1>🔍 SEO &amp; Google Search Console Manager</h1>
+              <p>Manage meta tags, Google site verification, and tracking without editing source code.</p>
+            </div>
+            <button type="button" class="btn-adm-primary" onclick="saveSeoConfig()">💾 Save SEO Changes</button>
+          </div>
+
+          <div class="adm-card">
+            <div class="adm-card-header">
+              <h3>Google Verification &amp; Analytics</h3>
+            </div>
+            <div class="adm-form-group">
+              <label>Google Site Verification Meta Tag Content (google-site-verification)</label>
+              <input type="text" id="admSeoGoogleVerify" class="adm-input" placeholder="e.g. abcd1234efgh5678ijkl" />
+              <small style="color:var(--adm-muted); font-size:11px; margin-top:4px; display:block;">Pasting your token here allows 1-click ownership verification in Google Search Console.</small>
+            </div>
+            <div class="adm-form-group">
+              <label>Google Analytics 4 / GTM Measurement ID</label>
+              <input type="text" id="admSeoGoogleAnalytics" class="adm-input" placeholder="e.g. G-XXXXXXXXXX" />
+            </div>
+          </div>
+
+          <div class="adm-card">
+            <div class="adm-card-header">
+              <h3>Meta Tags &amp; Search Snippets</h3>
+            </div>
+            <div class="adm-form-group">
+              <label>Homepage Title Tag (&lt;title&gt;)</label>
+              <input type="text" id="admSeoTitle" class="adm-input" />
+            </div>
+            <div class="adm-form-group">
+              <label>Meta Description (Shown in Google Search Results)</label>
+              <textarea id="admSeoDesc" class="adm-textarea"></textarea>
+            </div>
+            <div class="adm-form-group">
+              <label>Keywords (Comma separated)</label>
+              <input type="text" id="admSeoKeywords" class="adm-input" />
+            </div>
+            <div class="adm-form-group">
+              <label>Canonical Base URL</label>
+              <input type="text" id="admSeoCanonical" class="adm-input" />
+            </div>
+          </div>
+
+          <div class="adm-card">
+            <div class="adm-card-header">
+              <h3>Search Engine Links</h3>
+            </div>
+            <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:13px;">
+              <a href="/sitemap.xml" target="_blank" style="color:#60a5fa;">📄 Open sitemap.xml ↗</a>
+              <a href="/robots.txt" target="_blank" style="color:#60a5fa;">🤖 Open robots.txt ↗</a>
+              <a href="https://search.google.com/search-console" target="_blank" style="color:#34d399;">🌐 Google Search Console ↗</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: CACHE & MARKET ENGINE -->
+        <section id="panelCache" class="admin-panel-view">
+          <div class="admin-header">
+            <div>
+              <h1>⚡ Cache &amp; Market Engine Controls</h1>
+              <p>Purge stale market memory, reset cached files, and force live updates.</p>
+            </div>
+          </div>
+
+          <div class="adm-card">
+            <div class="adm-card-header">
+              <h3>Disk &amp; Memory Cache Purge</h3>
+            </div>
+            <p style="font-size:13px; color:var(--adm-muted); margin-bottom:16px;">
+              Purging caches will delete all temporary files in <code>.cache/</code> and reset memory snapshots. Next request will fetch fresh data from the active broker.
+            </p>
+            <button type="button" class="btn-adm-danger" onclick="purgeCache()">🧹 Purge All Caches Now</button>
+          </div>
+        </section>
+
+        <!-- TAB 5: SECURITY & ADMIN PIN -->
+        <section id="panelSecurity" class="admin-panel-view">
+          <div class="admin-header">
+            <div>
+              <h1>🛡️ Security &amp; Admin Passphrase</h1>
+              <p>Change your master administrator access PIN.</p>
+            </div>
+          </div>
+
+          <div class="adm-card" style="max-width:500px;">
+            <div class="adm-card-header">
+              <h3>Update Master Admin PIN</h3>
+            </div>
+            <div class="adm-form-group">
+              <label>New Admin Secret PIN (Minimum 6 characters)</label>
+              <input type="password" id="admNewPin" class="adm-input" placeholder="••••••••••••" />
+            </div>
+            <button type="button" class="btn-adm-primary" onclick="changeAdminPin()">Update PIN</button>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <script>
+      let adminSecretKey = sessionStorage.getItem('bl_admin_secret') || '';
+
+      function getAuthHeaders() {
+        return {
+          'Content-Type': 'application/json',
+          'X-Admin-Secret': adminSecretKey
+        };
+      }
+
+      function showAdmAlert(msg, type = 'success') {
+        const el = document.getElementById('adminGlobalAlert');
+        el.textContent = msg;
+        el.className = `alert-adm ${type}`;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 4000);
+      }
+
+      async function verifyAdminKey() {
+        const input = document.getElementById('adminSecretInput');
+        const key = input.value.trim();
+        const errEl = document.getElementById('lockErrorMsg');
+        errEl.style.display = 'none';
+
+        if (!key) {
+          errEl.textContent = 'Please enter the admin key.';
+          errEl.style.display = 'block';
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/admin/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminKey: key })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            adminSecretKey = key;
+            sessionStorage.setItem('bl_admin_secret', key);
+            document.getElementById('adminLockOverlay').style.display = 'none';
+            document.getElementById('adminLayout').style.display = 'flex';
+            loadTelemetry();
+            loadMasterBrokers();
+            loadSeoConfig();
+          } else {
+            errEl.textContent = 'Invalid Admin Key! Access denied.';
+            errEl.style.display = 'block';
+          }
+        } catch(e) {
+          errEl.textContent = 'Connection error: ' + e.message;
+          errEl.style.display = 'block';
+        }
+      }
+
+      function logoutAdmin() {
+        adminSecretKey = '';
+        sessionStorage.removeItem('bl_admin_secret');
+        document.getElementById('adminLayout').style.display = 'none';
+        document.getElementById('adminLockOverlay').style.display = 'flex';
+        document.getElementById('adminSecretInput').value = '';
+      }
+
+      function switchAdminTab(tabName) {
+        document.querySelectorAll('.admin-nav-item').forEach(el => {
+          el.classList.toggle('active', el.getAttribute('data-tab') === tabName);
+        });
+        document.querySelectorAll('.admin-panel-view').forEach(el => {
+          el.classList.remove('active');
+        });
+        const target = document.getElementById('panel' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+        if (target) target.classList.add('active');
+      }
+
+      // 1. Telemetry
+      async function loadTelemetry() {
+        try {
+          const res = await fetch('/api/admin/system-stats', { headers: getAuthHeaders() });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.ok) {
+            document.getElementById('statUptime').textContent = data.uptime;
+            document.getElementById('statActiveBroker').textContent = data.activeBroker;
+            document.getElementById('statCacheFiles').textContent = data.cacheFilesCount;
+            document.getElementById('statCacheSize').textContent = data.cacheSizeMb + ' MB';
+            document.getElementById('statSbUrl').textContent = data.supabaseUrl;
+
+            const b = document.getElementById('statSbBadge');
+            if (data.supabaseConfigured) {
+              b.textContent = 'CONNECTED';
+              b.style.background = 'rgba(16, 185, 129, 0.2)';
+              b.style.color = '#34d399';
+            } else {
+              b.textContent = 'NOT CONFIGURED';
+              b.style.background = 'rgba(239, 68, 68, 0.2)';
+              b.style.color = '#f87171';
+            }
+          }
+        } catch(e) {}
+      }
+
+      // 2. Master Brokers
+      async function loadMasterBrokers() {
+        try {
+          const res = await fetch('/api/admin/broker-config', { headers: getAuthHeaders() });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (!data.ok) return;
+
+          // Set radio
+          const r = document.querySelector(`input[name="admActiveBroker"][value="${data.activeBroker}"]`);
+          if (r) r.checked = true;
+
+          // Upstox
+          if (data.upstox) {
+            document.getElementById('admUpstoxToken').value = data.upstox.accessToken || '';
+            document.getElementById('admUpstoxKey').value = data.upstox.apiKey || '';
+            document.getElementById('admUpstoxSecret').value = data.upstox.apiSecret || '';
+          }
+          // Angel
+          if (data.angel) {
+            document.getElementById('admAngelKey').value = data.angel.apiKey || '';
+            document.getElementById('admAngelClient').value = data.angel.clientCode || '';
+            document.getElementById('admAngelPin').value = data.angel.pin || '';
+            document.getElementById('admAngelTotp').value = data.angel.totpSecret || '';
+          }
+          // Kotak
+          if (data.kotak) {
+            document.getElementById('admKotakToken').value = data.kotak.accessToken || '';
+            document.getElementById('admKotakKey').value = data.kotak.consumerKey || '';
+            document.getElementById('admKotakMobile').value = data.kotak.mobileNo || '';
+            document.getElementById('admKotakMpin').value = data.kotak.mpin || '';
+          }
+        } catch(e) {}
+      }
+
+      async function saveMasterBrokers() {
+        const activeRadio = document.querySelector('input[name="admActiveBroker"]:checked');
+        const payload = {
+          activeBroker: activeRadio ? activeRadio.value : 'UPSTOX',
+          upstox: {
+            accessToken: document.getElementById('admUpstoxToken').value.trim(),
+            apiKey: document.getElementById('admUpstoxKey').value.trim(),
+            apiSecret: document.getElementById('admUpstoxSecret').value.trim()
+          },
+          angel: {
+            apiKey: document.getElementById('admAngelKey').value.trim(),
+            clientCode: document.getElementById('admAngelClient').value.trim(),
+            pin: document.getElementById('admAngelPin').value.trim(),
+            totpSecret: document.getElementById('admAngelTotp').value.trim()
+          },
+          kotak: {
+            accessToken: document.getElementById('admKotakToken').value.trim(),
+            consumerKey: document.getElementById('admKotakKey').value.trim(),
+            mobileNo: document.getElementById('admKotakMobile').value.trim(),
+            mpin: document.getElementById('admKotakMpin').value.trim()
+          }
+        };
+
+        try {
+          const res = await fetch('/api/admin/broker-config', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+          });
+          const result = await res.json();
+          if (result.ok) {
+            showAdmAlert('✓ Server Master Broker configuration saved!', 'success');
+            loadTelemetry();
+          } else {
+            showAdmAlert(result.message || 'Failed to save', 'error');
+          }
+        } catch(e) {
+          showAdmAlert(e.message, 'error');
+        }
+      }
+
+      async function testActiveBroker() {
+        const activeRadio = document.querySelector('input[name="admActiveBroker"]:checked');
+        const broker = activeRadio ? activeRadio.value : 'UPSTOX';
+        showAdmAlert(`Testing live quote on ${broker}...`, 'success');
+
+        try {
+          const res = await fetch('/api/settings/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ broker: broker })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            showAdmAlert('✓ ' + data.message, 'success');
+          } else {
+            showAdmAlert('❌ Test failed: ' + (data.message || 'Unknown error'), 'error');
+          }
+        } catch(e) {
+          showAdmAlert(e.message, 'error');
+        }
+      }
+
+      // 3. SEO
+      async function loadSeoConfig() {
+        try {
+          const res = await fetch('/api/admin/seo', { headers: getAuthHeaders() });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.ok && data.seo) {
+            document.getElementById('admSeoGoogleVerify').value = data.seo.google_site_verification || '';
+            document.getElementById('admSeoGoogleAnalytics').value = data.seo.google_analytics_id || '';
+            document.getElementById('admSeoTitle').value = data.seo.site_title || '';
+            document.getElementById('admSeoDesc').value = data.seo.meta_description || '';
+            document.getElementById('admSeoKeywords').value = data.seo.keywords || '';
+            document.getElementById('admSeoCanonical').value = data.seo.canonical_url || '';
+          }
+        } catch(e) {}
+      }
+
+      async function saveSeoConfig() {
+        const payload = {
+          google_site_verification: document.getElementById('admSeoGoogleVerify').value.trim(),
+          google_analytics_id: document.getElementById('admSeoGoogleAnalytics').value.trim(),
+          site_title: document.getElementById('admSeoTitle').value.trim(),
+          meta_description: document.getElementById('admSeoDesc').value.trim(),
+          keywords: document.getElementById('admSeoKeywords').value.trim(),
+          canonical_url: document.getElementById('admSeoCanonical').value.trim()
+        };
+
+        try {
+          const res = await fetch('/api/admin/seo', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+          });
+          const result = await res.json();
+          if (result.ok) {
+            showAdmAlert('✓ SEO configuration updated and applied!', 'success');
+          } else {
+            showAdmAlert('Failed to update SEO', 'error');
+          }
+        } catch(e) {
+          showAdmAlert(e.message, 'error');
+        }
+      }
+
+      // 4. Cache
+      async function purgeCache() {
+        if (!confirm('Are you sure you want to purge all market data caches?')) return;
+        try {
+          const res = await fetch('/api/admin/cache-purge', {
+            method: 'POST',
+            headers: getAuthHeaders()
+          });
+          const result = await res.json();
+          if (result.ok) {
+            showAdmAlert(result.message, 'success');
+            loadTelemetry();
+          } else {
+            showAdmAlert('Cache purge failed', 'error');
+          }
+        } catch(e) {
+          showAdmAlert(e.message, 'error');
+        }
+      }
+
+      // 5. Change PIN
+      async function changeAdminPin() {
+        const newPin = document.getElementById('admNewPin').value.trim();
+        if (!newPin || newPin.length < 6) {
+          alert('PIN must be at least 6 characters long.');
+          return;
+        }
+        try {
+          const res = await fetch('/api/admin/change-pin', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ newPin: newPin })
+          });
+          const result = await res.json();
+          if (result.ok) {
+            adminSecretKey = newPin;
+            sessionStorage.setItem('bl_admin_secret', newPin);
+            alert('✓ Admin PIN updated successfully! Remember your new PIN.');
+            document.getElementById('admNewPin').value = '';
+          } else {
+            alert(result.message || 'Failed to update PIN');
+          }
+        } catch(e) {
+          alert(e.message);
+        }
+      }
+
+      // Auto-unlock if session key exists
+      if (adminSecretKey) {
+        fetch('/api/admin/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminKey: adminSecretKey })
+        }).then(r => r.json()).then(d => {
+          if (d.ok) {
+            document.getElementById('adminLockOverlay').style.display = 'none';
+            document.getElementById('adminLayout').style.display = 'flex';
+            loadTelemetry();
+            loadMasterBrokers();
+            loadSeoConfig();
+          }
+        }).catch(() => {});
+      }
+    </script>
+  </body>
+</html>

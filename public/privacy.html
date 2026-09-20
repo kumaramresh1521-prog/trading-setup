@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Privacy Policy | Breadth Lab</title>
+    <meta name="description" content="Privacy Policy and data security practices for Breadth Lab users and Google OAuth subscribers.">
+    <link rel="canonical" href="https://breadthlab.com/privacy.html">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css?v=20260919_v1">
+    <style>
+      .legal-page-container {
+        max-width: 960px;
+        margin: 40px auto;
+        padding: 32px 24px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+      }
+      [data-theme="dark"] .legal-page-container {
+        background: #0d121d;
+        border-color: #1e293b;
+      }
+      .legal-title {
+        font-size: 26px;
+        font-weight: 800;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+      }
+      [data-theme="dark"] .legal-title { color: #f8fafc; }
+      .legal-subtitle {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border-default);
+      }
+      .legal-section {
+        margin-bottom: 24px;
+      }
+      .legal-section h2 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: var(--text-primary);
+      }
+      [data-theme="dark"] .legal-section h2 { color: #e2e8f0; }
+      .legal-section p, .legal-section li {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+      }
+      [data-theme="dark"] .legal-section p, [data-theme="dark"] .legal-section li { color: #94a3b8; }
+      .back-nav {
+        margin-bottom: 20px;
+      }
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--primary);
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="legal-page-container">
+      <div class="back-nav">
+        <a href="/" class="back-link">&larr; Back to Breadth Lab Terminal</a>
+      </div>
+
+      <h1 class="legal-title">🔒 Privacy Policy & Data Protection</h1>
+      <p class="legal-subtitle">Effective Date: September 19, 2026 &bull; Compliant with Information Technology Act & GDPR</p>
+
+      <div class="legal-section">
+        <h2>1. Information We Collect</h2>
+        <p>Breadth Lab respects your confidentiality. When you access our platform:</p>
+        <ul>
+          <li><strong>Guest Usage</strong>: No personal information is collected. Your custom watchlists, theme preferences, and active analytics views are saved locally in your browser via <code>localStorage</code>.</li>
+          <li><strong>Google OAuth Sign-In (Optional)</strong>: If you choose to log in with Google via Supabase, we collect only your public profile name, email address, and avatar thumbnail to maintain your multi-device workspace synchronization.</li>
+          <li><strong>Broker API Credentials</strong>: Any broker API keys or TOTP configurations you enter in Settings are retained on your own private server instance or encrypted local storage and never transmitted to external third parties.</li>
+        </ul>
+      </div>
+
+      <div class="legal-section">
+        <h2>2. How Your Data Is Used</h2>
+        <p>We use synchronized data strictly to:</p>
+        <ul>
+          <li>Maintain your real-time watchlist across your desktop, laptop, and mobile devices.</li>
+          <li>Store custom strike ranges, alert preferences, and charting presets.</li>
+          <li>We never sell, monetize, or disclose your trading preferences or personal identifiers to advertising networks.</li>
+        </ul>
+      </div>
+
+      <div class="legal-section">
+        <h2>3. Local Storage & Cookies</h2>
+        <p>We use client-side local caching (<code>localStorage</code> and memory cache) to cache static instrument lists and historical market breadth figures so you experience zero latency and to reduce redundant broker API consumption.</p>
+      </div>
+
+      <div class="legal-section">
+        <h2>4. Data Deletion & Account Erasure</h2>
+        <p>You may purge your local cache at any time using your browser settings or click "Reset Workspace" inside Settings. To erase synchronized cloud data, users can disconnect their account at any time.</p>
+      </div>
+    </div>
+  </body>
+</html>

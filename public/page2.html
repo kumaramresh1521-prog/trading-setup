@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Derivatives &amp; Options OI Suite | Breadth Lab</title>
+  <meta name="description" content="Advanced Derivatives and Open Interest Suite featuring 14 institutional OI tools, Multi-Strike OI overlays, Volume PCR, and Straddle Charts.">
+  <meta name="keywords" content="derivatives suite, open interest analysis, options oi, multi strike oi, volume pcr, niftytrader, definedge suite">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://breadthlab.com/page2.html">
+  <link rel="stylesheet" href="/page2.css?v=20260920_v6">
+</head>
+<body class="page2-body">
+
+  <!-- ====================================================================
+       TOP MAIN NAVIGATION BAR
+       ==================================================================== -->
+  <header class="page2-header">
+    <div class="page2-nav-bar">
+      <!-- Left: Back Button & Portal Brand -->
+      <div class="page2-nav-left">
+        <a href="/index.html" class="page2-back-btn" title="Return to Main Portal (Page 1)">
+          <span>⬅</span> <span>Back to Main Portal (Page 1)</span>
+        </a>
+
+        <!-- Dual-Suite Switcher Tabs -->
+        <div class="page2-suite-tabs">
+          <button id="p2SuiteDefinedgeBtn" class="page2-suite-btn active" type="button">
+            <span>⚡</span> <span>DEFINEDGE SUITE (14 TOOLS)</span>
+          </button>
+          <button id="p2SuiteNiftyTraderBtn" class="page2-suite-btn" type="button">
+            <span>📊</span> <span>NIFTYTRADER SUITE</span>
+          </button>
+          <button id="p2SuiteToolsBtn" class="page2-suite-btn" type="button">
+            <span>🛠️</span> <span>TOOLS</span>
+          </button>
+          <button id="p2SuiteFiiDiiBtn" class="page2-suite-btn" type="button">
+            <span>🏛️</span> <span>FII / DII</span>
+          </button>
+          <button id="p2SuiteContributionBtn" class="page2-suite-btn" type="button">
+            <span>📈</span> <span>BREADTH &amp; CONTRIBUTION</span>
+          </button>
+        </div>
+
+        <!-- Definedge OPEN INTEREST Dropdown (Visible when Definedge Suite is active) -->
+        <div id="p2DefinedgeDropdownContainer" class="page2-menu-container">
+          <button id="p2OiMenuBtn" class="page2-menu-trigger" type="button">
+            <span>OPEN INTEREST</span>
+            <span style="font-size:10px;">▼</span>
+          </button>
+          
+          <div id="p2OiDropdown" class="page2-dropdown-list">
+            <button class="page2-dropdown-item active" data-tool="viewOpenInterest">
+              <span class="item-icon">📊</span> <span>Open Interest</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewTotalOi">
+              <span class="item-icon">🏛️</span> <span>Total Open Interest</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewHistoricalToi">
+              <span class="item-icon">⏳</span> <span>Historical TOI</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewMultiToi">
+              <span class="item-icon">🌈</span> <span>MultiTOI</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewOiDynamics">
+              <span class="item-icon">⚡</span> <span>Put Call OI Dynamics</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewOiCharts">
+              <span class="item-icon">📈</span> <span>Open Interest Charts</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewOptionsBuildup">
+              <span class="item-icon">🧱</span> <span>Options Buildup</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewPcr">
+              <span class="item-icon">⚖️</span> <span>PCR</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewStraddles">
+              <span class="item-icon">📉</span> <span>Straddles</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewOptionChain">
+              <span class="item-icon">📑</span> <span>Option Chain</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewUnusualActivity">
+              <span class="item-icon">🧭</span> <span>Unusual Options Activity</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewTrividh">
+              <span class="item-icon">📡</span> <span>Trividh</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewOiCrossover">
+              <span class="item-icon">🔀</span> <span>Open Interest Crossover</span>
+            </button>
+            <button class="page2-dropdown-item" data-tool="viewOptionsActivity">
+              <span class="item-icon">⚡</span> <span>Options Activity</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Asset Selector, Spot Badge, Refresh, and Night/White Mode Toggle -->
+      <div class="page2-nav-right">
+        <select id="p2IndexSelect" class="page2-ctrl-select">
+          <option value="nifty50" selected>NIFTY 50</option>
+          <option value="banknifty">BANK NIFTY</option>
+          <option value="finnifty">FIN NIFTY</option>
+          <option value="sensex">BSE SENSEX</option>
+          <option value="crudeoil">MCX CRUDEOIL</option>
+          <option value="reliance">RELIANCE</option>
+          <option value="hdfcbank">HDFC BANK</option>
+        </select>
+        <div id="p2SpotBadge" class="page2-spot-badge">SPOT: ₹23,346.40</div>
+        <button id="p2RefreshBtn" class="page2-refresh-btn" type="button">🔄 Refresh</button>
+        <!-- NIGHT MODE / WHITE MODE TOGGLE BUTTON -->
+        <button id="p2ThemeToggleBtn" class="page2-theme-toggle-btn" type="button" title="Toggle Night / White Theme">
+          <span id="p2ThemeIcon">🌙</span> <span id="p2ThemeLabel">Night Mode</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ====================================================================
+       SECTION 1: DEFINEDGE PRO SUITE (14 Open Interest Tools)
+       ==================================================================== -->
+  <main id="p2SectionDefinedge" class="page2-main-content">
+    <!-- View 1: Open Interest -->
+    <div id="viewOpenInterest" class="page2-view-panel active">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>📊 Open Interest Distribution</h2>
+          <p>Strike-by-strike Call OI vs Put OI comparative depth & net delta positioning</p>
+        </div>
+      </div>
+      <div class="p2-metrics-row" id="oiMetricCards"></div>
+      <div class="p2-card">
+        <div class="p2-card-header">
+          <span class="p2-card-title">Call OI vs Put OI Strike Distribution</span>
+          <span class="p2-badge p2-badge-teal">Live Strike Ladder</span>
+        </div>
+        <div class="p2-chart-container" style="height:380px;">
+          <canvas id="chartOiBars"></canvas>
+        </div>
+      </div>
+      <div class="p2-card">
+        <div class="p2-card-header">
+          <span class="p2-card-title">Strike-Wise Open Interest Data Table</span>
+        </div>
+        <div class="p2-table-container">
+          <table class="p2-table" id="tableOiData">
+            <thead>
+              <tr>
+                <th>Call OI (Lots)</th>
+                <th>Call OI Chg</th>
+                <th>Call LTP</th>
+                <th class="text-center">STRIKE</th>
+                <th>Put LTP</th>
+                <th>Put OI Chg</th>
+                <th>Put OI (Lots)</th>
+                <th>Net Bias</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- View 2: Total Open Interest (TOI) -->
+    <div id="viewTotalOi" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>🏛️ Total Open Interest (TOI)</h2>
+          <p>Cumulative market-wide option exposure, Call vs Put cushion & net delta dominance</p>
+        </div>
+      </div>
+      <div class="p2-metrics-row" id="toiMetricCards"></div>
+      <div class="p2-card">
+        <div class="p2-card-header"><span class="p2-card-title">Cumulative Open Interest Cushion</span></div>
+        <div class="p2-chart-container" style="height:280px;"><canvas id="chartToiGauge"></canvas></div>
+      </div>
+    </div>
+
+    <!-- View 3: Historical TOI -->
+    <div id="viewHistoricalToi" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>⏳ Historical TOI (Intraday Timeline)</h2>
+          <p>Multi-hour cumulative Call vs Put buildup shifts throughout today's market session</p>
+        </div>
+      </div>
+      <div class="p2-card">
+        <div class="p2-card-header"><span class="p2-card-title">Intraday TOI Evolution (09:15 - 15:30)</span></div>
+        <div class="p2-chart-container" style="height:360px;"><canvas id="chartHistoricalToi"></canvas></div>
+      </div>
+    </div>
+
+    <!-- View 4: MultiTOI -->
+    <div id="viewMultiToi" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>🌈 MultiTOI (Strike Migration Tracker)</h2>
+          <p>Independent curves for key ATM & Near-the-Money strikes detecting smart money shifts</p>
+        </div>
+      </div>
+      <div class="p2-card">
+        <div class="p2-card-header"><span class="p2-card-title">Multi-Strike Open Interest Trajectories</span></div>
+        <div class="p2-chart-container" style="height:360px;"><canvas id="chartMultiToi"></canvas></div>
+      </div>
+    </div>
+
+    <!-- View 5: Put Call OI Dynamics -->
+    <div id="viewOiDynamics" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>⚡ Put Call OI Dynamics (Velocity Flow)</h2>
+          <p>Rate of change and aggressive writing acceleration per 15-minute candle</p>
+        </div>
+      </div>
+      <div class="p2-card">
+        <div class="p2-card-header"><span class="p2-card-title">OI Velocity Flow (Writing vs Unwinding Momentum)</span></div>
+        <div class="p2-chart-container" style="height:340px;"><canvas id="chartOiDynamics"></canvas></div>
+      </div>
+    </div>
+
+    <!-- View 6: Open Interest Charts -->
+    <div id="viewOiCharts" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>📈 Open Interest Charts with Support/Resistance Walls</h2>
+          <p>Underlying price movement bounded by major Call Wall (Resistance) and Put Wall (Support)</p>
+        </div>
+      </div>
+      <div class="p2-card">
+        <div class="p2-card-header"><span class="p2-card-title">Price Action vs Major OI Walls</span></div>
+        <div class="p2-chart-container" style="height:360px;"><canvas id="chartOiWalls"></canvas></div>
+      </div>
+    </div>
+
+    <!-- View 7: Options Buildup -->
+    <div id="viewOptionsBuildup" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>🧱 Options Buildup Matrix</h2>
+          <p>4-Quadrant algorithmic classification across all strikes: Long Buildup, Short Buildup, Short Covering, Long Unwinding</p>
+        </div>
+      </div>
+      <div class="p2-metrics-row" id="buildupSummaryCards"></div>
+      <div class="p2-card">
+        <div class="p2-card-header"><span class="p2-card-title">Strike Buildup Radar</span></div>
+        <div class="p2-table-container">
+          <table class="p2-table" id="tableBuildupData">
+            <thead>
+              <tr>
+                <th>Call Buildup</th>
+                <th>Call Chg OI</th>
+                <th>Call LTP</th>
+                <th class="text-center">STRIKE</th>
+                <th>Put LTP</th>
+                <th>Put Chg OI</th>
+                <th>Put Buildup</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- View 8: PCR -->
+    <div id="viewPcr" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>⚖️ PCR (Put-Call Ratio) Analytics</h2>
+          <p>Total OI PCR, Volume PCR & Overbought / Oversold exhaustion zones</p>
+        </div>
+      </div>
+      <div class="p2-metrics-row" id="pcrMetricCards"></div>
+      <div class="p2-card">
+        <div class="p2-card-header"><span class="p2-card-title">PCR Dial & Historical Intraday Curve</span></div>
+        <div class="p2-chart-container" style="height:320px;"><canvas id="chartPcrCurve"></canvas></div>
+      </div>
+    </div>
+
+    <!-- View 9: Straddles -->
+    <div id="viewStraddles" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>📉 Straddles & Combined Premium Decay</h2>
+          <p>ATM Straddle (CE + PE) price track, intraday theta bleed & Breakeven bands</p>
+        </div>
+      </div>
+      <div class="p2-metrics-row" id="straddleMetricCards"></div>
+      <div class="p2-card">
+        <div class="p2-card-header"><span class="p2-card-title">ATM Straddle Premium Decay Curve</span></div>
+        <div class="p2-chart-container" style="height:340px;"><canvas id="chartStraddleDecay"></canvas></div>
+      </div>
+    </div>
+
+    <!-- View 10: Option Chain -->
+    <div id="viewOptionChain" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>📑 Option Chain & Greeks Grid</h2>
+          <p>21-Strike institutional matrix with live Black-Scholes Greeks, IV smile, and OI depth</p>
+        </div>
+      </div>
+      <div class="p2-card">
+        <div class="p2-table-container">
+          <table class="p2-table" id="tableOptionChainGrid">
+            <thead>
+              <tr class="header-split">
+                <th colspan="5" class="text-center text-call">CALLS</th>
+                <th class="text-center">STRIKE</th>
+                <th colspan="5" class="text-center text-put">PUTS</th>
+              </tr>
+              <tr>
+                <th>Delta (Δ)</th>
+                <th>IV (%)</th>
+                <th>Volume</th>
+                <th>OI</th>
+                <th>LTP (₹)</th>
+                <th class="text-center">Strike</th>
+                <th>LTP (₹)</th>
+                <th>OI</th>
+                <th>Volume</th>
+                <th>IV (%)</th>
+                <th>Delta (Δ)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- View 11: Unusual Options Activity -->
+    <div id="viewUnusualActivity" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>🧭 Unusual Options Activity (UOA)</h2>
+          <p>Anomaly scanner tracking institutional block bursts and volume spikes</p>
+        </div>
+      </div>
+      <div class="p2-card">
+        <div class="p2-table-container">
+          <table class="p2-table" id="tableUoaData">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Strike</th>
+                <th>Volume</th>
+                <th>OI</th>
+                <th>Vol / OI Ratio</th>
+                <th>Anomaly Severity</th>
+                <th>Action Interpretation</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- View 12: Trividh -->
+    <div id="viewTrividh" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>📡 Trividh (3-Dimensional Confluence Desk)</h2>
+          <p>Price Momentum + Open Interest Velocity + Volume Intensity composite conviction model</p>
+        </div>
+      </div>
+      <div class="p2-metrics-row" id="trividhMetricCards"></div>
+      <div class="p2-card">
+        <div class="p2-card-header"><span class="p2-card-title">3D Component Confluence Breakdown</span></div>
+        <div class="p2-chart-container" style="height:320px;"><canvas id="chartTrividhRadar"></canvas></div>
+      </div>
+    </div>
+
+    <!-- View 13: OI Crossover -->
+    <div id="viewOiCrossover" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>🔀 Open Interest Crossover Radar</h2>
+          <p>Inflection strike detection where Call OI and Put OI intersect, identifying support/resistance shifts</p>
+        </div>
+      </div>
+      <div class="p2-card">
+        <div class="p2-table-container">
+          <table class="p2-table" id="tableCrossoverData">
+            <thead>
+              <tr>
+                <th>Strike</th>
+                <th>Call OI</th>
+                <th>Put OI</th>
+                <th>Net OI Spread</th>
+                <th>Crossover Status</th>
+                <th>Structural Pivot</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- View 14: Options Activity -->
+    <div id="viewOptionsActivity" class="page2-view-panel">
+      <div class="page2-tool-header">
+        <div class="page2-tool-title-wrap">
+          <h2>⚡ Options Activity (Flow Radar)</h2>
+          <p>Real-time aggressive institutional trade intensity ranking across high-volume strikes</p>
+        </div>
+      </div>
+      <div class="p2-card">
+        <div class="p2-table-container">
+          <table class="p2-table" id="tableActivityData">
+            <thead>
+              <tr>
+                <th>Strike</th>
+                <th>Option Leg</th>
+                <th>LTP (₹)</th>
+                <th>Trade Intensity</th>
+                <th>Total Volume</th>
+                <th>OI Addition</th>
+                <th>Institutional Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ====================================================================
+       SECTION 2: NIFTYTRADER PRO SUITE (From Image & Website Analysis)
+       ==================================================================== -->
+  <main id="p2SectionNiftyTrader" class="page2-main-content" style="display:none;">
+
+    <!-- Top Live Metric Ribbon (Matching https://www.niftytrader.in/nifty-put-call-ratio) -->
+    <section class="nt-top-ribbon">
+      <div class="nt-ribbon-item">
+        <span class="nt-ribbon-lbl">India VIX</span>
+        <span class="nt-ribbon-val text-red" id="ntVixVal">11.39 (-0.90)</span>
+      </div>
+      <div class="nt-ribbon-sep"></div>
+      <div class="nt-ribbon-item">
+        <span class="nt-ribbon-lbl">Live Max Pain</span>
+        <span class="nt-ribbon-val text-amber" id="ntMaxPainVal">23,350</span>
+      </div>
+      <div class="nt-ribbon-sep"></div>
+      <div class="nt-ribbon-item">
+        <span class="nt-ribbon-lbl">Lot Size</span>
+        <span class="nt-ribbon-val" id="ntLotSizeVal">65</span>
+      </div>
+      <div class="nt-ribbon-sep"></div>
+      <div class="nt-ribbon-item">
+        <span class="nt-ribbon-lbl">PCR</span>
+        <span class="nt-ribbon-val text-green" id="ntPcrVal">1.1268</span>
+      </div>
+      <div class="nt-ribbon-sep"></div>
+      <div class="nt-ribbon-item">
+        <span class="nt-ribbon-lbl">CHG IN OI PCR</span>
+        <span class="nt-ribbon-val text-green" id="ntChgPcrVal">2.5742</span>
+      </div>
+      <div class="nt-ribbon-sep"></div>
+      <div class="nt-ribbon-item">
+        <span class="nt-ribbon-lbl">Volume PCR</span>
+        <span class="nt-ribbon-val" id="ntVolPcrVal">1.3380</span>
+      </div>
+      <div class="nt-ribbon-sep"></div>
+      <div class="nt-ribbon-item">
+        <span class="nt-ribbon-lbl">Expiry Date</span>
+        <span class="nt-ribbon-val" id="ntExpiryDateVal">22 Sep 2026</span>
+      </div>
+      <div class="nt-ribbon-sep"></div>
+      <div class="nt-ribbon-item">
+        <span class="nt-ribbon-lbl">Market Bias</span>
+        <span class="p2-badge p2-badge-green" id="ntSentimentBadge">Put OI Higher</span>
+      </div>
+    </section>
+
+    <!-- NiftyTrader Sub-Navigation Tabs Bar (Exact tools from the uploaded image) -->
+    <nav class="nt-sub-nav">
+      <button class="nt-nav-btn active" data-nt-tool="ntViewPcr">
+        <span>⚖️</span> <span>PCR (Put Call Ratio)</span>
+      </button>
+      <button class="nt-nav-btn" data-nt-tool="ntViewMaxPain">
+        <span>🎯</span> <span>Live Max Pain</span>
+      </button>
+      <button class="nt-nav-btn" data-nt-tool="ntViewOiChart">
+        <span>📊</span> <span>OI Chart</span> <span class="nt-tag-prime">Prime</span>
+      </button>
+      <button class="nt-nav-btn" data-nt-tool="ntViewChangeOi">
+        <span>📶</span> <span>Change in OI</span>
+      </button>
+      <button class="nt-nav-btn" data-nt-tool="ntViewVolumePcr">
+        <span>📢</span> <span>Volume PCR</span> <span class="nt-tag-prime">Prime</span>
+      </button>
+      <button class="nt-nav-btn" data-nt-tool="ntViewOptionChain">
+        <span>🔗</span> <span>Option Chain</span>
+      </button>
+      <button class="nt-nav-btn" data-nt-tool="ntViewIvSmile">
+        <span>📈</span> <span>Implied Volatility</span>
+      </button>
+    </nav>
+
+    <!-- NT Tool 1: PCR Desk (Chart + 30-min Intraday History Table) -->
+    <div id="ntViewPcr" class="nt-view-panel active">
+      <div class="p2-card">
+        <div class="p2-card-header">
+          <div>
+            <span class="p2-card-title">Nifty PCR Today – Live Put Call Ratio Chart</span>
+            <div class="p2-card-subtitle">Intraday 30-minute tracking of OI PCR, Change-in-OI PCR and underlying Spot overlay</div>
+          </div>
+          <div class="nt-radio-group">
+            <label class="nt-radio-lbl">
+              <input type="radio" name="ntPcrMode" value="pcr" checked>
+              <span>Total OI PCR</span>
+            </label>
+            <label class="nt-radio-lbl">
+              <input type="radio" name="ntPcrMode" value="chg">
+              <span>Change in OI PCR</span>
+            </label>
+          </div>
+        </div>
+        <div class="p2-chart-container" style="height:360px;">
+          <canvas id="ntChartPcrTimeseries"></canvas>
+        </div>
+      </div>
+
+      <!-- Intraday History Table -->
+      <div class="p2-card">
+        <div class="p2-card-header">
+          <div>
+            <span class="p2-card-title">Intraday Snapshot History (30-Minute Intervals)</span>
+            <div class="p2-card-subtitle">Thirty-minute snapshots for the selected expiry session (09:10 AM - 03:30 PM)</div>
+          </div>
+          <button id="ntDownloadPcrCsv" class="nt-btn-secondary" type="button">📥 Export Excel / CSV</button>
+        </div>
+        <div class="p2-table-container">
+          <table class="p2-table" id="ntTablePcrHistory">
+            <thead>
+              <tr>
+                <th>Time (IST)</th>
+                <th class="text-right">OI PCR</th>
+                <th class="text-right">Change-in-OI PCR</th>
+                <th class="text-right">Underlying Spot (₹)</th>
+                <th class="text-center">Signal Interpretation</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- NT Tool 2: Live Max Pain -->
+    <div id="ntViewMaxPain" class="nt-view-panel">
+      <div class="p2-card">
+        <div class="p2-card-header">
+          <div>
+            <span class="p2-card-title">🎯 Live Max Pain Strike Model</span>
+            <div class="p2-card-subtitle">Mathematical strike level where total option buyer payout is minimized for option writers</div>
+          </div>
+          <div class="p2-badge p2-badge-teal" id="ntMaxPainStrikeBadge">Max Pain: 23,350</div>
+        </div>
+        <div class="p2-chart-container" style="height:380px;">
+          <canvas id="ntChartMaxPainLoss"></canvas>
+        </div>
+      </div>
+      <div class="p2-card">
+        <div class="p2-card-header"><span class="p2-card-title">Strike-Wise Loss / Pain Table (₹ Crores)</span></div>
+        <div class="p2-table-container">
+          <table class="p2-table" id="ntTableMaxPain">
+            <thead>
+              <tr>
+                <th class="text-center">STRIKE</th>
+                <th class="text-right">Call Buyer Loss (₹ Cr)</th>
+                <th class="text-right">Put Buyer Loss (₹ Cr)</th>
+                <th class="text-right">Total Combined Loss (₹ Cr)</th>
+                <th class="text-center">Classification</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- NT Tool 3: OI Chart -->
+    <div id="ntViewOiChart" class="nt-view-panel">
+      <div class="p2-card">
+        <div class="p2-card-header">
+          <div>
+            <span class="p2-card-title">📊 Open Interest Bar & Line Chart</span>
+            <div class="p2-card-subtitle">Call Open Interest vs Put Open Interest across all strike ranges with Spot level</div>
+          </div>
+          <div class="p2-badge p2-badge-teal">Spot Line Overlay</div>
+        </div>
+        <div class="p2-chart-container" style="height:400px;">
+          <canvas id="ntChartOiBarsLine"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- NT Tool 4: Change in OI -->
+    <div id="ntViewChangeOi" class="nt-view-panel">
+      <div class="p2-card">
+        <div class="p2-card-header">
+          <div>
+            <span class="p2-card-title">📶 Change in Open Interest (ΔOI)</span>
+            <div class="p2-card-subtitle">Intraday shift showing where new contracts were written or unwound today</div>
+          </div>
+        </div>
+        <div class="p2-chart-container" style="height:400px;">
+          <canvas id="ntChartChangeOiBars"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- NT Tool 5: Volume PCR -->
+    <div id="ntViewVolumePcr" class="nt-view-panel">
+      <div class="p2-card">
+        <div class="p2-card-header">
+          <div>
+            <span class="p2-card-title">📢 Volume Put Call Ratio (PCR)</span>
+            <div class="p2-card-subtitle">Volume-weighted trading activity ratio tracking smart money execution flow</div>
+          </div>
+        </div>
+        <div class="p2-chart-container" style="height:360px;">
+          <canvas id="ntChartVolumePcrSeries"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- NT Tool 6: Option Chain -->
+    <div id="ntViewOptionChain" class="nt-view-panel">
+      <div class="p2-card">
+        <div class="p2-card-header">
+          <div>
+            <span class="p2-card-title">🔗 Multi-Exchange Option Chain & Greeks</span>
+            <div class="p2-card-subtitle">Live quotes, Greeks, IV smile & strike ladder</div>
+          </div>
+          <div class="nt-exchange-selector">
+            <button class="nt-exch-btn active" data-exch="NSE">NSE</button>
+            <button class="nt-exch-btn" data-exch="BSE">BSE</button>
+            <button class="nt-exch-btn" data-exch="MCX">MCX</button>
+          </div>
+        </div>
+        <div class="p2-table-container">
+          <table class="p2-table" id="ntTableOptionChainGrid">
+            <thead>
+              <tr class="header-split">
+                <th colspan="5" class="text-center text-call">CALLS</th>
+                <th class="text-center">STRIKE</th>
+                <th colspan="5" class="text-center text-put">PUTS</th>
+              </tr>
+              <tr>
+                <th>Delta (Δ)</th>
+                <th>IV (%)</th>
+                <th>Volume</th>
+                <th>OI</th>
+                <th>LTP (₹)</th>
+                <th class="text-center">Strike</th>
+                <th>LTP (₹)</th>
+                <th>OI</th>
+                <th>Volume</th>
+                <th>IV (%)</th>
+                <th>Delta (Δ)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- NT Tool 7: Implied Volatility (IV Smile) -->
+    <div id="ntViewIvSmile" class="nt-view-panel">
+      <div class="p2-card">
+        <div class="p2-card-header">
+          <div>
+            <span class="p2-card-title">📈 Implied Volatility (IV) Smile & Skew Curve</span>
+            <div class="p2-card-subtitle">Call IV vs Put IV across strikes detecting downside fear & tail-risk pricing</div>
+          </div>
+        </div>
+        <div class="p2-chart-container" style="height:380px;">
+          <canvas id="ntChartIvSmile"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ====================================================================
+       SECTION 3: TOOLS SUITE (Live ATM Straddle & Options Analytics)
+       ==================================================================== -->
+  <main id="p2SectionTools" class="page2-main-content" style="display:none;">
+
+    <!-- Tools Header with Category, Index, Expiry & Real-time Auto-Refresh -->
+    <div class="straddle-toolbar">
+      <div class="straddle-title-wrap">
+        <h2>📈 LIVE ATM OPTIONS STRADDLE CHART</h2>
+        <p>Real-Time Intraday Straddle Premium Decay, Spot &amp; Synthetic Future vs VWAP Overlay</p>
+      </div>
+
+      <div class="straddle-controls-wrap">
+        <!-- Live vs Back-Date Mode Switcher -->
+        <div class="nt-exchange-selector" style="margin-right:4px;">
+          <button id="stModeLiveBtn" class="nt-exch-btn active" type="button">🔴 Live Today</button>
+          <button id="stModeHistBtn" class="nt-exch-btn" type="button">📅 Back Date</button>
+        </div>
+
+        <div class="straddle-ctrl-group">
+          <label for="straddleCategorySelect">Category</label>
+          <select id="straddleCategorySelect" class="page2-ctrl-select">
+            <option value="Equity" selected>Equity</option>
+            <option value="MCX">MCX</option>
+            <option value="Crypto">Crypto</option>
+          </select>
+        </div>
+
+        <div class="straddle-ctrl-group">
+          <label for="straddleIndexSelect">Index / Asset</label>
+          <select id="straddleIndexSelect" class="page2-ctrl-select">
+            <option value="NIFTY" selected>NIFTY</option>
+            <option value="BANKNIFTY">BANKNIFTY</option>
+            <option value="FINNIFTY">FINNIFTY</option>
+            <option value="MIDCPNIFTY">MIDCAPNIFTY</option>
+            <option value="SENSEX">SENSEX</option>
+            <option value="BANKEX">BANKEX</option>
+          </select>
+        </div>
+
+        <!-- Back-Date Selector (Visible when Back Date mode is active) -->
+        <div id="stDateGroup" class="straddle-ctrl-group" style="display:none;">
+          <label for="straddleDateSelect">Date</label>
+          <select id="straddleDateSelect" class="page2-ctrl-select" style="min-width:140px;">
+            <option value="">Loading dates...</option>
+          </select>
+          <input type="date" id="straddleDateInput" class="page2-ctrl-select" style="padding:4px 8px;" title="Or pick any specific calendar date">
+        </div>
+
+        <div class="straddle-ctrl-group">
+          <label for="straddleExpirySelect">Expiry</label>
+          <select id="straddleExpirySelect" class="page2-ctrl-select">
+            <option value="">Current Expiry</option>
+          </select>
+        </div>
+
+        <div class="straddle-live-badge-group">
+          <label id="straddleLiveToggleWrap" class="straddle-live-toggle" title="Auto-refresh chart every 30 seconds">
+            <input type="checkbox" id="straddleAutoRefresh" checked>
+            <span class="straddle-live-dot">●</span>
+            <span id="stLiveText">Live 30s</span>
+          </label>
+          <button id="straddleRefreshBtn" class="page2-refresh-btn" type="button">🔄 Fetch</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Metrics Ribbon (FinanceDeft-style Strip) -->
+    <section class="straddle-metric-strip" id="straddleMetricStrip">
+      <div class="st-metric-card highlight">
+        <span class="st-lbl">Straddle Price</span>
+        <span class="st-val text-cyan" id="stPriceVal">₹--</span>
+        <span class="st-sub" id="stDecaySub">Decay: --</span>
+      </div>
+      <div class="st-metric-card">
+        <span class="st-lbl" id="stSpotLbl">Index Spot</span>
+        <span class="st-val text-green" id="stSpotVal">₹--</span>
+        <span class="st-sub">Cash Underlying</span>
+      </div>
+      <div class="st-metric-card">
+        <span class="st-lbl">Synthetic Future</span>
+        <span class="st-val text-purple" id="stSynthVal">₹--</span>
+        <span class="st-sub">Strike + CE - PE</span>
+      </div>
+      <div class="st-metric-card">
+        <span class="st-lbl">Straddle Strike</span>
+        <span class="st-val text-amber" id="stStrikeVal">--</span>
+        <span class="st-sub">ATM Strike</span>
+      </div>
+      <div class="st-metric-card">
+        <span class="st-lbl">ATM CE LTP</span>
+        <span class="st-val text-call" id="stCeVal">₹--</span>
+        <span class="st-sub">Call Leg</span>
+      </div>
+      <div class="st-metric-card">
+        <span class="st-lbl">ATM PE LTP</span>
+        <span class="st-val text-put" id="stPeVal">₹--</span>
+        <span class="st-sub">Put Leg</span>
+      </div>
+      <div class="st-metric-card">
+        <span class="st-lbl">Straddle VWAP</span>
+        <span class="st-val text-gold" id="stVwapVal">₹--</span>
+        <span class="st-sub">Vol-Weighted Avg</span>
+      </div>
+      <div class="st-metric-card">
+        <span class="st-lbl">Days to Expiry</span>
+        <span class="st-val" id="stDteVal">--</span>
+        <span class="st-sub">Trading Session</span>
+      </div>
+      <div class="st-metric-card">
+        <span class="st-lbl">Last Updated</span>
+        <span class="st-val" id="stTimeVal" style="font-size:12px;">--</span>
+        <span class="st-sub">1-Min Interval (IST)</span>
+      </div>
+    </section>
+
+    <!-- Main Full-Length Interactive Straddle Chart -->
+    <div class="p2-card straddle-chart-card">
+      <div class="p2-card-header">
+        <div class="straddle-chart-title-left">
+          <span class="p2-card-title" id="straddleChartHeading">NIFTY ATM Straddle Live Curve</span>
+          <div class="p2-card-subtitle">Intraday 1-minute trajectory comparing combined premium erosion against spot momentum</div>
+        </div>
+
+        <!-- Series Visibility Toggles & Watermark -->
+        <div class="straddle-legend-toggles">
+          <label class="st-legend-btn active" data-series="straddle">
+            <span class="st-dot dot-cyan"></span>
+            <span>Straddle Price (Left Y)</span>
+          </label>
+          <label class="st-legend-btn active" data-series="spot">
+            <span class="st-dot dot-green"></span>
+            <span>Index Spot (Right Y)</span>
+          </label>
+          <label class="st-legend-btn active" data-series="synth">
+            <span class="st-dot dot-purple"></span>
+            <span>Synthetic Future</span>
+          </label>
+          <label class="st-legend-btn active" data-series="vwap">
+            <span class="st-dot dot-gold"></span>
+            <span>VWAP</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- High-resolution Canvas with exact FinanceDeft height/length -->
+      <div class="straddle-canvas-container" style="position:relative; width:100%; height:450px;">
+        <canvas id="chartLiveStraddle"></canvas>
+        <div id="straddleTooltip" class="straddle-interactive-tooltip" style="display:none;"></div>
+      </div>
+
+      <!-- Breakeven & Range Summary Strip -->
+      <div class="straddle-range-bar">
+        <div class="range-item">
+          <span class="range-lbl">Lower Breakeven:</span>
+          <strong class="range-val text-red" id="stLowerBe">--</strong>
+        </div>
+        <div class="range-sep"></div>
+        <div class="range-item">
+          <span class="range-lbl">Current Spot:</span>
+          <strong class="range-val" id="stCenterSpot">--</strong>
+        </div>
+        <div class="range-sep"></div>
+        <div class="range-item">
+          <span class="range-lbl">Upper Breakeven:</span>
+          <strong class="range-val text-green" id="stUpperBe">--</strong>
+        </div>
+        <div class="range-sep"></div>
+        <div class="range-item">
+          <span class="range-lbl">Expected Expiry Range:</span>
+          <span class="p2-badge p2-badge-teal" id="stRangeSpread">±0.00 pts</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Intraday Snapshot Timeline Table -->
+    <div class="p2-card">
+      <div class="p2-card-header">
+        <div>
+          <span class="p2-card-title">Intraday 1-Minute Timeline Snapshots</span>
+          <div class="p2-card-subtitle">Tick-by-tick straddle premium, synthetic pricing, VWAP and leg pricing</div>
+        </div>
+        <button id="stExportCsvBtn" class="nt-btn-secondary" type="button">📥 Export CSV / Excel</button>
+      </div>
+
+      <div class="p2-table-container">
+        <table class="p2-table" id="tableStraddleHistory">
+          <thead>
+            <tr>
+              <th>Time (IST)</th>
+              <th class="text-right">Straddle Price (₹)</th>
+              <th class="text-right">Index Spot (₹)</th>
+              <th class="text-right">Synthetic Future (₹)</th>
+              <th class="text-right">VWAP (₹)</th>
+              <th class="text-right">ATM CE LTP (₹)</th>
+              <th class="text-right">ATM PE LTP (₹)</th>
+              <th class="text-right">Decay from Open (₹)</th>
+              <th class="text-center">Intraday Signal</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ====================================================================
+       SECTION 4: FII / DII INSTITUTIONAL CASH FLOW DESK
+       ==================================================================== -->
+  <main id="p2SectionFiiDii" class="page2-main-content" style="display:none;">
+    <!-- Top Header Bar with Period & View Switchers -->
+    <div class="page2-tool-header fii-header-container">
+      <div class="page2-tool-title-wrap">
+        <h2>🏛️ FII / FPI & DII Institutional Flow</h2>
+        <p>Cash Market Institutional Gross & Net Trading Volumes across Daily, Monthly & Yearly Horizons</p>
+      </div>
+
+      <!-- Controls Strip: Period Switcher + View Switcher + Range Select -->
+      <div class="fii-top-controls">
+        <!-- Timeframe Period Switcher (Daily / Monthly / Yearly) -->
+        <div class="fii-period-switcher" id="fiiPeriodGroup">
+          <button class="fii-period-btn active" data-period="daily" type="button">FII/DII DAILY</button>
+          <button class="fii-period-btn" data-period="monthly" type="button">FII/DII MONTHLY</button>
+          <button class="fii-period-btn" data-period="yearly" type="button">FII/DII YEARLY</button>
+        </div>
+
+        <!-- Metric View Switcher (Net / FII / DII) -->
+        <div class="fii-view-switcher" id="fiiViewGroup">
+          <button class="fii-view-btn active" data-view="net" type="button">FII/DII - NET</button>
+          <button class="fii-view-btn" data-view="fii" type="button">FII BUY/SELL NET</button>
+          <button class="fii-view-btn" data-view="dii" type="button">DII BUY/SELL NET</button>
+        </div>
+
+        <!-- Range Filter Dropdown -->
+        <div class="fii-range-wrap">
+          <select id="fiiRangeSelect" class="page2-ctrl-select">
+            <option value="15">Last 15 Sessions</option>
+            <option value="30" selected>Last 30 Sessions</option>
+            <option value="60">Last 60 Sessions</option>
+            <option value="all">All Available</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Metrics Strip (4 Dynamic KPI Cards) -->
+    <div class="p2-metrics-row" id="fiiMetricCards">
+      <div class="p2-metric-card">
+        <div class="metric-header"><span class="metric-title">TOTAL INSTITUTIONAL NET</span> <span class="p2-badge p2-badge-green" id="fiiBadgeTotal">INFLOW</span></div>
+        <div class="metric-value text-green" id="fiiValTotal">+₹1,619.23 Cr</div>
+        <div class="metric-footer"><span class="metric-lbl">Combined Cash Flow:</span> <span class="metric-sub" id="fiiSubTotal">FII + DII Net</span></div>
+      </div>
+      <div class="p2-metric-card">
+        <div class="metric-header"><span class="metric-title">FII / FPI NET FLOW</span> <span class="p2-badge p2-badge-teal" id="fiiBadgeFii">BUYERS</span></div>
+        <div class="metric-value text-green" id="fiiValFii">+₹599.54 Cr</div>
+        <div class="metric-footer"><span class="metric-lbl">Buy: <strong id="fiiBuyVal">₹14,850 Cr</strong> | Sell: <strong id="fiiSellVal">₹14,251 Cr</strong></span></div>
+      </div>
+      <div class="p2-metric-card">
+        <div class="metric-header"><span class="metric-title">DII DOMESTIC NET FLOW</span> <span class="p2-badge p2-badge-teal" id="fiiBadgeDii">BUYERS</span></div>
+        <div class="metric-value text-green" id="fiiValDii">+₹1,019.69 Cr</div>
+        <div class="metric-footer"><span class="metric-lbl">Buy: <strong id="diiBuyVal">₹12,901 Cr</strong> | Sell: <strong id="diiSellVal">₹11,881 Cr</strong></span></div>
+      </div>
+      <div class="p2-metric-card">
+        <div class="metric-header"><span class="metric-title">NIFTY 50 BENCHMARK</span> <span class="p2-badge p2-badge-green" id="fiiBadgeNifty">+0.33%</span></div>
+        <div class="metric-value" id="fiiValNifty">23,346.40</div>
+        <div class="metric-footer"><span class="metric-lbl">Session Change:</span> <span class="metric-sub text-green" id="fiiSubNifty">+75.80 pts</span></div>
+      </div>
+    </div>
+
+    <!-- Chart Card with Crosshair -->
+    <div class="p2-card">
+      <div class="p2-card-header">
+        <div>
+          <span class="p2-card-title" id="fiiChartTitle">FII / FPI & DII Net (in Crores.) - Daily</span>
+          <div class="p2-card-subtitle">Horizontal zero-centered institutional divergence bars with crosshair tracking & high-precision tooltips</div>
+        </div>
+        <div class="fii-chart-legend">
+          <span class="fii-legend-pill green"><span class="fii-dot"></span> Inflow (+ ₹ Cr)</span>
+          <span class="fii-legend-pill red"><span class="fii-dot"></span> Outflow (- ₹ Cr)</span>
+          <span class="fii-crosshair-indicator"><span>🎯 Crosshair:</span> <strong id="fiiCrosshairStatus">Active</strong></span>
+        </div>
+      </div>
+
+      <!-- Chart Container & Canvas -->
+      <div class="fii-chart-canvas-container" id="fiiChartContainer">
+        <canvas id="chartFiiDiiCanvas"></canvas>
+        <div id="fiiCrosshairTooltip" class="fii-crosshair-tooltip"></div>
+      </div>
+    </div>
+
+    <!-- Data Table Card -->
+    <div class="p2-card">
+      <div class="p2-card-header">
+        <div>
+          <span class="p2-card-title" id="fiiTableTitle">FII/FPI & DII Net Buy/Sell Data - Daily</span>
+          <div class="p2-card-subtitle">Detailed session-by-session institutional gross purchases, sales, and index spot correlation</div>
+        </div>
+        <div class="fii-table-controls">
+          <input type="text" id="fiiTableSearch" placeholder="🔍 Filter date..." class="nt-input-search">
+          <button id="fiiExportCsvBtn" class="nt-btn-secondary" type="button">📥 Export CSV / Excel</button>
+        </div>
+      </div>
+
+      <div class="p2-table-container">
+        <table class="p2-table" id="tableFiiDiiData">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="text-right">NIFTY 50</th>
+              <th class="text-right">FII/DII Net (In Crs.)</th>
+              <th class="text-right">FII Gross Buy (₹ Cr)</th>
+              <th class="text-right">FII Gross Sell (₹ Cr)</th>
+              <th class="text-right">FII Net (In Crs.)</th>
+              <th class="text-right">DII Gross Buy (₹ Cr)</th>
+              <th class="text-right">DII Gross Sell (₹ Cr)</th>
+              <th class="text-right">DII Net (In Crs.)</th>
+              <th class="text-center">Institutional Action</th>
+            </tr>
+          </thead>
+          <tbody id="fiiTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ====================================================================
+       SECTION 5: INDEX BREADTH & STOCK WEIGHT CONTRIBUTION DESK
+       ==================================================================== -->
+  <main id="p2SectionBreadthContribution" class="page2-main-content" style="display:none;">
+    <!-- Top Header Bar with Index Switcher & Live Spot -->
+    <div class="page2-tool-header contrib-header-container">
+      <div class="page2-tool-title-wrap">
+        <h2>📈 Index Breadth &amp; Weight Contribution</h2>
+        <p>Intraday Advance/Decline Breadth Dynamics vs Index Spot with Stock-by-Stock Institutional Point Contributions</p>
+      </div>
+
+      <!-- Controls: Date Selector + Index Selector Buttons + Live Spot Pill + Refresh -->
+      <div class="contrib-top-controls">
+        <div class="contrib-date-wrap">
+          <label class="contrib-date-label">
+            <span class="contrib-lbl-icon">📅</span>
+            <span class="contrib-lbl-text">Date:</span>
+            <input id="contribDateInput" type="date" value="2026-09-18" class="contrib-date-input">
+          </label>
+          <span id="contribDateDisplayBadge" class="p2-badge p2-badge-teal">18-Sep-2026</span>
+        </div>
+
+        <div class="contrib-index-switcher" id="contribIndexGroup">
+          <button class="contrib-index-btn active" data-index="nifty50" type="button">NIFTY 50</button>
+          <button class="contrib-index-btn" data-index="banknifty" type="button">BANK NIFTY</button>
+        </div>
+
+        <div class="contrib-spot-pill" id="contribSpotPill">
+          <span class="spot-title" id="contribSpotTitle">NIFTY 50</span>
+          <span class="spot-val" id="contribSpotVal">23,346.40</span>
+          <span class="spot-chg text-green" id="contribSpotChg">+75.80 (0.32%)</span>
+        </div>
+
+        <button id="contribRefreshBtn" class="nt-btn-secondary" type="button" title="Refresh Live Data">
+          <span>🔄</span> <span>Refresh</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Dedicated Top KPI Metric Bar (Spacious Page 1 Style) -->
+    <div class="contrib-kpi-bar">
+      <div class="contrib-kpi-pill">
+        <span class="kpi-lbl">Latest Breadth</span>
+        <span class="kpi-val text-blue" id="contribLatestBreadth">54.00%</span>
+      </div>
+      <div class="contrib-kpi-pill">
+        <span class="kpi-lbl">Open Breadth</span>
+        <span class="kpi-val" id="contribOpenBreadth">42.00%</span>
+      </div>
+      <div class="contrib-kpi-pill positive" id="contribChangeMetric">
+        <span class="kpi-lbl">Breadth Change</span>
+        <span class="kpi-val" id="contribBreadthChange">+12.00 pts</span>
+      </div>
+      <div class="contrib-kpi-pill">
+        <span class="kpi-lbl">Adv / Dec (X / O)</span>
+        <span class="kpi-val" id="contribXoCount">27 / 23</span>
+      </div>
+      <div class="contrib-kpi-pill">
+        <span class="kpi-lbl">Index Spot (Close)</span>
+        <span class="kpi-val text-teal" id="contribNiftySpotVal">24,782.55</span>
+      </div>
+      <div class="contrib-kpi-pill positive" id="contribNiftyChgMetric">
+        <span class="kpi-lbl">Index Change</span>
+        <span class="kpi-val" id="contribNiftyChgVal">+1,511.95 (6.50%)</span>
+      </div>
+    </div>
+
+    <!-- Dual Column Intraday Charts (Side-by-Side Synchronized, 440px Tall) -->
+    <div class="contrib-dual-charts-row">
+      <!-- Left Column: Intraday Advance / Decline Breadth Chart (Matching Page 1 Breadth Chart) -->
+      <div class="p2-card contrib-chart-card">
+        <div class="p2-card-header">
+          <div>
+            <span class="p2-card-title" id="contribBreadthTitle">Intraday Breadth (18/09/2026)</span>
+            <div class="p2-card-subtitle" id="contribBreadthMeta">Nifty 50 | one minute | 50/50 scrips</div>
+          </div>
+          <div class="legend contrib-legend-strip">
+            <span><i class="legend-line line-breadth"></i>Breadth %</span>
+            <span><i class="legend-line line-ma"></i>20 SMA</span>
+            <span><i class="legend-line line-guide"></i>25/50/75</span>
+            <span class="contrib-crosshair-badge"><span>🎯 Crosshair:</span> <strong id="breadthCrosshairStatus">Active</strong></span>
+          </div>
+        </div>
+
+        <div class="contrib-chart-wrapper" id="breadthChartWrapper">
+          <canvas id="chartIntradayBreadthCanvas"></canvas>
+          <div id="breadthCrosshairTooltip" class="contrib-crosshair-tooltip"></div>
+        </div>
+      </div>
+
+      <!-- Right Column: Nifty 50 / Bank Nifty Intraday Spot & VWAP Chart (Matching Page 1 Nifty Chart) -->
+      <div class="p2-card contrib-chart-card">
+        <div class="p2-card-header">
+          <div>
+            <span class="p2-card-title" id="niftyChartTitle">Index Spot Chart (18/09/2026)</span>
+            <div class="p2-card-subtitle" id="contribNiftyMeta">Nifty 50 | one minute | Spot &amp; VWAP</div>
+          </div>
+          <div class="legend contrib-legend-strip">
+            <span><i class="legend-line line-breadth"></i>Close / Spot</span>
+            <span><i class="legend-line line-ma"></i>VWAP</span>
+            <span class="contrib-crosshair-badge"><span>🎯 Synced:</span> <strong id="niftyCrosshairStatus">Locked</strong></span>
+          </div>
+        </div>
+
+        <div class="contrib-chart-wrapper" id="niftyChartWrapper">
+          <canvas id="chartIntradayNiftyCanvas"></canvas>
+          <div id="niftyCrosshairTooltip" class="contrib-crosshair-tooltip"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle: Index Breadth Contribution Summary Card (As shown in Reference Screenshot) -->
+    <div class="p2-card contrib-summary-card">
+      <div class="contrib-summary-header">
+        <div>
+          <h3 class="contrib-main-heading">Index breadth contribution</h3>
+          <p class="contrib-sub-heading">Share of total point movement coming from decliners vs advancers</p>
+        </div>
+        <div class="contrib-net-points-wrap">
+          <span class="contrib-net-badge text-green" id="contribNetPtsBadge">Net +72.55 pts</span>
+        </div>
+      </div>
+
+      <!-- Split Proportion Progress Bar -->
+      <div class="contrib-split-progress-container">
+        <div class="contrib-split-bar">
+          <div class="contrib-bar-drag" id="contribSplitBarDrag" style="width: 34.9%;" title="Decliners dragging 34.9%"></div>
+          <div class="contrib-bar-support" id="contribSplitBarSupport" style="width: 65.1%;" title="Advancers supporting 65.1%"></div>
+        </div>
+        <div class="contrib-split-legend-row">
+          <div class="contrib-drag-pill">
+            <span class="dot-drag">●</span> Dragging down <strong id="contribDragPtsLabel" class="text-red">-83.62</strong>
+          </div>
+          <div class="contrib-support-pill">
+            <span class="dot-support">●</span> Supporting up <strong id="contribSupportPtsLabel" class="text-green">+156.17</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="contrib-filter-toolbar">
+      <div class="contrib-sector-filters" id="contribSectorFilters">
+        <button class="contrib-sector-tag active" data-sector="ALL" type="button">All Sectors</button>
+        <button class="contrib-sector-tag" data-sector="Banking" type="button">Banking</button>
+        <button class="contrib-sector-tag" data-sector="IT" type="button">IT</button>
+        <button class="contrib-sector-tag" data-sector="Automobile" type="button">Auto</button>
+        <button class="contrib-sector-tag" data-sector="Financials" type="button">Financials</button>
+        <button class="contrib-sector-tag" data-sector="Energy" type="button">Energy</button>
+        <button class="contrib-sector-tag" data-sector="Pharma" type="button">Pharma</button>
+        <button class="contrib-sector-tag" data-sector="Metals" type="button">Metals</button>
+      </div>
+
+      <div class="contrib-search-wrap">
+        <input type="text" id="contribSymbolSearchInput" placeholder="Filter by symbol..." class="contrib-search-input">
+      </div>
+    </div>
+
+    <!-- Bottom: Two Side-by-Side Contributor Tables (As shown in Reference Screenshot) -->
+    <div class="contrib-tables-grid">
+      <!-- Left Column Table: Pulling the Index Down -->
+      <div class="p2-card contrib-table-card">
+        <div class="contrib-table-card-header drag-header">
+          <div class="contrib-header-left">
+            <span class="contrib-arrow-icon down">↓</span>
+            <div>
+              <span class="contrib-col-title">Pulling the index down</span>
+              <span class="contrib-stock-count" id="contribDragStockCount">22 stocks</span>
+            </div>
+          </div>
+          <div class="contrib-header-right">
+            <span class="contrib-header-pts text-red" id="contribDragHeaderPts">-83.62</span>
+          </div>
+        </div>
+
+        <div class="p2-table-container contrib-scroll-table">
+          <table class="p2-table contrib-table" id="tablePullingDown">
+            <thead>
+              <tr>
+                <th>SYMBOL</th>
+                <th class="text-right">LTP</th>
+                <th class="text-right">CHG</th>
+                <th class="text-right">CHG %</th>
+                <th class="text-right">IDX CONTRIBUTION</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyPullingDown"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right Column Table: Supporting the Index -->
+      <div class="p2-card contrib-table-card">
+        <div class="contrib-table-card-header support-header">
+          <div class="contrib-header-left">
+            <span class="contrib-arrow-icon up">↑</span>
+            <div>
+              <span class="contrib-col-title">Supporting the index</span>
+              <span class="contrib-stock-count" id="contribSupportStockCount">28 stocks</span>
+            </div>
+          </div>
+          <div class="contrib-header-right">
+            <span class="contrib-header-pts text-green" id="contribSupportHeaderPts">+156.17</span>
+          </div>
+        </div>
+
+        <div class="p2-table-container contrib-scroll-table">
+          <table class="p2-table contrib-table" id="tableSupporting">
+            <thead>
+              <tr>
+                <th>SYMBOL</th>
+                <th class="text-right">LTP</th>
+                <th class="text-right">CHG</th>
+                <th class="text-right">CHG %</th>
+                <th class="text-right">IDX CONTRIBUTION</th>
+              </tr>
+            </thead>
+            <tbody id="tbodySupporting"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/page2.js?v=20260920_v6"></script>
+</body>
+</html>

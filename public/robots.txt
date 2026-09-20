@@ -1,0 +1,12 @@
+# Breadth Lab - Search Engine Crawler Directives
+User-agent: *
+Allow: /
+Allow: /about.html
+Allow: /disclaimer.html
+Allow: /privacy.html
+Allow: /terms.html
+Allow: /page2.html
+Allow: /calendar.html
+Disallow: /api/
+
+Sitemap: https://breadthlab.com/sitemap.xml

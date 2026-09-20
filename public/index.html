@@ -1,0 +1,3507 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Breadth Lab | Market Breadth, Options Greeks &amp; Institutional Research Desk</title>
+    <meta name="description" content="Institutional-grade Indian equity Market Breadth, sub-second Options Greeks (Delta, Gamma, Theta, Vega), Max Pain, Smart Money FII/DII positioning &amp; verified broker research price targets with audit proof.">
+    <meta name="keywords" content="market breadth, nifty 50, options desk, options greeks, black scholes greeks, max pain, pcr ratio, fii dii data, smart money tracker, broker price targets, jefferies target, morgan stanley, sebi disclaimer">
+    <meta name="author" content="Breadth Lab Quantitative Analytics">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <link rel="canonical" href="https://breadthlab.com/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://breadthlab.com/">
+    <meta property="og:title" content="Breadth Lab | Institutional Market Breadth &amp; Options Analytics">
+    <meta property="og:description" content="Real-time Indian equity Market Breadth, Black-Scholes Greeks, Smart Money EOD Tracker, and verified broker research targets.">
+    <meta property="og:site_name" content="Breadth Lab">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Breadth Lab | Quantitative Market Intelligence">
+    <meta name="twitter:description" content="Institutional Market Breadth, Options Greeks surfaces, and verified broker research price targets.">
+
+    <!-- PWA & Mobile Web App -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <!-- Structured Data: JSON-LD for Google Rich Results -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://breadthlab.com/#webapp",
+          "name": "Breadth Lab",
+          "url": "https://breadthlab.com/",
+          "applicationCategory": "FinanceApplication",
+          "operatingSystem": "All",
+          "description": "Institutional-grade market breadth algorithms, real-time Black-Scholes Options Greeks, and verified broker price targets."
+        },
+        {
+          "@type": "FinancialService",
+          "@id": "https://breadthlab.com/#service",
+          "name": "Breadth Lab Market Intelligence",
+          "url": "https://breadthlab.com/",
+          "serviceType": "Quantitative Market Research & Analytics Desk",
+          "areaServed": "IN",
+          "disclaimer": "Educational and quantitative research platform. Not a SEBI registered investment advisor."
+        }
+      ]
+    }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css?v=20260920_v1">
+
+    <!-- Supabase JS Client for Cloud Google OAuth & State Sync -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Static Client-Side Cache Manager -->
+    <script src="/cache_manager.js?v=20260919_v1"></script>
+  </head>
+  <body>
+    <main class="app">
+      <!-- Top Navigation Bar -->
+      <header class="topbar">
+        <div class="brand-wrapper">
+          <span class="brand-icon">⚡</span>
+          <div>
+            <h1>Breadth Lab &amp; Analytics Desk</h1>
+            <p class="eyebrow">Institutional Market Intelligence</p>
+          </div>
+        </div>
+        
+        <!-- Tab Navigation in Header -->
+        <nav class="tab-nav" aria-label="Main Navigation">
+          <button id="tabBreadth" class="tab-btn active" type="button">📈 Market Breadth</button>
+          <button id="tabOptions" class="tab-btn" type="button">⚡ Options Desk</button>
+          <button id="tabSmartMoney" class="tab-btn" type="button">🏛️ Smart Money EOD Tracker</button>
+          <button id="tabDelivery" class="tab-btn" type="button">📦 Delivery Desk</button>
+          <button id="tabMtf" class="tab-btn" type="button">📊 MTF Analytics</button>
+          <button id="tabTools" class="tab-btn" type="button">🛠️ Tools</button>
+          <a href="/page2.html" class="tab-btn" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(0,172,193,0.15); border-color:rgba(0,172,193,0.35); color:#00acc1; font-weight:700;" title="Open Page 2: Advanced Open Interest Suite">📑 Page 2: Advanced OI Suite ↗</a>
+          <button id="tabSettings" class="tab-btn" type="button">⚙️ Settings</button>
+        </nav>
+
+        <div class="topbar-right-group">
+          <!-- Auth & Multi-Device Sync Area -->
+          <div id="topbarAuthArea">
+            <div class="auth-btn-group">
+              <button type="button" class="auth-signin-btn" id="btnOpenSignInModal" onclick="if(window.AuthSync){window.AuthSync.currentTab='signin';window.AuthSync.openAuthModal();}">
+                🔑 Sign In
+              </button>
+              <button type="button" class="auth-signup-btn" id="btnOpenSignUpModal" onclick="if(window.AuthSync){window.AuthSync.currentTab='signup';window.AuthSync.openAuthModal();}">
+                ✨ Sign Up
+              </button>
+            </div>
+          </div>
+          <div class="status" id="apiStatus">Checking API...</div>
+          <button id="themeToggleBtn" type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark / Light Theme">🌙 Dark</button>
+        </div>
+      </header>
+
+      <!-- ================================================================
+           Panel 1: Market Breadth
+           ================================================================ -->
+      <div id="panelBreadth" class="tab-panel active">
+        <!-- Compact Control Band -->
+        <section class="control-band" aria-label="Controls">
+          <div class="ctrl-group">
+            <label>
+              <span>Date</span>
+              <input id="dateInput" type="date" value="2026-09-18">
+            </label>
+            <label id="endDateLabel" style="display:none">
+              <span>End Date</span>
+              <input id="endDateInput" type="date" value="2026-09-18">
+            </label>
+            <label class="check-label">
+              <input id="dateRangeToggle" type="checkbox">
+              <span>Range</span>
+            </label>
+          </div>
+
+          <div class="ctrl-group">
+            <label>
+              <span>Source</span>
+              <select id="dataSource">
+                <option value="broker" selected>⚡ Active Broker (Live)</option>
+                <option value="sample">Sample Simulation</option>
+              </select>
+            </label>
+            <label id="totpLabel" style="display:none">
+              <span>OTP <small id="totpTimer"></small></span>
+              <input id="totpInput" type="text" maxlength="6" pattern="[0-9]{6}" placeholder="OTP" inputmode="numeric">
+            </label>
+            <label>
+              <span>Universe</span>
+              <select id="universeSelect">
+                <option value="nifty50">Nifty 50</option>
+                <option value="sensex">BSE Sensex</option>
+                <option value="banknifty">Bank Nifty</option>
+                <option value="finnifty">FinNifty</option>
+                <option value="midcpnifty">Midcap Select</option>
+                <option value="niftyit">Nifty IT</option>
+                <option value="niftyauto">Nifty Auto</option>
+                <option value="niftypharma">Nifty Pharma</option>
+                <option value="niftymetal">Nifty Metal</option>
+                <option value="niftyfmcg">Nifty FMCG</option>
+                <option value="niftyenergy">Nifty Energy</option>
+                <option value="niftymidcap100">Nifty Midcap 100</option>
+                <option value="niftynext50">Nifty Next 50</option>
+                <option value="nifty500">Nifty 500</option>
+              </select>
+            </label>
+            <label>
+              <span>Interval</span>
+              <select id="intervalInput">
+                <option value="ONE_MINUTE">1m</option>
+                <option value="THREE_MINUTE">3m</option>
+                <option value="FIVE_MINUTE">5m</option>
+                <option value="TEN_MINUTE">10m</option>
+                <option value="FIFTEEN_MINUTE">15m</option>
+                <option value="THIRTY_MINUTE">30m</option>
+                <option value="ONE_DAY">Day</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="ctrl-group">
+            <label>
+              <span>Graph</span>
+              <select id="chartMode">
+                <option value="carry">Carry prev</option>
+                <option value="previous_current">Prev + curr</option>
+                <option value="current">Current only</option>
+              </select>
+            </label>
+            <label>
+              <span>Warmup</span>
+              <input id="warmupSessions" type="number" min="0" max="20" step="1" value="5">
+            </label>
+            <label>
+              <span>Basis</span>
+              <select id="pnfBasis">
+                <option value="hl">High/Low</option>
+                <option value="close">Close</option>
+              </select>
+            </label>
+            <label>
+              <span>Box %</span>
+              <input id="boxPercent" type="number" min="0.05" max="5" step="0.05" value="0.15">
+            </label>
+            <label>
+              <span>Rev</span>
+              <input id="reversalBoxes" type="number" min="1" max="5" step="1" value="3">
+            </label>
+            <label>
+              <span>Limit</span>
+              <input id="maxSymbols" type="number" min="1" max="500" step="1" value="50">
+            </label>
+            <label>
+              <span>Index</span>
+              <select id="indexSelect">
+                <option value="nifty50">Nifty 50</option>
+                <option value="sensex">BSE Sensex</option>
+                <option value="banknifty">Bank Nifty</option>
+                <option value="finnifty">FinNifty</option>
+                <option value="midcpnifty">Midcap Select</option>
+                <option value="niftyit">Nifty IT</option>
+                <option value="niftyauto">Nifty Auto</option>
+                <option value="niftypharma">Nifty Pharma</option>
+                <option value="niftymetal">Nifty Metal</option>
+                <option value="niftyfmcg">Nifty FMCG</option>
+                <option value="niftyenergy">Nifty Energy</option>
+                <option value="niftymidcap100">Nifty Midcap 100</option>
+                <option value="niftynext50">Nifty Next 50</option>
+                <option value="nifty500">Nifty 500</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="runButton" type="button">⚡ Run Breadth</button>
+            <button id="refreshButton" class="secondary" type="button">🔄</button>
+          </div>
+        </section>
+
+        <!-- Sub-band: Auto Refresh & Custom Symbols toggle -->
+        <section class="sub-band">
+          <div class="auto-refresh-wrap">
+            <label class="check-label">
+              <input id="autoRefresh" type="checkbox">
+              <span>Auto Refresh</span>
+            </label>
+            <select id="refreshInterval" class="mini-select">
+              <option value="30">30s</option>
+              <option value="60" selected>60s</option>
+              <option value="120">2m</option>
+            </select>
+            <span class="refresh-state" id="refreshState">Manual mode</span>
+          </div>
+
+          <details class="custom-symbols-accordion">
+            <summary>Custom Symbols Filter</summary>
+            <textarea id="symbolsInput" rows="1" placeholder="Optional comma-separated scrips: RELIANCE, TCS, INFY"></textarea>
+          </details>
+        </section>
+
+        <!-- Compact KPI Metric Strip -->
+        <section class="metrics" aria-label="Summary">
+          <article class="metric">
+            <span>Latest Breadth</span>
+            <strong id="latestBreadth">--</strong>
+          </article>
+          <article class="metric">
+            <span>Open Breadth</span>
+            <strong id="openBreadth">--</strong>
+          </article>
+          <article class="metric">
+            <span>Net Change</span>
+            <strong id="breadthChange">--</strong>
+          </article>
+          <article class="metric">
+            <span>X / O Ratio</span>
+            <strong id="xoCount">--</strong>
+          </article>
+          <article class="metric">
+            <span>Loaded Scrips</span>
+            <strong id="loadedCount">--</strong>
+          </article>
+          <article class="metric">
+            <span>Index Spot</span>
+            <strong id="niftySpot">--</strong>
+          </article>
+          <article class="metric">
+            <span>Spot Change</span>
+            <strong id="niftyChange">--</strong>
+          </article>
+        </section>
+
+        <!-- Sector Breadth Performance Matrix -->
+        <section class="sector-heatmap-section" id="sectorHeatmapSection">
+          <div class="sector-header-wrap">
+            <div class="sector-header-title-row">
+              <div class="sector-title-group">
+                <h3>🔥 Sector Performance Matrix</h3>
+                <div class="sector-meta-badges" id="heatmapMeta"></div>
+              </div>
+              <div class="sector-controls">
+                <div class="sector-btn-group" role="group" aria-label="Sort Sectors">
+                  <button type="button" class="sec-ctrl-btn active" data-sort="bullish" id="secSortBullish" title="Sort by highest advance %">Bullish</button>
+                  <button type="button" class="sec-ctrl-btn" data-sort="bearish" id="secSortBearish" title="Sort by lowest advance %">Bearish</button>
+                  <button type="button" class="sec-ctrl-btn" data-sort="alpha" id="secSortAlpha" title="Sort alphabetically">A–Z</button>
+                  <button type="button" class="sec-ctrl-btn" data-sort="stocks" id="secSortStocks" title="Sort by scrip weight">Weight</button>
+                </div>
+                <div class="sector-filter-group">
+                  <select id="secFilterSelect" class="sec-filter-select" aria-label="Filter sectors">
+                    <option value="all">All Sectors</option>
+                    <option value="bullish">Bullish (&ge;50%)</option>
+                    <option value="bearish">Bearish (&lt;50%)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="sector-heatmap-grid" id="sectorHeatmap"></div>
+        </section>
+
+        <!-- Primary Charts Grid: Index Spot & Nifty 50 Advance / Decline Tracker (Net Spread) -->
+        <section class="paired-charts">
+          <section class="chart-section">
+            <div class="chart-header">
+              <div>
+                <h2 id="niftyChartTitle">Index Spot Chart</h2>
+                <p id="niftyChartMeta">Ready</p>
+              </div>
+              <div class="legend">
+                <span><i class="line breadth"></i>Close</span>
+              </div>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="niftyCanvas" width="760" height="340"></canvas>
+              <div class="chart-tooltip" id="niftyTooltip"></div>
+            </div>
+          </section>
+
+          <section class="chart-section">
+            <div class="chart-header">
+              <div>
+                <h2 id="niftyAdChartTitle">Nifty 50 Advance / Decline Tracker</h2>
+                <p id="niftyAdChartMeta">Ready</p>
+              </div>
+              <div class="legend">
+                <span><i class="line net-line"></i>Net Spread</span>
+              </div>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="niftyAdCanvas" width="760" height="340"></canvas>
+              <div class="chart-tooltip" id="niftyAdTooltip"></div>
+            </div>
+          </section>
+        </section>
+
+        <!-- Secondary Charts Grid: Breadth Curve & Market Advance / Decline Ratio -->
+        <section class="paired-charts">
+          <section class="chart-section">
+            <div class="chart-header">
+              <div>
+                <h2 id="chartTitle">Intraday Breadth Curve</h2>
+                <p id="chartMeta">Ready</p>
+              </div>
+              <div class="legend">
+                <span><i class="line breadth"></i>Breadth %</span>
+                <span><i class="line average"></i>20 SMA</span>
+                <span><i class="dash"></i>25/50/75</span>
+              </div>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="breadthCanvas" width="760" height="340"></canvas>
+              <div class="chart-tooltip" id="chartTooltip"></div>
+            </div>
+          </section>
+
+          <section class="chart-section">
+            <div class="chart-header">
+              <div>
+                <h2 id="adChartTitle">Market Advance / Decline Ratio</h2>
+                <p id="adChartMeta">Ready</p>
+              </div>
+              <div class="legend">
+                <span><i class="line advance-line"></i>Advance</span>
+                <span><i class="line decline-line"></i>Decline</span>
+              </div>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="adCanvas" width="760" height="340"></canvas>
+              <div class="chart-tooltip" id="adTooltip"></div>
+            </div>
+          </section>
+        </section>
+      </div>
+
+      <!-- ================================================================
+           Panel 2: Options Desk
+           ================================================================ -->
+      <div id="panelOptions" class="tab-panel">
+        <section class="options-control-band">
+          <div class="ctrl-group">
+            <label>
+              <span>Index</span>
+              <select id="optIndexSelect">
+                <option value="nifty50">Nifty 50</option>
+                <option value="banknifty">Bank Nifty</option>
+                <option value="finnifty">FinNifty</option>
+                <option value="midcpnifty">Midcap Select</option>
+                <option value="sensex">BSE Sensex</option>
+                <option value="niftynext50">Nifty Next 50</option>
+              </select>
+            </label>
+            <label class="expiry-label-box">
+              <span>📅 Expiry Date</span>
+              <select id="optExpirySelect" class="expiry-select-highlight">
+                <option value="auto">Loading Expiries...</option>
+              </select>
+            </label>
+            <label>
+              <span>Strikes</span>
+              <select id="optStrikeRange">
+                <option value="5">ATM +/- 5</option>
+                <option value="10" selected>ATM +/- 10</option>
+                <option value="15">ATM +/- 15</option>
+                <option value="20">ATM +/- 20</option>
+                <option value="30">ATM +/- 30 (Wide)</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="ctrl-group">
+            <label class="check-label">
+              <input id="optShowGreeks" type="checkbox" checked>
+              <span>Greeks (&Delta;, &theta;, &gamma;)</span>
+            </label>
+            <label class="check-label">
+              <input id="optShowModelFair" type="checkbox" checked>
+              <span>Model Fair Val &amp; Edge</span>
+            </label>
+            <label class="check-label">
+              <input id="optCompact" type="checkbox">
+              <span>Compact</span>
+            </label>
+          </div>
+
+          <div class="opt-actions">
+            <button id="optRefreshButton" type="button" class="primary-btn">🔄 Refresh Option Chain</button>
+          </div>
+        </section>
+
+        <!-- Live Real-Time Auto-Refresh Bar -->
+        <section class="live-refresh-bar" id="optLiveRefreshBar">
+          <div class="live-refresh-left">
+            <div class="live-pulse-badge" id="optLivePulseBadge">
+              <span class="pulse-dot"></span>
+              <span class="live-text" id="optLiveStatusText">LIVE STREAM</span>
+            </div>
+            <label class="toggle-switch-label">
+              <input id="optAutoRefreshToggle" type="checkbox" checked>
+              <span class="toggle-switch-slider"></span>
+              <span class="switch-caption">Auto-Refresh</span>
+            </label>
+            <div class="refresh-interval-wrap">
+              <span class="rate-label">Interval:</span>
+              <select id="optRefreshInterval" class="interval-select">
+                <option value="1000">⚡ 1 sec (Ultra-Fast Live)</option>
+                <option value="2000">2 sec</option>
+                <option value="3000">3 sec</option>
+                <option value="5000" selected>5 sec</option>
+                <option value="10000">10 sec</option>
+                <option value="30000">30 sec</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="live-refresh-right">
+            <div class="countdown-wrap">
+              <span class="countdown-label">Next Tick in:</span>
+              <span class="countdown-badge" id="optCountdownBadge">5s</span>
+              <div class="countdown-bar-track">
+                <div class="countdown-bar-fill" id="optCountdownFill"></div>
+              </div>
+            </div>
+            <span class="last-updated-text" id="optLastUpdatedTime">Last tick: --:--:--</span>
+          </div>
+        </section>
+
+        <!-- Options Sub-navigation Tabs -->
+        <div class="options-subnav-bar">
+          <button type="button" class="opt-subtab-btn active" id="subtabChain" data-target="chainView">
+            <span>📊 Option Chain &amp; Straddle</span>
+          </button>
+          <button type="button" class="opt-subtab-btn" id="subtabStats" data-target="statsView">
+            <span>📈 Options Statistics (GoCharting Analytics)</span>
+            <span class="badge-pro">PRO</span>
+          </button>
+          <button type="button" class="opt-subtab-btn" id="subtabWpcrPce" data-target="wpcrPceView">
+            <span>⚖️ wPCR &amp; PCE Quant Terminal</span>
+            <span class="badge-pro" style="background:#7c3aed; color:#ffffff;">INSTITUTIONAL</span>
+          </button>
+          <button type="button" class="opt-subtab-btn" id="subtabVolatility" data-target="volatilityView">
+            <span>🔥 Volatility &amp; IV Rank Terminal</span>
+            <span class="badge-pro" style="background:#2563eb; color:#ffffff;">NIFTYTRADER STYLE</span>
+          </button>
+        </div>
+
+        <!-- VIEW PANE 1: Option Chain & Straddle Desk -->
+        <div id="optChainViewWrap" class="opt-subview-pane active">
+          <!-- Options summary metrics band -->
+          <section class="options-summary-strip">
+          <div class="opt-metric-item">
+            <span>Spot Price</span>
+            <strong id="optSpot">--</strong>
+          </div>
+          <div class="opt-metric-item">
+            <span>Day Change</span>
+            <strong id="optChange">--</strong>
+          </div>
+          <div class="opt-metric-item">
+            <span>ATM Straddle</span>
+            <strong id="optAtmStraddle" style="color: var(--primary);">--</strong>
+          </div>
+          <div class="opt-metric-item">
+            <span>PCR (OI)</span>
+            <strong id="optPcr">--</strong>
+          </div>
+          <div class="opt-metric-item">
+            <span>PCR (Vol)</span>
+            <strong id="optPcrVol">--</strong>
+          </div>
+          <div class="opt-metric-item">
+            <span>Max Pain</span>
+            <strong id="optMaxPain">--</strong>
+          </div>
+          <div class="opt-metric-item">
+            <span>ATM IV</span>
+            <strong id="optAtmIv">--</strong>
+          </div>
+          <div class="opt-metric-item support-item">
+            <span>Support (Major Put)</span>
+            <strong id="optSupport">--</strong>
+          </div>
+          <div class="opt-metric-item resistance-item">
+            <span>Resistance (Major Call)</span>
+            <strong id="optResistance">--</strong>
+          </div>
+        </section>
+
+        <!-- Top OI chips strip -->
+        <section class="top-oi-strip">
+          <div class="top-oi-group">
+            <span class="top-oi-label">Call Resistance:</span>
+            <div id="topCallOiStrikes" class="top-oi-chips"></div>
+          </div>
+          <div class="top-oi-group">
+            <span class="top-oi-label">Put Support:</span>
+            <div id="topPutOiStrikes" class="top-oi-chips"></div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             Institutional Quant Options Desk & Intraday Straddle Engine
+             ================================================================ -->
+        <section class="quant-straddle-section" id="quantStraddleSection">
+          <div class="quant-straddle-header">
+            <div class="straddle-title-group">
+              <div class="quant-badge-icon">⚡ QUANT STRADDLE DESK</div>
+              <div>
+                <h3 id="straddleChartTitle">Intraday Straddle Premium Curve</h3>
+                <p id="straddleChartSub" class="quant-subtext">ATM Strike Straddle Premium (CE+PE) &amp; Intraday Theta Decay</p>
+              </div>
+            </div>
+
+            <!-- Straddle Summary KPI Badges -->
+            <div class="straddle-kpi-ribbon" id="straddleKpiRibbon">
+              <div class="straddle-kpi-item">
+                <span>Strike</span>
+                <strong id="strdStrikeVal">--</strong>
+              </div>
+              <div class="straddle-kpi-item">
+                <span>Straddle Open</span>
+                <strong id="strdOpenVal">--</strong>
+              </div>
+              <div class="straddle-kpi-item">
+                <span>Straddle LTP</span>
+                <strong id="strdCurrVal" class="straddle-highlight">--</strong>
+              </div>
+              <div class="straddle-kpi-item">
+                <span>Intraday Decay</span>
+                <strong id="strdDecayVal">--</strong>
+              </div>
+              <div class="straddle-kpi-item">
+                <span>Breakeven Range</span>
+                <strong id="strdBeRange">--</strong>
+              </div>
+              <div class="straddle-kpi-item">
+                <span>CE - PE Diff</span>
+                <strong id="strdDiffVal">--</strong>
+              </div>
+              <div class="straddle-kpi-item regime-badge-item">
+                <span>Market Regime</span>
+                <span id="strdRegimeBadge" class="regime-pill neutral">Calculating...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Strike Selection Chips & Chart Controls Bar -->
+          <div class="straddle-controls-bar">
+            <div class="strike-switcher-wrap">
+              <span class="ctrl-label">Straddle Strike:</span>
+              <div class="strike-chips-group" id="straddleStrikeChips">
+                <!-- Populated dynamically via JS -->
+              </div>
+            </div>
+
+            <!-- Multi-Day Timeframe Pill Selector -->
+            <div class="straddle-tf-wrap">
+              <span class="ctrl-label">Period:</span>
+              <div class="straddle-tf-group" id="straddleTfGroup">
+                <button type="button" class="straddle-tf-btn active" data-days="1">1D (Today)</button>
+                <button type="button" class="straddle-tf-btn" data-days="2">2D</button>
+                <button type="button" class="straddle-tf-btn" data-days="3">3D</button>
+                <button type="button" class="straddle-tf-btn" data-days="5">5D (Weekly)</button>
+              </div>
+            </div>
+
+            <div class="chart-toggles-wrap">
+              <label class="check-label toggle-pill">
+                <input id="toggleStraddleLine" type="checkbox" checked>
+                <span>Straddle (CE+PE)</span>
+              </label>
+              <label class="check-label toggle-pill call-toggle">
+                <input id="toggleCallLine" type="checkbox" checked>
+                <span>Call LTP</span>
+              </label>
+              <label class="check-label toggle-pill put-toggle">
+                <input id="togglePutLine" type="checkbox" checked>
+                <span>Put LTP</span>
+              </label>
+              <label class="check-label toggle-pill diff-toggle">
+                <input id="toggleDiffLine" type="checkbox" checked>
+                <span>CE - PE Diff</span>
+              </label>
+              <label class="check-label toggle-pill vwap-toggle">
+                <input id="toggleVwapLine" type="checkbox" checked>
+                <span>VWAP</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Straddle Canvas & Tooltip Container -->
+          <div class="straddle-canvas-container">
+            <canvas id="straddleCanvas" width="1200" height="320"></canvas>
+            <div class="straddle-chart-tooltip" id="straddleTooltip"></div>
+          </div>
+
+          <!-- Quant Greeks & Risk Sensitivity Matrix -->
+          <div class="quant-greeks-strip" id="quantGreeksStrip">
+            <div class="greek-metric-card">
+              <div class="greek-top">
+                <span class="greek-symbol">&Delta;</span>
+                <span class="greek-name">Portfolio Delta</span>
+              </div>
+              <strong id="qDeltaVal" class="greek-val">--</strong>
+              <span class="greek-sub" id="qDeltaSub">Directional bias</span>
+            </div>
+
+            <div class="greek-metric-card">
+              <div class="greek-top">
+                <span class="greek-symbol">&Gamma;</span>
+                <span class="greek-name">Gamma Sensitivity</span>
+              </div>
+              <strong id="qGammaVal" class="greek-val">--</strong>
+              <span class="greek-sub" id="qGammaSub">Squeeze risk</span>
+            </div>
+
+            <div class="greek-metric-card">
+              <div class="greek-top">
+                <span class="greek-symbol">&theta;</span>
+                <span class="greek-name">Theta Velocity</span>
+              </div>
+              <strong id="qThetaVal" class="greek-val theta-val">--</strong>
+              <span class="greek-sub" id="qThetaSub">Decay / day</span>
+            </div>
+
+            <div class="greek-metric-card">
+              <div class="greek-top">
+                <span class="greek-symbol">&nu;</span>
+                <span class="greek-name">Vega Exposure</span>
+              </div>
+              <strong id="qVegaVal" class="greek-val">--</strong>
+              <span class="greek-sub" id="qVegaSub">Per 1% IV shift</span>
+            </div>
+
+            <div class="greek-metric-card expected-move-card">
+              <div class="greek-top">
+                <span class="greek-symbol">&plusmn;1&sigma;</span>
+                <span class="greek-name">Expected Move</span>
+              </div>
+              <strong id="qExpectedMoveVal" class="greek-val">--</strong>
+              <span class="greek-sub" id="qExpectedMoveSub">Expiry range cone</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Option Chain Table -->
+        <section class="option-chain-container">
+          <!-- Institutional Option Valuation & Mispricing Ribbon -->
+          <div class="model-pricing-ribbon" id="modelPricingRibbon">
+            <div class="ribbon-left">
+              <span class="ribbon-tag" style="background:#f0fdf4; color:#166534; border-color:#bbf7d0;">⚡ QUANT MARKET-MAKER DESK (BLACK-76 + SVI SMILE)</span>
+              <span class="ribbon-text" id="modelSkewSummary">Calibrating Vol Surface...</span>
+            </div>
+            <div class="ribbon-right">
+              <span class="filter-label">MM Edge Filter:</span>
+              <div class="edge-filter-group" id="edgeFilterGroup">
+                <button type="button" class="edge-filter-btn active" data-mode="all">All Strikes</button>
+                <button type="button" class="edge-filter-btn buyer-filter" data-mode="undervalued">🟢 Cheap (Buyers Edge)</button>
+                <button type="button" class="edge-filter-btn seller-filter" data-mode="overvalued">🔴 Rich (Sellers Edge)</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-scroll">
+            <table class="option-chain-table" id="optionChainTable">
+              <thead>
+                <tr class="header-level-1">
+                  <th colspan="10" class="calls-header" id="callsHeaderCell">CALL OPTIONS (CE)</th>
+                  <th class="strike-header">STRIKE</th>
+                  <th colspan="10" class="puts-header" id="putsHeaderCell">PUT OPTIONS (PE)</th>
+                </tr>
+                <tr class="header-level-2" id="tableHeaderColumns">
+                  <th class="col-oi">OI</th>
+                  <th class="col-oichg">OI Chg%</th>
+                  <th class="col-vol">Vol</th>
+                  <th class="col-iv">IV %</th>
+                  <th class="col-greek col-delta">&Delta;</th>
+                  <th class="col-greek col-theta">&theta;</th>
+                  <th class="col-model col-fair">Fair Val</th>
+                  <th class="col-model col-edge">Edge</th>
+                  <th class="col-ltp">LTP</th>
+                  <th class="col-chg">Chg %</th>
+                  
+                  <th class="col-strike">Strike</th>
+                  
+                  <th class="col-chg">Chg %</th>
+                  <th class="col-ltp">LTP</th>
+                  <th class="col-model col-edge">Edge</th>
+                  <th class="col-model col-fair">Fair Val</th>
+                  <th class="col-greek col-theta">&theta;</th>
+                  <th class="col-greek col-delta">&Delta;</th>
+                  <th class="col-iv">IV %</th>
+                  <th class="col-vol">Vol</th>
+                  <th class="col-oichg">OI Chg%</th>
+                  <th class="col-oi">OI</th>
+                </tr>
+              </thead>
+              <tbody id="optionChainBody">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Options Charts grid -->
+        <section class="paired-charts">
+          <article class="chart-section">
+            <div class="chart-header">
+              <h2>Open Interest Distribution (Calls vs Puts)</h2>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="optOiCanvas" width="760" height="280"></canvas>
+            </div>
+          </article>
+          <article class="chart-section">
+            <div class="chart-header">
+              <h2>Implied Volatility Curve</h2>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="optIvCanvas" width="760" height="280"></canvas>
+            </div>
+          </article>
+        </section>
+        </div> <!-- /optChainViewWrap -->
+
+        <!-- ================================================================
+             VIEW PANE 2: GoCharting-Style Options Statistics Dashboard
+             ================================================================ -->
+        <div id="optStatsViewWrap" class="opt-subview-pane" style="display: none;">
+          <!-- Top Row: Core Statistical KPIs -->
+          <div class="stats-kpi-grid">
+            <div class="stats-card">
+              <div class="stats-card-header">
+                <span class="stats-tag">SENTIMENT</span>
+                <h4>PCR (Put-Call Ratio)</h4>
+              </div>
+              <div class="stats-card-body">
+                <div class="stats-val-row">
+                  <span class="stats-main-val" id="statPcrOi">--</span>
+                  <span class="stats-badge" id="statNetBiasBadge">Neutral</span>
+                </div>
+                <div class="stats-sub-row">
+                  <span>PCR Vol: <b id="statPcrVol">--</b></span>
+                  <span>PCR OI Chg: <b id="statPcrOiChg">--</b></span>
+                </div>
+                <div class="stats-note" id="statSentimentSub">--</div>
+              </div>
+            </div>
+
+            <div class="stats-card">
+              <div class="stats-card-header">
+                <span class="stats-tag">PIN LEVEL</span>
+                <h4>Max Pain &amp; Drift</h4>
+              </div>
+              <div class="stats-card-body">
+                <div class="stats-val-row">
+                  <span class="stats-main-val" id="statMaxPain">--</span>
+                  <span class="stats-badge" id="statMaxPainDiff">0 pts</span>
+                </div>
+                <div class="stats-sub-row">
+                  <span>Expiry Gravitation Target</span>
+                </div>
+                <div class="stats-note" id="statMaxPainNote">Option writers maximize profit at this strike</div>
+              </div>
+            </div>
+
+            <div class="stats-card">
+              <div class="stats-card-header">
+                <span class="stats-tag">VOLATILITY</span>
+                <h4>ATM IV &amp; Skew</h4>
+              </div>
+              <div class="stats-card-body">
+                <div class="stats-val-row">
+                  <span class="stats-main-val" id="statAtmIv">--%</span>
+                  <span class="stats-badge" id="statIvSkewBadge">Skew: --</span>
+                </div>
+                <div class="stats-sub-row">
+                  <span>Call IV: <b id="statCallIv">--%</b></span>
+                  <span>Put IV: <b id="statPutIv">--%</b></span>
+                </div>
+                <div class="stats-note" id="statSkewRegime">--</div>
+              </div>
+            </div>
+
+            <div class="stats-card">
+              <div class="stats-card-header">
+                <span class="stats-tag">GAMMA (GEX)</span>
+                <h4>Gamma Exposure &amp; Flip</h4>
+              </div>
+              <div class="stats-card-body">
+                <div class="stats-val-row">
+                  <span class="stats-main-val" id="statNetGex">-- Cr</span>
+                  <span class="stats-badge" id="statGammaRegime">Long Gamma</span>
+                </div>
+                <div class="stats-sub-row">
+                  <span>Gamma Flip Strike: <b id="statGammaFlip">--</b></span>
+                </div>
+                <div class="stats-note" id="statGexNote">Market maker hedging acceleration</div>
+              </div>
+            </div>
+
+            <div class="stats-card">
+              <div class="stats-card-header">
+                <span class="stats-tag">EXPECTED MOVE</span>
+                <h4>Straddle / Cone Range</h4>
+              </div>
+              <div class="stats-card-body">
+                <div class="stats-val-row">
+                  <span class="stats-main-val" id="statExpectedMove">&plusmn; --</span>
+                  <span class="stats-badge" id="statAtmStraddle">Straddle: ₹--</span>
+                </div>
+                <div class="stats-sub-row">
+                  <span>&plusmn;1&sigma; Range: <b id="statExpectedCone">[-- - --]</b></span>
+                </div>
+                <div class="stats-note">Strangle: <span id="statAtmStrangle">₹--</span></div>
+              </div>
+            </div>
+
+            <div class="stats-card">
+              <div class="stats-card-header">
+                <span class="stats-tag">THETA BURN</span>
+                <h4>Market Theta Velocity</h4>
+              </div>
+              <div class="stats-card-body">
+                <div class="stats-val-row">
+                  <span class="stats-main-val theta-val" id="statThetaBurn">₹-- Cr</span>
+                  <span class="stats-badge" id="statIvRankBadge">IVR: --%</span>
+                </div>
+                <div class="stats-sub-row">
+                  <span>IV Percentile (IVP): <b id="statIvPercentile">--%</b></span>
+                </div>
+                <div class="stats-note">Total intraday premium decay eroding</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Middle Row: OI & Volume Dual Distribution Bars -->
+          <div class="stats-distribution-section">
+            <div class="dist-card">
+              <div class="dist-card-header">
+                <h4>Open Interest Distribution (Call vs Put)</h4>
+                <div class="dist-summary-pills">
+                  <span class="pill-call">Calls: <b id="statTotalCallOi">--</b></span>
+                  <span class="pill-put">Puts: <b id="statTotalPutOi">--</b></span>
+                </div>
+              </div>
+              <div class="ratio-progress-container">
+                <div class="ratio-bar-call" id="statCallOiBar" style="width: 50%;">
+                  <span id="statCallOiPct">50%</span>
+                </div>
+                <div class="ratio-bar-put" id="statPutOiBar" style="width: 50%;">
+                  <span id="statPutOiPct">50%</span>
+                </div>
+              </div>
+              <div class="dist-footer-info">
+                <span>Resistance Barrier</span>
+                <span>Support Barrier</span>
+              </div>
+            </div>
+
+            <div class="dist-card">
+              <div class="dist-card-header">
+                <h4>Volume Flow Distribution (Call vs Put)</h4>
+                <div class="dist-summary-pills">
+                  <span class="pill-call">Call Vol: <b id="statTotalCallVol">--</b></span>
+                  <span class="pill-put">Put Vol: <b id="statTotalPutVol">--</b></span>
+                </div>
+              </div>
+              <div class="ratio-progress-container">
+                <div class="ratio-bar-call" id="statCallVolBar" style="width: 50%;">
+                  <span id="statCallVolPct">50%</span>
+                </div>
+                <div class="ratio-bar-put" id="statPutVolBar" style="width: 50%;">
+                  <span id="statPutVolPct">50%</span>
+                </div>
+              </div>
+              <div class="dist-footer-info">
+                <span>Bullish Turnover</span>
+                <span>Bearish Turnover</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Institutional Buildup Flow Matrix & S/R Walls -->
+          <div class="stats-bottom-grid">
+            <!-- Strike Buildup Flow Matrix -->
+            <div class="buildup-matrix-card">
+              <div class="matrix-card-header">
+                <h4>⚡ Institutional Strike Buildup Classification</h4>
+                <span class="matrix-subtitle">Classified by Price Action &amp; OI Flow Dynamics</span>
+              </div>
+              <div class="buildup-quad-grid">
+                <!-- Long Buildup -->
+                <div class="buildup-column col-long-buildup">
+                  <div class="col-head">
+                    <span class="dot-indicator green"></span>
+                    <strong>Long Buildup</strong>
+                    <span class="badge-count" id="countLongBuildup">0</span>
+                  </div>
+                  <span class="col-desc">Price &uarr; | OI &uarr; (Bullish Aggression)</span>
+                  <div class="buildup-items-list" id="listLongBuildup"></div>
+                </div>
+
+                <!-- Short Buildup -->
+                <div class="buildup-column col-short-buildup">
+                  <div class="col-head">
+                    <span class="dot-indicator red"></span>
+                    <strong>Short Buildup</strong>
+                    <span class="badge-count" id="countShortBuildup">0</span>
+                  </div>
+                  <span class="col-desc">Price &darr; | OI &uarr; (Heavy Call/Put Writing)</span>
+                  <div class="buildup-items-list" id="listShortBuildup"></div>
+                </div>
+
+                <!-- Short Covering -->
+                <div class="buildup-column col-short-covering">
+                  <div class="col-head">
+                    <span class="dot-indicator blue"></span>
+                    <strong>Short Covering</strong>
+                    <span class="badge-count" id="countShortCovering">0</span>
+                  </div>
+                  <span class="col-desc">Price &uarr; | OI &darr; (Squeeze / Seller Panic)</span>
+                  <div class="buildup-items-list" id="listShortCovering"></div>
+                </div>
+
+                <!-- Long Unwinding -->
+                <div class="buildup-column col-long-unwinding">
+                  <div class="col-head">
+                    <span class="dot-indicator amber"></span>
+                    <strong>Long Unwinding</strong>
+                    <span class="badge-count" id="countLongUnwinding">0</span>
+                  </div>
+                  <span class="col-desc">Price &darr; | OI &darr; (Profit Booking / Exit)</span>
+                  <div class="buildup-items-list" id="listLongUnwinding"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Support & Resistance Walls Cluster -->
+            <div class="walls-card">
+              <div class="matrix-card-header">
+                <h4>🛡️ Major OI Resistance &amp; Support Walls</h4>
+                <span class="matrix-subtitle">Strongest OI concentrations acting as price barriers</span>
+              </div>
+              <div class="walls-content">
+                <div class="wall-box call-wall-box">
+                  <span class="wall-title">Call Resistance Walls (Bear Fortresses)</span>
+                  <div class="wall-strikes-list" id="resistanceWallsList"></div>
+                </div>
+                <div class="wall-box put-wall-box">
+                  <span class="wall-title">Put Support Walls (Bull Floors)</span>
+                  <div class="wall-strikes-list" id="supportWallsList"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div> <!-- /optStatsViewWrap -->
+
+        <!-- ================================================================
+             VIEW PANE 3: wPCR & PCE Quant Terminal (Institutional Desk)
+             ================================================================ -->
+        <div id="optWpcrPceViewWrap" class="opt-subview-pane" style="display: none;">
+          <!-- Top Row: wPCR, dPCR, PCE Net, and Smart Money Divergence Cards -->
+          <div class="stats-kpi-grid">
+            <!-- Card 1: wPCR (Premium-Weighted PCR) -->
+            <div class="stats-card">
+              <div class="stats-card-header">
+                <span class="stats-tag" style="background:#f3e8ff; color:#7c3aed;">INSTITUTIONAL wPCR</span>
+                <h4>Weighted PCR (Rupee Capital)</h4>
+              </div>
+              <div class="stats-card-body">
+                <div class="stats-val-row">
+                  <span class="stats-hero-val" id="wpcrHeroVal">--</span>
+                  <span class="stats-badge" id="wpcrHeroBadge">CALCULATING</span>
+                </div>
+                <div class="ratio-progress-container" style="margin: 8px 0 4px;">
+                  <div class="ratio-bar-call" id="wpcrCallRatioBar" style="width: 50%;">CE --%</div>
+                  <div class="ratio-bar-put" id="wpcrPutRatioBar" style="width: 50%;">PE --%</div>
+                </div>
+                <span class="stats-sub-metric" id="wpcrCapRatioSub">Put Cap: ₹-- Cr | Call Cap: ₹-- Cr</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Delta-Weighted PCR (dPCR) & Volume PCR (vPCR) -->
+            <div class="stats-card">
+              <div class="stats-card-header">
+                <span class="stats-tag" style="background:#e0f2fe; color:#0284c7;">FLOW DYNAMICS</span>
+                <h4>Delta &amp; Turnover PCR</h4>
+              </div>
+              <div class="stats-card-body">
+                <div class="stats-val-row">
+                  <div>
+                    <span class="stats-label" style="font-size:10px; color:var(--text-muted);">DELTA PCR:</span>
+                    <span class="stats-hero-val" id="dpcrVal" style="font-size:20px;">--</span>
+                  </div>
+                  <div style="text-align:right;">
+                    <span class="stats-label" style="font-size:10px; color:var(--text-muted);">TURNOVER PCR:</span>
+                    <span class="stats-hero-val" id="vwpcrVal" style="font-size:20px;">--</span>
+                  </div>
+                </div>
+                <div class="stat-mini-row" style="margin-top: 6px;">
+                  <span>Standard Contract PCR (OI):</span>
+                  <strong id="wpcrStandardPcr">--</strong>
+                </div>
+                <span class="stats-sub-metric" id="dpcrSubText">Delta-weighted removes far OTM lottery distortion</span>
+              </div>
+            </div>
+
+            <!-- Card 3: PCE (Put-Call Exposure & Parity) -->
+            <div class="stats-card">
+              <div class="stats-card-header">
+                <span class="stats-tag" style="background:#dcfce7; color:#15803d;">CAPITAL EXPOSURE</span>
+                <h4>PCE (Net Capital Exposure)</h4>
+              </div>
+              <div class="stats-card-body">
+                <div class="stats-val-row">
+                  <span class="stats-hero-val" id="pceNetVal" style="font-size:20px;">--</span>
+                  <span class="stats-badge" id="pceParityBadge">PARITY FAIR</span>
+                </div>
+                <div class="stat-mini-row" style="margin-top: 4px;">
+                  <span>Total Capital Deployed:</span>
+                  <strong id="pceTotalCap">₹-- Cr</strong>
+                </div>
+                <div class="stat-mini-row">
+                  <span>Synthetic Parity Spread:</span>
+                  <strong id="pceForwardSpread">-- pts</strong>
+                </div>
+                <span class="stats-sub-metric" id="pceParityDesc">Forward spread detects synthetic future arbitrage</span>
+              </div>
+            </div>
+
+            <!-- Card 4: Smart Money Divergence & Trap Alert -->
+            <div class="stats-card trap-alert-card" id="wpcrTrapCard">
+              <div class="stats-card-header">
+                <span class="stats-tag" style="background:#fee2e2; color:#dc2626;">QUANT DIVERGENCE</span>
+                <h4>Smart Money Trap Detector</h4>
+              </div>
+              <div class="stats-card-body">
+                <div class="trap-badge-wrap">
+                  <span class="trap-banner-badge" id="wpcrTrapBadge">ANALYZING FLOW...</span>
+                </div>
+                <div class="stat-mini-row" style="margin-top: 6px;">
+                  <span>Capital vs Contract Divergence:</span>
+                  <strong id="wpcrDivergenceVal">--</strong>
+                </div>
+                <p class="trap-detail-desc" id="wpcrTrapDesc">Detects when retail buys lottery OTM options while institutional money deploys capital in the opposite direction.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Opstra-Style wPCR & Capital Dynamics Chart Section -->
+          <div class="wpcr-chart-section">
+            <div class="matrix-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h4 id="wpcrChartTitle">📈 Intraday wPCR &amp; Put-Call Capital Dynamics (Opstra Style)</h4>
+                <span class="matrix-subtitle" id="wpcrChartSubtitle">Dual-axis time-series tracking institutional Rupee-weighted PCR vs Nifty Spot Price</span>
+              </div>
+              
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <!-- Timeframe Selector -->
+                <div class="straddle-tf-group" id="wpcrTfGroup">
+                  <button type="button" class="straddle-tf-btn active" data-days="1">1D (Today)</button>
+                  <button type="button" class="straddle-tf-btn" data-days="2">2D</button>
+                  <button type="button" class="straddle-tf-btn" data-days="3">3D</button>
+                  <button type="button" class="straddle-tf-btn" data-days="5">5D (Weekly)</button>
+                </div>
+
+                <!-- View Mode Selector -->
+                <div class="edge-filter-group" id="wpcrModeGroup">
+                  <button type="button" class="edge-filter-btn active" data-mode="wpcr_spot">📈 wPCR vs Spot</button>
+                  <button type="button" class="edge-filter-btn" data-mode="ce_pe_crossover">⚔️ CE vs PE Dynamics</button>
+                  <button type="button" class="edge-filter-btn" data-mode="strike_bars">📊 Strike Matrix</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Time-Series Canvas Container (Opstra Style) -->
+            <div class="canvas-wrap" id="wpcrTsWrap" style="position:relative; margin-top:8px;">
+              <canvas id="wpcrTsCanvas" width="1200" height="300" style="width:100%; height:300px;"></canvas>
+              <div class="straddle-chart-tooltip" id="wpcrTsTooltip"></div>
+            </div>
+
+            <!-- Strike-Wise Bar Canvas Container (Hidden when in Time-Series mode) -->
+            <div class="canvas-wrap" id="wpcrCapitalWrap" style="position:relative; margin-top:8px; display:none;">
+              <canvas id="wpcrCapitalCanvas" width="1200" height="280" style="width:100%; height:280px;"></canvas>
+              <div class="straddle-chart-tooltip" id="wpcrCanvasTooltip"></div>
+            </div>
+          </div>
+
+          <!-- Section 3: Dual Column Deep-Dive -->
+          <div class="matrix-cards-grid" style="margin-top: 14px;">
+            <!-- Left: Strike Capital Matrix Table -->
+            <div class="matrix-card">
+              <div class="matrix-card-header">
+                <h4>🏛️ Capital Deployment Breakdown by Strike</h4>
+                <span class="matrix-subtitle">Real-time Rupee value staked at each strike</span>
+              </div>
+              <div class="wpcr-table-wrap">
+                <table class="wpcr-data-table" id="wpcrStrikeTable">
+                  <thead>
+                    <tr>
+                      <th>Strike</th>
+                      <th>Call LTP</th>
+                      <th>Call Cap (₹ Cr)</th>
+                      <th>Put LTP</th>
+                      <th>Put Cap (₹ Cr)</th>
+                      <th>Net Capital</th>
+                      <th>Dominance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="wpcrStrikeTableBody">
+                    <!-- Populated via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: PCE Macro Risk & Global Catalyst Barometer -->
+            <div class="matrix-card">
+              <div class="matrix-card-header">
+                <h4>🌍 PCE &amp; Macro Event Risk Barometer</h4>
+                <span class="matrix-subtitle">US Core PCE Inflation &amp; Global Volatility Drivers</span>
+              </div>
+              <div class="macro-pce-body">
+                <!-- Live Global Macro Tickers Strip -->
+                <div class="macro-tickers-strip">
+                  <div class="macro-ticker-item">
+                    <span class="ticker-label">US 10Y Yield:</span>
+                    <strong class="ticker-val" id="macroUs10y">--</strong>
+                  </div>
+                  <div class="macro-ticker-item">
+                    <span class="ticker-label">US Dollar (DXY):</span>
+                    <strong class="ticker-val" id="macroDxy">--</strong>
+                  </div>
+                  <div class="macro-ticker-item">
+                    <span class="ticker-label">India VIX:</span>
+                    <strong class="ticker-val" id="macroIndiaVix">--</strong>
+                  </div>
+                  <div class="macro-ticker-item">
+                    <span class="ticker-label">US VIX:</span>
+                    <strong class="ticker-val" id="macroCboeVix">--</strong>
+                  </div>
+                </div>
+
+                <div class="macro-kpi-row" style="margin-top: 10px;">
+                  <div class="macro-kpi-box">
+                    <span class="macro-label">US Core PCE Inflation</span>
+                    <strong class="macro-val" id="macroPceYoy">2.6%</strong>
+                    <span class="macro-status-pill green" id="macroPceTrend">--</span>
+                  </div>
+                  <div class="macro-kpi-box">
+                    <span class="macro-label">Fed Interest Rate Outlook</span>
+                    <strong class="macro-val" id="macroFedOutlook">--</strong>
+                    <span class="macro-status-pill blue" id="macroGlobalStatus">NORMAL</span>
+                  </div>
+                </div>
+
+                <div class="macro-impact-card">
+                  <h5>⚡ Real-Time Expiry Volatility Risk Impact</h5>
+                  <div class="stat-mini-row">
+                    <span>Expected Implied Volatility (IV) Shock:</span>
+                    <strong id="macroExpectedIv">± --%</strong>
+                  </div>
+                  <div class="stat-mini-row">
+                    <span>Expected Spot Move (ATM Straddle):</span>
+                    <strong id="macroExpectedPts">± -- pts</strong>
+                  </div>
+                  <div class="stat-mini-row">
+                    <span>Desk Breakeven Range:</span>
+                    <strong id="macroBreakevenRange" style="color:#2563eb;">--</strong>
+                  </div>
+                  <div class="stat-mini-row">
+                    <span>FII Capital Flow Bias:</span>
+                    <strong id="macroFiiBias" class="change-pos">--</strong>
+                  </div>
+                  <div class="stat-mini-row">
+                    <span>Dynamic Desk Hedging Protocol:</span>
+                    <strong id="macroHedgingProtocol" style="color:var(--primary);">--</strong>
+                  </div>
+                </div>
+
+                <div class="macro-fortress-wrap">
+                  <h5>🛡️ Institutional Rupee Capital Anchors</h5>
+                  <div class="fortress-split">
+                    <div class="fortress-col">
+                      <span class="col-head-title" style="color:#ef4444;">Top Call Capital Walls (Resistance)</span>
+                      <div id="wpcrTopCallsList" class="fortress-items"></div>
+                    </div>
+                    <div class="fortress-col">
+                      <span class="col-head-title" style="color:#10b981;">Top Put Capital Floors (Support)</span>
+                      <div id="wpcrTopPutsList" class="fortress-items"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div> <!-- /optWpcrPceViewWrap -->
+
+        <!-- VIEW PANE 4: Options Volatility & IV Rank Terminal (NiftyTrader Style) -->
+        <div id="optVolatilityViewWrap" class="opt-subview-pane">
+          <!-- Headline 6 Volatility Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px;">
+            <div class="stats-card" style="padding: 12px; border-left: 3px solid #2563eb;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">India VIX</span>
+              <div id="volVixVal" style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 4px 0;">--</div>
+              <span id="volVixSub" style="font-size: 11px; color: #64748b;">52W Percentile: --%</span>
+            </div>
+            <div class="stats-card" style="padding: 12px; border-left: 3px solid #2563eb;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">ATM IV</span>
+              <div id="volAtmIvVal" style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 4px 0;">--%</div>
+              <span id="volAtmIvSub" style="font-size: 11px; color: #64748b;">ATM Implied Vol</span>
+            </div>
+            <div class="stats-card" style="padding: 12px; border-left: 3px solid #10b981;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">IV Rank</span>
+              <div id="volIvRankVal" style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 4px 0;">--</div>
+              <div style="height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; margin:4px 0;">
+                <div id="volIvRankFill" style="height:100%; width:0%; background:#10b981; border-radius:3px;"></div>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">52W High-Low Range</span>
+            </div>
+            <div class="stats-card" style="padding: 12px; border-left: 3px solid #10b981;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">IV Percentile</span>
+              <div id="volIvPctVal" style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 4px 0;">--%</div>
+              <div style="height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; margin:4px 0;">
+                <div id="volIvPctFill" style="height:100%; width:0%; background:#10b981; border-radius:3px;"></div>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">% of days below today</span>
+            </div>
+            <div class="stats-card" style="padding: 12px; border-left: 3px solid #f59e0b;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">IV − HV (20D)</span>
+              <div id="volIvMinusHvVal" style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 4px 0;">-- pts</div>
+              <span style="font-size: 11px; color: #64748b;">Vol Risk Premium (VRP)</span>
+            </div>
+            <div class="stats-card" style="padding: 12px; border-left: 3px solid #2563eb;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Expected Move (±1σ)</span>
+              <div id="volExpectedMoveVal" style="font-size: 24px; font-weight: 800; color: #2563eb; margin: 4px 0;">±-- pts</div>
+              <span id="volExpectedMoveSub" style="font-size: 11px; color: #64748b;">ATM Straddle Premium</span>
+            </div>
+          </div>
+
+          <!-- Volatility Regime & Today's Vol Playbook -->
+          <div style="margin-top: 16px; display: grid; grid-template-columns: 5fr 7fr; gap: 14px;">
+            <div class="stats-card">
+              <div class="stats-card-header">
+                <span class="stats-tag" style="background:#dbeafe; color:#1d4ed8;">VIX ZONE</span>
+                <h4 style="margin:0;">Volatility Regime Gauge</h4>
+              </div>
+              <div class="stats-card-body">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <strong id="volRegimeBadge" style="font-size:16px; color:#2563eb;">ANALYZING VIX...</strong>
+                  <span id="volRegimeVixText" style="font-weight:700;">VIX --</span>
+                </div>
+                <div style="height:12px; background:#e2e8f0; border-radius:6px; overflow:hidden; position:relative;">
+                  <div id="volGaugeFill" style="height:100%; width:0%; background:linear-gradient(90deg, #10b981, #3b82f6, #f59e0b, #ef4444); border-radius:6px;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b; margin-top:4px;">
+                  <span>Calm (&lt;13)</span>
+                  <span>Normal (13-17)</span>
+                  <span>Elevated (17-22)</span>
+                  <span>Panic (&gt;22)</span>
+                </div>
+                <p id="volRegimeDesc" style="font-size:12px; color:#475569; margin-top:10px; margin-bottom:0;">Loading Volatility Regime Analysis...</p>
+              </div>
+            </div>
+
+            <!-- Today's Vol Playbook Cards -->
+            <div class="stats-card">
+              <div class="stats-card-header">
+                <span class="stats-tag" style="background:#fef3c7; color:#b45309;">STRATEGY ENGINE</span>
+                <h4 style="margin:0;">Today's Vol Playbook</h4>
+              </div>
+              <div class="stats-card-body">
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
+                    <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Option Buyer</span>
+                    <div id="volBuyerBadge" class="pill info-pill" style="margin-top:4px; font-weight:800; display:inline-block;">--</div>
+                    <p id="volBuyerDesc" style="font-size:11px; color:#475569; margin-top:6px; margin-bottom:0;">Loading strategy...</p>
+                  </div>
+                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
+                    <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Option Seller</span>
+                    <div id="volSellerBadge" class="pill success-pill" style="margin-top:4px; font-weight:800; display:inline-block;">--</div>
+                    <p id="volSellerDesc" style="font-size:11px; color:#475569; margin-top:6px; margin-bottom:0;">Loading strategy...</p>
+                  </div>
+                  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
+                    <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Spread / Arb</span>
+                    <div id="volSpreadBadge" class="pill accent-pill" style="margin-top:4px; font-weight:800; display:inline-block;">--</div>
+                    <p id="volSpreadDesc" style="font-size:11px; color:#475569; margin-top:6px; margin-bottom:0;">Loading strategy...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Expected Move Price Bands Bar -->
+          <div class="stats-card" style="margin-top:14px;">
+            <div class="stats-card-header">
+              <span class="stats-tag" style="background:#e0e7ff; color:#3730a3;">EXPECTED RANGE</span>
+              <h4 style="margin:0;">Expected Move Bands &amp; Straddle Breakevens</h4>
+            </div>
+            <div class="stats-card-body">
+              <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
+                <div style="background:#f1f5f9; padding:10px; border-radius:8px; text-align:center;">
+                  <span style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">±1σ Band (68%)</span>
+                  <div id="volExp1Sig" style="font-size:15px; font-weight:800; color:#0f172a; margin-top:2px;">-- - --</div>
+                </div>
+                <div style="background:#f1f5f9; padding:10px; border-radius:8px; text-align:center;">
+                  <span style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">±2σ Band (95%)</span>
+                  <div id="volExp2Sig" style="font-size:15px; font-weight:800; color:#0f172a; margin-top:2px;">-- - --</div>
+                </div>
+                <div style="background:#f1f5f9; padding:10px; border-radius:8px; text-align:center;">
+                  <span style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Straddle Breakevens</span>
+                  <div id="volStraddleBreakeven" style="font-size:15px; font-weight:800; color:#2563eb; margin-top:2px;">-- - --</div>
+                </div>
+                <div style="background:#f1f5f9; padding:10px; border-radius:8px; text-align:center;">
+                  <span style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase;">Expected % Move</span>
+                  <div id="volExpectedPct" style="font-size:15px; font-weight:800; color:#059669; margin-top:2px;">±--%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- F&O Stock Volatility Screener Section -->
+          <div class="stats-card" style="margin-top:14px;">
+            <div class="stats-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0;">🔥 F&amp;O Stock Volatility Screener</h4>
+                <span style="font-size:11px; color:#64748b;">Filter high/low IV Rank stocks for option buying vs selling opportunities</span>
+              </div>
+              <div class="edge-filter-group" id="volScreenerFilterGroup">
+                <button type="button" class="edge-filter-btn active" data-filter="all">All Stocks</button>
+                <button type="button" class="edge-filter-btn" data-filter="high_iv">High IV Rank (Sell)</button>
+                <button type="button" class="edge-filter-btn" data-filter="low_iv">Low IV Rank (Buy)</button>
+              </div>
+            </div>
+            <div class="stats-card-body" style="padding:0; overflow-x:auto;">
+              <table class="market-table" style="margin:0; font-size:12px;">
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th style="text-align:right;">Spot</th>
+                    <th style="text-align:right;">ATM IV</th>
+                    <th style="text-align:right;">IV Rank</th>
+                    <th style="text-align:right;">IV %ile</th>
+                    <th style="text-align:right;">IV − HV</th>
+                    <th style="text-align:right;">Skew 25Δ</th>
+                    <th style="text-align:right;">HV 20D</th>
+                    <th style="text-align:center;">Signal / Action</th>
+                  </tr>
+                </thead>
+                <tbody id="volStockTableBody">
+                  <tr><td colspan="9" style="text-align:center; padding:16px; color:#64748b;">Loading F&amp;O Stock Volatility Screener...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div> <!-- /optVolatilityViewWrap -->
+
+        </div> <!-- /panelOptions -->
+
+
+      <!-- ================================================================
+           Panel 3: Smart Money EOD Tracker (FII / DII / PRO vs Retail)
+           ================================================================ -->
+      <div id="panelSmartMoney" class="tab-panel">
+        
+        <!-- Header Controls Bar -->
+        <section class="controls sm-controls" style="margin-bottom: 16px;">
+          <div class="ctrl-group" style="flex-wrap:wrap; gap:10px;">
+            <label>
+              <span>Trading Session</span>
+              <select id="smSessionSelect" class="ctrl-select" style="font-weight:700; min-width:160px;">
+                <option value="2026-08-31" selected>31 Aug 2026 (Latest)</option>
+              </select>
+            </label>
+            <label>
+              <span>Custom Date</span>
+              <input id="smDateInput" type="date" style="font-size:12px;">
+            </label>
+            <div class="sm-quick-dates" id="smQuickDates">
+              <!-- Dynamically loaded buttons -->
+            </div>
+          </div>
+
+          <div class="ctrl-actions" style="margin-left:auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span class="sm-eod-badge" id="smStatusBadge">🟢 NSE Official Participant File Verified</span>
+            <button id="smRefreshBtn" class="ctrl-btn primary" type="button">🔄 Fetch EOD Data</button>
+          </div>
+        </section>
+
+        <!-- Index-Wise Position & Volume Banner Link -->
+        <div class="sm-index-link-banner">
+          <div class="sm-index-link-left">
+            <span class="sm-index-link-icon">🏛️</span>
+            <div>
+              <div class="sm-index-link-title">Index-Wise Detailed Position &amp; Volume Report Available</div>
+              <div class="sm-index-link-desc">View how much trading volume (contracts &amp; ₹ Cr turnover) and open interest buildup occurred across NIFTY 50, BANK NIFTY, FIN NIFTY &amp; MIDCAP NIFTY.</div>
+            </div>
+          </div>
+          <button type="button" id="smJumpToIndicesBtn" class="sm-index-link-btn">Open Index Report ➜</button>
+        </div>
+
+        <!-- Row 1: Top 3 Institutional KPI Cards -->
+        <div class="sm-kpi-grid">
+          
+          <!-- Card 1: FII Future Long/Short Ratio Gauge -->
+          <div class="sm-card sm-fii-gauge-card">
+            <div class="sm-card-header">
+              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <span class="sm-card-title">🦅 FII Index Futures Long/Short Stance</span>
+                <span class="stats-badge" id="smFiiZoneBadge">BALANCED (50%)</span>
+              </div>
+            </div>
+            
+            <div class="sm-gauge-body">
+              <div class="sm-gauge-ratio-numbers">
+                <div>
+                  <span class="ratio-label" style="color:#16a34a;">LONG</span>
+                  <strong class="ratio-val" id="smFiiLongPct">--%</strong>
+                </div>
+                <div style="text-align:right;">
+                  <span class="ratio-label" style="color:#dc2626;">SHORT</span>
+                  <strong class="ratio-val" id="smFiiShortPct">--%</strong>
+                </div>
+              </div>
+
+              <!-- Visual Split Ratio Bar -->
+              <div class="sm-split-bar-wrap">
+                <div class="sm-split-bar-long" id="smFiiBarLong" style="width: 50%;"></div>
+                <div class="sm-split-bar-short" id="smFiiBarShort" style="width: 50%;"></div>
+              </div>
+
+              <div class="sm-metric-subrow">
+                <span>Net Index Futures:</span>
+                <strong id="smFiiNetFut" style="color:#2563eb;">-- contracts</strong>
+                <span style="color:var(--text-muted);">|</span>
+                <span>Value:</span>
+                <strong id="smFiiNetValCr">₹-- Cr</strong>
+              </div>
+
+              <div class="sm-zone-desc" id="smFiiZoneDesc">
+                FII long/short exposure is in equilibrium.
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Smart Money vs Retail Trap Radar -->
+          <div class="sm-card sm-trap-card">
+            <div class="sm-card-header">
+              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <span class="sm-card-title">🪤 Smart Money vs Retail Trap Radar</span>
+                <span class="stats-badge" id="smTrapBadge">BALANCED</span>
+              </div>
+            </div>
+            
+            <div class="sm-trap-body">
+              <h4 class="sm-trap-title" id="smTrapTitle">Institutional Positioning Stance</h4>
+              <p class="sm-trap-desc" id="smTrapDesc">Analyzing open interest positions across smart money and retail clients.</p>
+
+              <!-- Clash Mini Grid -->
+              <div class="sm-clash-grid">
+                <div class="sm-clash-box">
+                  <span class="clash-label">Retail (Client) Calls:</span>
+                  <strong id="smClientCalls">--</strong>
+                </div>
+                <div class="sm-clash-box">
+                  <span class="clash-label">Smart Money Calls:</span>
+                  <strong id="smSmartCalls">--</strong>
+                </div>
+                <div class="sm-clash-box">
+                  <span class="clash-label">Retail (Client) Puts:</span>
+                  <strong id="smClientPuts">--</strong>
+                </div>
+                <div class="sm-clash-box">
+                  <span class="clash-label">Smart Money Puts:</span>
+                  <strong id="smSmartPuts">--</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Tomorrow's Institutional Gameplan -->
+          <div class="sm-card sm-gameplan-card">
+            <div class="sm-card-header">
+              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <span class="sm-card-title">🎯 Tomorrow's Desk Gameplan</span>
+                <span class="stats-badge" id="smGameplanBias">BULLISH BIAS</span>
+              </div>
+            </div>
+            
+            <div class="sm-gameplan-body">
+              <div class="sm-gameplan-rule">
+                <strong>🏛️ FII Trading Stance:</strong>
+                <p id="smGameplanSummary">FIIs carrying net long positions. Dips towards support are likely to be defended.</p>
+              </div>
+
+              <div class="sm-gameplan-bullets">
+                <div class="gp-bullet"><span>💡 <strong>Call Buying Advice:</strong> Never buy calls when Retail is &gt; 2.5L long calls and FII is net short calls.</span></div>
+                <div class="gp-bullet"><span>⚡ <strong>Short Squeeze Zone:</strong> If FII Long % drops below 18%, aggressive put writing / buying call spreads yields highest risk-reward.</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Row: Intraday Trade Shift & Action Highlights across Participants -->
+        <div style="margin: 20px 0 16px 0;">
+          <h4 style="margin: 0 0 10px 0; font-size: 15px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+            <span>⚡ Intraday Trades &amp; Net Position Shifts (Din Bhar me Participant Trades)</span>
+          </h4>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+            
+            <!-- FII Intraday Action Card -->
+            <div class="sm-card" style="padding: 16px; background: #0c121e; border: 1px solid #1e293d; border-radius: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-weight: 800; font-size: 13px; color: #38bdf8;">🦅 FII (Foreign Institutional)</span>
+              </div>
+              <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+                • Futures Shift: <strong id="smFiiFutShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Calls (CE) Shift: <strong id="smFiiCallShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Puts (PE) Shift: <strong id="smFiiPutShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Stock Futures: <strong id="smFiiStkShift" style="font-family:'JetBrains Mono';">--</strong>
+              </div>
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #162032; font-size: 11px; font-weight: 700; color: #f59e0b;" id="smFiiActionSummary">
+                Analyzing FII intraday order flow...
+              </div>
+            </div>
+
+            <!-- PRO Intraday Action Card -->
+            <div class="sm-card" style="padding: 16px; background: #0c121e; border: 1px solid #1e293d; border-radius: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-weight: 800; font-size: 13px; color: #a855f7;">🏢 PRO (Proprietary Desks)</span>
+              </div>
+              <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+                • Futures Shift: <strong id="smProFutShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Calls (CE) Shift: <strong id="smProCallShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Puts (PE) Shift: <strong id="smProPutShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Stock Futures: <strong id="smProStkShift" style="font-family:'JetBrains Mono';">--</strong>
+              </div>
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #162032; font-size: 11px; font-weight: 700; color: #f59e0b;" id="smProActionSummary">
+                Analyzing Proprietary desk trades...
+              </div>
+            </div>
+
+            <!-- CLIENT Intraday Action Card -->
+            <div class="sm-card" style="padding: 16px; background: #0c121e; border: 1px solid #1e293d; border-radius: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-weight: 800; font-size: 13px; color: #f59e0b;">👤 CLIENT (Retail Traders)</span>
+              </div>
+              <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+                • Futures Shift: <strong id="smClientFutShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Calls (CE) Shift: <strong id="smClientCallShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Puts (PE) Shift: <strong id="smClientPutShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Stock Futures: <strong id="smClientStkShift" style="font-family:'JetBrains Mono';">--</strong>
+              </div>
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #162032; font-size: 11px; font-weight: 700; color: #f59e0b;" id="smClientActionSummary">
+                Analyzing Retail intraday trades...
+              </div>
+            </div>
+
+            <!-- DII Intraday Action Card -->
+            <div class="sm-card" style="padding: 16px; background: #0c121e; border: 1px solid #1e293d; border-radius: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-weight: 800; font-size: 13px; color: #10b981;">🏛️ DII (Domestic Inst)</span>
+              </div>
+              <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+                • Futures Shift: <strong id="smDiiFutShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Calls (CE) Shift: <strong id="smDiiCallShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Puts (PE) Shift: <strong id="smDiiPutShift" style="font-family:'JetBrains Mono';">--</strong><br>
+                • Stock Futures: <strong id="smDiiStkShift" style="font-family:'JetBrains Mono';">--</strong>
+              </div>
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #162032; font-size: 11px; font-weight: 700; color: #f59e0b;" id="smDiiActionSummary">
+                Analyzing Domestic institutional trades...
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Row 2: Participant-Wise Detailed Breakdown Matrix Table -->
+        <div class="sm-card sm-table-card" style="margin-top: 16px;">
+          <div class="sm-card-header">
+            <h4>📋 Official NSE Participant-Wise Open Interest Matrix</h4>
+            <span class="matrix-subtitle">Complete daily audit of Index Futures, Index Calls, Index Puts, and Stock Futures across all 4 market segments</span>
+          </div>
+          
+          <div class="wpcr-table-wrap" style="overflow-x: auto;">
+            <table class="wpcr-data-table sm-table" id="smParticipantTable">
+              <thead>
+                <tr>
+                  <th rowspan="2" style="vertical-align:middle;">Participant</th>
+                  <th colspan="4" style="text-align:center; background:#162032; border-bottom:1px solid #26334d; color:#38bdf8;">Index Futures</th>
+                  <th colspan="4" style="text-align:center; background:#064e3b; border-bottom:1px solid #047857; color:#34d399;">Index Calls (CE)</th>
+                  <th colspan="4" style="text-align:center; background:#881337; border-bottom:1px solid #be123c; color:#fb7185;">Index Puts (PE)</th>
+                  <th colspan="3" style="text-align:center; background:#162032; border-bottom:1px solid #26334d;">Stock Futures</th>
+                  <th rowspan="2" style="vertical-align:middle;">Intraday Trade Action</th>
+                  <th rowspan="2" style="vertical-align:middle;">Desk Stance</th>
+                </tr>
+                <tr>
+                  <th>Long</th>
+                  <th>Short</th>
+                  <th>Net Fut</th>
+                  <th style="color:#38bdf8;">Fut Shift</th>
+                  <th style="color:#10b981;">Long</th>
+                  <th style="color:#ef4444;">Short</th>
+                  <th>Net CE</th>
+                  <th style="color:#34d399;">CE Shift</th>
+                  <th style="color:#10b981;">Long</th>
+                  <th style="color:#ef4444;">Short</th>
+                  <th>Net PE</th>
+                  <th style="color:#fb7185;">PE Shift</th>
+                  <th>Long</th>
+                  <th>Short</th>
+                  <th style="color:#38bdf8;">Stk Shift</th>
+                </tr>
+              </thead>
+              <tbody id="smParticipantTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Row 3: Official Major Indices Cash Delivery Absorption Benchmark Table -->
+        <div class="sm-card sm-table-card" style="margin-top: 16px;">
+          <div class="sm-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h4 style="margin:0; font-size:15px; font-weight:800; color:#0f172a;">🏢 Major Indices Cash Delivery Absorption &amp; Delivery Averages (EOD)</h4>
+              <span class="matrix-subtitle">Institutional Demat absorption benchmarks across Nifty 50, Bank Nifty, IT, Auto, FMCG, Metal, Pharma, Energy, and FinNifty</span>
+            </div>
+            <span class="badge-tag" style="background:#eff6ff; color:#1d4ed8; font-weight:700; border:1px solid #bfdbfe;">NSE Cash Bhavcopy EOD</span>
+          </div>
+          
+          <div class="wpcr-table-wrap" style="overflow-x: auto;">
+            <table class="wpcr-data-table sm-table" id="smIndicesDeliveryTable">
+              <thead>
+                <tr>
+                  <th>Major Index</th>
+                  <th>Stocks</th>
+                  <th>Day Delivery %</th>
+                  <th>5-Day Delivery Avg</th>
+                  <th>Volume Surge / Shock</th>
+                  <th>Cash Delivery Turnover</th>
+                  <th>Total Traded Turnover</th>
+                  <th>Acc / Dist Count</th>
+                  <th>Institutional Absorption Stance</th>
+                </tr>
+              </thead>
+              <tbody id="smIndicesDeliveryTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div> <!-- /panelSmartMoney -->
+
+      <!-- ================================================================
+           Panel 4: Delivery Desk (StockEdge + Moneycontrol Advanced Edition)
+           ================================================================ -->
+      <div id="panelDelivery" class="tab-panel">
+        
+        <!-- Header Controls Bar -->
+        <section class="controls sm-controls" style="margin-bottom: 14px;">
+          <div class="ctrl-group" style="flex-wrap:wrap; gap:10px;">
+            <label>
+              <span>Trading Session</span>
+              <select id="delivSessionSelect" class="ctrl-select" style="font-weight:700; min-width:160px;">
+                <option value="2026-08-31" selected>31 Aug 2026 (Latest)</option>
+              </select>
+            </label>
+            <label>
+              <span>Custom Date</span>
+              <input id="delivDateInput" type="date" style="font-size:12px;">
+            </label>
+            <div class="sm-quick-dates" id="delivQuickDates">
+              <!-- Dynamically populated buttons -->
+            </div>
+            <label>
+              <span>Universe / Index</span>
+              <select id="delivUniverseSelect" class="ctrl-select" style="font-weight:600;">
+                <option value="nifty50" selected>Nifty 50 Constituents</option>
+                <option value="banknifty">Bank Nifty (12 Banking Leaders)</option>
+                <option value="niftyit">Nifty IT (Tech Leaders)</option>
+                <option value="niftyauto">Nifty Auto (Automobile Giants)</option>
+                <option value="niftyfmcg">Nifty FMCG (Consumer Goods)</option>
+                <option value="niftymetal">Nifty Metal (Steel &amp; Mining)</option>
+                <option value="niftypharma">Nifty Pharma (Healthcare)</option>
+                <option value="niftyenergy">Nifty Energy (Oil/Gas &amp; Power)</option>
+                <option value="finnifty">FinNifty (Financial Services)</option>
+                <option value="fno">F&amp;O Liquid Equities</option>
+                <option value="all">All Listed Equities (1800+)</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="ctrl-actions" style="margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span class="sm-eod-badge" id="delivStatusBadge">🟢 NSE Cash Delivery Bhavcopy Active</span>
+            <button id="delivRefreshBtn" class="ctrl-btn primary" type="button">🔄 Scan Deliveries</button>
+          </div>
+        </section>
+
+        <!-- Major Indices Delivery Absorption Benchmark Strip -->
+        <div class="deliv-indices-strip-card" style="margin-bottom:14px; background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+            <strong style="font-size:12.5px; color:#0f172a; display:flex; align-items:center; gap:6px;">
+              🏢 Major Indices Cash Delivery Absorption Benchmark (EOD)
+            </strong>
+            <span style="font-size:11px; color:#64748b;">Click any index below to filter stock matrix</span>
+          </div>
+          <div class="deliv-indices-grid" id="delivIndicesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Filter Presets Bar & Search -->
+        <div class="deliv-filter-bar" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+          <div class="filter-pill-group" id="delivFilterGroup" style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="filter-pill active" data-filter="all">All Stocks</button>
+            <button type="button" class="filter-pill" data-filter="shocks">⚡ Delivery Volume Shocks (&gt;1.3x)</button>
+            <button type="button" class="filter-pill" data-filter="accumulation">🟢 Strong Accumulation</button>
+            <button type="button" class="filter-pill" data-filter="distribution">🔴 Heavy Distribution</button>
+            <button type="button" class="filter-pill" data-filter="high_deliv">💎 Ultra-High Delivery (&gt;60%)</button>
+          </div>
+          <div class="deliv-search-wrap" style="margin-left:auto; display:flex; gap:6px; align-items:center;">
+            <input type="text" id="delivSearchInput" class="ctrl-input" style="padding:6px 12px; font-size:12px; border-radius:6px; border:1px solid #cbd5e1; width:200px;" placeholder="Search stock (e.g. RELIANCE)..." autocomplete="off">
+            <button id="delivInspectBtn" class="ctrl-btn primary" type="button" style="padding:6px 12px; font-size:12px; font-weight:700;">🔍 Inspect Stock</button>
+          </div>
+        </div>
+
+        <!-- NSE Official Stock Delivery Inspector Card -->
+        <div class="nse-stock-inspector" id="stockInspectorCard" style="display:none; margin-bottom:16px; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; padding:16px; box-shadow:0 4px 12px rgba(0,0,0,0.06);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 id="inspectSymbol" style="margin:0; font-size:18px; font-weight:800; color:#0f172a;">RELIANCE</h3>
+                <span style="background:#e0e7ff; color:#3730a3; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:4px;">NSE EQ</span>
+                <span id="inspectSignalBadge" class="deliv-sig-pill" style="font-size:11px;">STRONG_ACCUMULATION</span>
+              </div>
+              <div style="font-size:12px; color:#64748b; margin-top:2px;" id="inspectSubtitle">Official NSE Security-Wise Delivery Position</div>
+            </div>
+            <button type="button" id="closeInspectorBtn" style="background:transparent; border:none; font-size:22px; cursor:pointer; color:#94a3b8;">&times;</button>
+          </div>
+
+          <div class="nse-inspect-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:14px;">
+            <div class="nse-inspect-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
+              <div style="font-size:10.5px; color:#64748b; font-weight:600;">CLOSE (CMP)</div>
+              <div style="font-size:18px; font-weight:800; color:#0f172a;" id="inspectClose">₹1,277.00</div>
+              <div style="font-size:11px; font-weight:700;" id="inspectChange">-0.78%</div>
+            </div>
+            <div class="nse-inspect-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
+              <div style="font-size:10.5px; color:#64748b; font-weight:600;">DAY'S TRADED QTY</div>
+              <div style="font-size:16px; font-weight:800; color:#0f172a;" id="inspectTradedQty">3,48,71,137</div>
+              <div style="font-size:10.5px; color:#64748b;" id="inspectTrades">52,727 Trades</div>
+            </div>
+            <div class="nse-inspect-box" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px;">
+              <div style="font-size:10.5px; color:#1d4ed8; font-weight:600;">DELIVERABLE QTY</div>
+              <div style="font-size:16px; font-weight:800; color:#1d4ed8;" id="inspectDelivQty">1,85,63,940</div>
+              <div style="font-size:10.5px; color:#1d4ed8;">Absorption: In Demat</div>
+            </div>
+            <div class="nse-inspect-box" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px;">
+              <div style="font-size:10.5px; color:#15803d; font-weight:600;">DELIVERY TO TRADED %</div>
+              <div style="font-size:20px; font-weight:900; color:#15803d;" id="inspectDelivPer">53.26%</div>
+              <div style="font-size:10.5px; color:#15803d;" id="inspectAvg5dPer">5D Avg: 48.5%</div>
+            </div>
+            <div class="nse-inspect-box" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
+              <div style="font-size:10.5px; color:#64748b; font-weight:600;">DELIVERY VALUE (CR)</div>
+              <div style="font-size:16px; font-weight:800; color:#16a34a;" id="inspectDelivVal">₹2,373.12 Cr</div>
+              <div style="font-size:10.5px; color:#64748b;" id="inspectShock">Volume Shock: 1.42x</div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+            <span style="font-size:11.5px; color:#475569;">Want to view multi-session delivery history for this stock?</span>
+            <button type="button" class="ctrl-btn" id="inspectViewHistoryBtn" style="font-size:11.5px; padding:4px 10px; font-weight:700;">📅 Open Date-Wise Delivery Table</button>
+          </div>
+        </div>
+
+        <!-- Row 1: KPI Cards -->
+        <div class="sm-kpi-grid" style="margin-top: 14px;">
+          <!-- KPI 1 -->
+          <div class="sm-card">
+            <div class="sm-card-header">
+              <span class="sm-card-title">📦 Market Delivery Turnover</span>
+            </div>
+            <div class="sm-gauge-body">
+              <div class="sm-gauge-ratio-numbers">
+                <div>
+                  <span class="ratio-label" style="color:var(--text-muted);">AVG DELIVERY %</span>
+                  <strong class="ratio-val" id="kpiDelivAvgPct" style="color:#2563eb;">--%</strong>
+                </div>
+                <div style="text-align:right;">
+                  <span class="ratio-label" style="color:#16a34a;">DELIVERY VALUE</span>
+                  <strong class="ratio-val" id="kpiDelivValCr" style="font-size:20px; color:#16a34a;">₹-- Cr</strong>
+                </div>
+              </div>
+              <div class="sm-zone-desc" id="kpiDelivSummaryDesc">
+                Analyzing cash delivery commitments across the selected universe.
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI 2 -->
+          <div class="sm-card">
+            <div class="sm-card-header">
+              <span class="sm-card-title">🏛️ Institutional Accumulation vs Distribution</span>
+            </div>
+            <div class="sm-gauge-body">
+              <div class="sm-gauge-ratio-numbers">
+                <div>
+                  <span class="ratio-label" style="color:#16a34a;">ACCUMULATION STOCKS</span>
+                  <strong class="ratio-val" id="kpiAccCount" style="color:#16a34a;">--</strong>
+                </div>
+                <div style="text-align:right;">
+                  <span class="ratio-label" style="color:#dc2626;">DISTRIBUTION STOCKS</span>
+                  <strong class="ratio-val" id="kpiDistCount" style="color:#dc2626;">--</strong>
+                </div>
+              </div>
+              <div class="sm-split-bar-wrap">
+                <div class="sm-split-bar-long" id="kpiAccBar" style="width: 50%;"></div>
+                <div class="sm-split-bar-short" id="kpiDistBar" style="width: 50%;"></div>
+              </div>
+              <div class="sm-metric-subrow" style="margin-top:6px;">
+                <span>⚡ Delivery Volume Surge Candidates:</span>
+                <strong id="kpiShockCount" style="color:#f59e0b;">-- stocks</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI 3 -->
+          <div class="sm-card">
+            <div class="sm-card-header">
+              <span class="sm-card-title">🏆 Top Institutional Delivery Anchors</span>
+            </div>
+            <div class="sm-trap-body">
+              <div class="deliv-mini-list" id="kpiTopDelivList" style="display:flex; flex-direction:column; gap:6px;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Comprehensive Delivery Matrix Table -->
+        <div class="sm-card sm-table-card" style="margin-top: 14px;">
+          <div class="sm-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h4>📋 Security-Wise Delivery Volume &amp; Percentage Matrix</h4>
+              <span class="matrix-subtitle">Official NSE delivery breakdown with 5-Day rolling baseline, shock multiplier, and institutional signal. Click any row or button to view Date-Wise history.</span>
+            </div>
+            <div>
+              <span class="badge" id="delivStockCountBadge" style="background:#f1f5f9; color:#475569; font-weight:700; padding:4px 8px; border-radius:4px;">0 Stocks</span>
+            </div>
+          </div>
+
+          <div class="wpcr-table-wrap" style="overflow-x: auto; max-height: 620px;">
+            <table class="wpcr-data-table sm-table deliv-table" id="delivTable">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Last Price (₹)</th>
+                  <th>Change %</th>
+                  <th>Traded Qty</th>
+                  <th>Deliverable Qty</th>
+                  <th style="min-width: 140px;">Delivery %</th>
+                  <th>5D Avg Deliv %</th>
+                  <th>Shock vs 5D</th>
+                  <th>Turnover (₹ Cr)</th>
+                  <th>Delivery (₹ Cr)</th>
+                  <th>Institutional Signal</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="delivTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- StockEdge-Style Date-Wise Delivery Drilldown Modal -->
+        <div id="delivDrilldownModal" class="deliv-modal-overlay" style="display:none;">
+          <div class="deliv-modal-content">
+            <div class="deliv-modal-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+              <div>
+                <h3 id="drilldownTitle" style="margin:0; font-size:16px; font-weight:800; color:#0f172a;">RELIANCE - Date-Wise Deliveries</h3>
+                <span id="drilldownSubtitle" style="font-size:11.5px; color:var(--text-muted);">Historical multi-session delivery position &amp; Demat absorption</span>
+              </div>
+              <button type="button" class="deliv-modal-close" id="drilldownCloseBtn" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#64748b;">&times;</button>
+            </div>
+            <div class="deliv-modal-body">
+              <div class="wpcr-table-wrap" style="overflow-x: auto; max-height: 420px;">
+                <table class="wpcr-data-table sm-table" id="drilldownTable">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Close Price (₹)</th>
+                      <th>Chg %</th>
+                      <th>Traded Qty</th>
+                      <th>Deliverable Qty</th>
+                      <th style="min-width:140px;">Delivery %</th>
+                      <th>Deliverable Turnover</th>
+                      <th>Trades</th>
+                    </tr>
+                  </thead>
+                  <tbody id="drilldownTableBody">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div> <!-- /delivDrilldownModal -->
+
+      </div> <!-- /panelDelivery -->
+
+      <!-- ================================================================
+           Panel 5: MTF Leverage Desk (Margin Trading Facility Analytics)
+           ================================================================ -->
+      <div id="panelMtf" class="tab-panel mta-panel">
+        <!-- Control & Status Band -->
+        <section class="control-band" aria-label="MTF Controls" style="margin-bottom:14px;">
+          <div class="ctrl-group" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700;">
+              <span>Session Date:</span>
+              <select id="mtfSessionSelect" class="ctrl-select" style="font-weight:700; padding:4px 8px; font-size:12px;">
+                <option value="auto">Loading Sessions...</option>
+              </select>
+            </label>
+            <button id="mtfRefreshBtn" class="btn primary btn-compact" type="button">🔄 Sync Latest NSE MTF File</button>
+            <span id="mtaAsOfStatus" style="font-size:11px; color:#64748b; margin-left:4px;"></span>
+          </div>
+        </section>
+
+        <!-- Hero KPI Strip -->
+        <div class="mta-hero-strip" id="mtaHeroStrip">
+          <div class="mta-hero-card mta-hero-nse">
+            <div class="mta-hero-label">NSE MTF Book</div>
+            <div class="mta-hero-val" id="mtfNseVal">₹0 Cr</div>
+            <div class="mta-hero-sub" id="mtfNseSub">95%+ market share</div>
+            <div class="mta-hero-badge mta-badge-nse">NSE</div>
+          </div>
+          <div class="mta-hero-card mta-hero-bse">
+            <div class="mta-hero-label">BSE MTF Book</div>
+            <div class="mta-hero-val" id="mtfBseVal">₹0 Cr</div>
+            <div class="mta-hero-sub" id="mtfBseSub">Secondary exchange</div>
+            <div class="mta-hero-badge mta-badge-bse">BSE</div>
+          </div>
+          <div class="mta-hero-card mta-hero-combined">
+            <div class="mta-hero-label">Combined Book</div>
+            <div class="mta-hero-val" id="mtfCombinedVal">₹0 Cr</div>
+            <div class="mta-hero-sub" id="mtfCombinedSub">NSE + BSE outstanding</div>
+            <div class="mta-hero-badge" style="background:rgba(255,255,255,0.15);color:#fff;">TOTAL</div>
+          </div>
+          <div class="mta-hero-card mta-hero-stocks">
+            <div class="mta-hero-label">Active Securities</div>
+            <div class="mta-hero-val" id="mtaActiveSecurities">—</div>
+            <div class="mta-hero-sub">Stocks with MTF exposure</div>
+            <div class="mta-hero-badge" style="background:rgba(139,92,246,0.2);color:#a78bfa;border:1px solid rgba(139,92,246,0.4);">SCREENER</div>
+          </div>
+          <div class="mta-hero-card mta-hero-fresh">
+            <div class="mta-hero-label">Fresh Exposure Today</div>
+            <div class="mta-hero-val" id="mtaFreshExposure">—</div>
+            <div class="mta-hero-sub">New margin lent today</div>
+            <div class="mta-hero-badge" style="background:rgba(217,119,6,0.2);color:#fbbf24;border:1px solid rgba(217,119,6,0.4);">DAILY</div>
+          </div>
+        </div>
+
+        <!-- Inner Sub-Tab Navigation -->
+        <nav class="mta-inner-nav" aria-label="MTF Analytics Sub-navigation">
+          <button class="mta-inner-tab active" data-subtab="overview" onclick="mtaSwitchTab('overview')">📊 Overview</button>
+          <button class="mta-inner-tab" data-subtab="topstocks" onclick="mtaSwitchTab('topstocks')">🔥 Top Stocks</button>
+          <button class="mta-inner-tab" data-subtab="retail" onclick="mtaSwitchTab('retail')">👥 Retail vs Institutional</button>
+          <button class="mta-inner-tab" data-subtab="movers" onclick="mtaSwitchTab('movers')">⚡ Movers &amp; Squeeze</button>
+          <button class="mta-inner-tab" data-subtab="sectors" onclick="mtaSwitchTab('sectors')">🏭 Sector Breakdown</button>
+          <button class="mta-inner-tab" data-subtab="trend" onclick="mtaSwitchTab('trend')">📈 Historical Trend</button>
+          <button class="mta-inner-tab" data-subtab="broker" onclick="mtaSwitchTab('broker')">🏦 Broker Desk</button>
+          <button class="mta-inner-tab" data-subtab="global" onclick="mtaSwitchTab('global')">🌍 Global Lens</button>
+          <button class="mta-inner-tab" data-subtab="calculator" onclick="mtaSwitchTab('calculator')">🧮 MTF Calculator</button>
+          <button class="mta-inner-tab" data-subtab="compare" onclick="mtaSwitchTab('compare')">⚖️ Compare Desk</button>
+          <button class="mta-inner-tab" data-subtab="fragility" onclick="mtaSwitchTab('fragility')">🎯 Fragility Radar</button>
+        </nav>
+
+        <!-- ── Sub-tab: Overview ─────────────────────────────────────── -->
+        <div class="mta-inner-panel active" id="mtaPanel-overview">
+          <div class="mta-overview-grid">
+            <!-- Left: Session Activity -->
+            <div class="mta-section">
+              <div class="mta-section-header">
+                <span>📅 Session Activity</span>
+                <span id="mtaSessionDateBadge" class="mta-badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">—</span>
+              </div>
+              <div class="mta-session-cards" id="mtaSessionCards">
+                <div class="mta-session-card">
+                  <div class="mta-session-label">Fresh Exposure</div>
+                  <div class="mta-session-val text-blue" id="mtaDtFresh">—</div>
+                  <div class="mta-session-sub">New MTF positions opened</div>
+                </div>
+                <div class="mta-session-card">
+                  <div class="mta-session-label">Exposure Liquidated</div>
+                  <div class="mta-session-val text-red" id="mtaDtLiquidated">—</div>
+                  <div class="mta-session-sub">Positions closed / squared off</div>
+                </div>
+                <div class="mta-session-card">
+                  <div class="mta-session-label">Net Change Today</div>
+                  <div class="mta-session-val" id="mtaDtNet">—</div>
+                  <div class="mta-session-sub">Fresh minus liquidated</div>
+                </div>
+                <div class="mta-session-card">
+                  <div class="mta-session-label">Securities Count</div>
+                  <div class="mta-session-val text-purple" id="mtaDtSecurities">—</div>
+                  <div class="mta-session-sub">Stocks traded on MTF today</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: MTF Pulse Sparkline -->
+            <div class="mta-section">
+              <div class="mta-section-header">
+                <span>⚡ MTF Pulse — 30-Day NSE Book</span>
+                <span class="mta-badge mta-badge-nse">LIVE TREND</span>
+              </div>
+              <div class="mta-sparkline" id="mtaPulseSparkline">
+                <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:13px;">Loading trend data...</div>
+              </div>
+              <div class="mta-spark-legend">
+                <span class="mta-spark-dot" style="background:#2563eb;"></span><span>NSE Outstanding (₹ Cr)</span>
+                <span class="mta-spark-dot" style="background:#16a34a; margin-left:16px;"></span><span>BSE Outstanding</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top 10 Stocks Table -->
+          <div class="mta-section" style="margin-top:16px;">
+            <div class="mta-section-header">
+              <span>🏆 Top 10 Most Funded Stocks</span>
+              <span class="mta-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;">Concentration Leaders</span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="mta-table" id="mtaTop10Table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Symbol</th>
+                    <th>Name</th>
+                    <th>Segment</th>
+                    <th style="text-align:right;">MTF Book (₹ Cr)</th>
+                    <th style="text-align:right;">Share of Book</th>
+                    <th style="text-align:right;">Financed Qty</th>
+                  </tr>
+                </thead>
+                <tbody id="mtaTop10Body">
+                  <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px;">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: Top Stocks ───────────────────────────────────── -->
+        <div class="mta-inner-panel" id="mtaPanel-topstocks">
+          <div class="mta-section">
+            <div class="mta-section-header" style="flex-wrap:wrap; gap:10px;">
+              <div>
+                <span>🔥 Stock-Wise MTF Funded Book Screener</span>
+                <div id="mtfScreenerMeta" style="font-size:11px;color:#64748b;margin-top:3px;">Loading official NSE stockwise disclosure...</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <input id="mtfStockSearch" type="text" placeholder="🔍 Search symbol..." class="mta-input">
+                <select id="mtfStockFilter" class="mta-select">
+                  <option value="all">All MTF Stocks</option>
+                  <option value="nse">NSE Only</option>
+                  <option value="bse">BSE Only</option>
+                  <option value="fno">F&amp;O Segment</option>
+                  <option value="top50">Top 50 Heavyweights</option>
+                </select>
+                <select id="mtfStockSort" class="mta-select" aria-label="Sort MTF stocks">
+                  <option value="book">Sort: MTF Book</option>
+                  <option value="share">Sort: Concentration</option>
+                  <option value="quantity">Sort: Qty Financed</option>
+                  <option value="symbol">Sort: Symbol A-Z</option>
+                </select>
+                <span class="mta-badge" id="mtfStockCountBadge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">0 Stocks</span>
+                <button type="button" id="mtaExportCsvBtn" onclick="mtaExportCsv()" class="btn btn-compact" style="background:#059669;color:#fff;font-weight:700;padding:5px 12px;font-size:11px;border-radius:6px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">📥 Export CSV</button>
+              </div>
+            </div>
+            <div style="overflow-x:auto;max-height:600px;">
+              <table class="mta-table mta-table-sticky">
+                <thead>
+                  <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Symbol</th>
+                    <th>Company Name</th>
+                    <th style="text-align:center;">Exchange</th>
+                    <th style="text-align:right;">MTF Book (₹ Cr)</th>
+                    <th style="text-align:right;">Financed Qty</th>
+                    <th style="text-align:right;">Share of Book</th>
+                    <th style="text-align:center;">Segment</th>
+                    <th style="text-align:center;">Risk</th>
+                  </tr>
+                </thead>
+                <tbody id="mtfStockTableBody">
+                  <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:20px;">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: Retail vs Institutional ──────────────────────── -->
+        <!-- ── Sub-tab: Retail vs Institutional ──────────────────────── -->
+        <div class="mta-inner-panel" id="mtaPanel-retail">
+          <!-- Summary Cards Strip -->
+          <div class="mta-signal-strip" id="mtaSignalStrip">
+            <div class="mta-signal-card mta-signal-retail" style="border-left:4px solid #d97706;">
+              <div class="mta-signal-icon">🔴</div>
+              <div class="mta-signal-title">Retail-Classified Book</div>
+              <div class="mta-signal-val text-amber" id="mtaSumRetailBook">—</div>
+              <div class="mta-signal-desc" id="mtaSigRetailDesc">High turnover, trending F&amp;O scrips</div>
+            </div>
+            <div class="mta-signal-card mta-signal-inst" style="border-left:4px solid #16a34a;">
+              <div class="mta-signal-icon">🏛️</div>
+              <div class="mta-signal-title">Institutional / HNI Book</div>
+              <div class="mta-signal-val text-green" id="mtaSumInstBook">—</div>
+              <div class="mta-signal-desc" id="mtaSigInstDesc">Nifty 50, Bluechips &amp; large-cap delivery blocks</div>
+            </div>
+            <div class="mta-signal-card mta-signal-warn" style="border-left:4px solid #dc2626;">
+              <div class="mta-signal-icon">⚠️</div>
+              <div class="mta-signal-title">Speculative Penny Debt</div>
+              <div class="mta-signal-val text-red" id="mtaSumSpecBook">—</div>
+              <div class="mta-signal-desc">Low-priced stocks (&lt;₹25 debt/sh) with heavy retail crowding</div>
+            </div>
+            <div class="mta-signal-card" style="border-left:4px solid #2563eb;background:#ffffff;">
+              <div class="mta-signal-icon">⚖️</div>
+              <div class="mta-signal-title">Retail / Institutional Ratio</div>
+              <div class="mta-signal-val text-blue" id="mtaSumRatio">—</div>
+              <div class="mta-signal-desc" id="mtaRegimeDesc">Market leverage regime status</div>
+            </div>
+          </div>
+
+          <!-- Dual Side-by-Side Quick Comparison (Gives instant clarity & confidence) -->
+          <div class="mta-dual-grid">
+            <!-- Left: Top Retail Heavyweights -->
+            <div class="mta-side-card" style="border-top:3px solid #d97706;">
+              <div class="mta-side-header" style="background:#fffbeb;color:#92400e;">
+                <span>🔴 Top Retail Leverage Heavyweights</span>
+                <span class="mta-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;">Crowd Leaders</span>
+              </div>
+              <div class="mta-side-body">
+                <table class="mta-table" style="font-size:11px;margin:0;">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th style="text-align:right;">Book (₹ Cr)</th>
+                      <th style="text-align:right;">Debt / Share</th>
+                      <th style="text-align:center;">Segment</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mtaTopRetailList">
+                    <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:12px;">Loading retail leaders...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Top Institutional Anchors -->
+            <div class="mta-side-card" style="border-top:3px solid #16a34a;">
+              <div class="mta-side-header" style="background:#f0fdf4;color:#166534;">
+                <span>🏛️ Top Institutional / Wealth Desk Anchors</span>
+                <span class="mta-badge" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;">Bluechip Blocks</span>
+              </div>
+              <div class="mta-side-body">
+                <table class="mta-table" style="font-size:11px;margin:0;">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th style="text-align:right;">Book (₹ Cr)</th>
+                      <th style="text-align:right;">Debt / Share</th>
+                      <th style="text-align:center;">Segment</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mtaTopInstList">
+                    <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:12px;">Loading institutional anchors...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Classification Table with Segmented Pills & Live Search -->
+          <div class="mta-section" style="margin-top:16px;">
+            <div class="mta-section-header" style="flex-wrap:wrap;gap:12px;">
+              <div>
+                <span style="font-size:13px;font-weight:800;color:#0f172a;">🔬 Stock Leverage Classification Table</span>
+                <div style="font-size:11px;color:#64748b;margin-top:2px;">Segmented by market-cap, ticket size, and F&amp;O participation</div>
+              </div>
+              <!-- Segmented Pills Bar -->
+              <div class="mta-pills-bar" id="mtaRetailPills">
+                <button type="button" class="mta-pill active" data-filter="ALL" onclick="mtaSetRetailFilter('ALL')">All (<span id="mtaPillAllCount">0</span>)</button>
+                <button type="button" class="mta-pill" data-filter="INSTITUTIONAL BUILD" onclick="mtaSetRetailFilter('INSTITUTIONAL BUILD')">🏛️ Institutional (<span id="mtaPillInstCount">0</span>)</button>
+                <button type="button" class="mta-pill" data-filter="RETAIL HEAVY" onclick="mtaSetRetailFilter('RETAIL HEAVY')">🔴 Retail Heavy (<span id="mtaPillRetailCount">0</span>)</button>
+                <button type="button" class="mta-pill" data-filter="SPECULATIVE" onclick="mtaSetRetailFilter('SPECULATIVE')">⚠️ Speculative (<span id="mtaPillSpecCount">0</span>)</button>
+                <button type="button" class="mta-pill" data-filter="MOMENTUM PLAY" onclick="mtaSetRetailFilter('MOMENTUM PLAY')">⚡ Momentum (<span id="mtaPillMomCount">0</span>)</button>
+              </div>
+              <!-- Search & Export -->
+              <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+                <input id="mtaRetailSearchInput" type="text" placeholder="🔍 Search symbol / name..." class="mta-input" style="width:190px;" oninput="mtaFilterRetailTable()">
+                <button type="button" onclick="mtaExportRetailCsv()" class="btn btn-compact" style="background:#059669;color:#fff;font-weight:700;padding:5px 12px;font-size:11px;border-radius:6px;border:none;cursor:pointer;">📥 Export CSV</button>
+              </div>
+            </div>
+            <div style="overflow-x:auto;max-height:540px;">
+              <table class="mta-table mta-table-sticky">
+                <thead>
+                  <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Symbol</th>
+                    <th>Company Name</th>
+                    <th style="text-align:center;">Segment</th>
+                    <th style="text-align:right;">MTF Book (₹ Cr)</th>
+                    <th style="text-align:right;">Debt / Share (₹)</th>
+                    <th style="text-align:center;">Classification</th>
+                    <th>Signal Rationale / Desk Insight</th>
+                  </tr>
+                </thead>
+                <tbody id="mtaRetailTableBody">
+                  <tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:20px;">Loading classification analysis...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Heatmap -->
+          <div class="mta-section" style="margin-top:16px;">
+            <div class="mta-section-header">
+              <span>🗺️ Stock Concentration Heatmap</span>
+              <span class="mta-badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;">Size = MTF Book | Color = Classification</span>
+            </div>
+            <div class="mta-heatmap" id="mtaHeatmap">
+              <div style="color:#94a3b8;font-size:13px;padding:20px;">Loading heatmap...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: Movers & Squeeze Radar ──────────────────────── -->
+        <div class="mta-inner-panel" id="mtaPanel-movers">
+          <!-- 4 Grid Sections -->
+          <div class="mta-movers-grid">
+            <!-- 1. Top Fresh Accumulators (₹ Cr) -->
+            <div class="mta-section">
+              <div class="mta-section-header">
+                <span>🚀 Top Fresh Margin Inflows (₹ Cr)</span>
+                <span class="mta-badge" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;">Session Delta</span>
+              </div>
+              <div style="overflow-x:auto;">
+                <table class="mta-table">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th style="text-align:right;">Book (₹ Cr)</th>
+                      <th style="text-align:right;">Delta (₹ Cr)</th>
+                      <th style="text-align:right;">% Surge</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mtaMoversAccumBody">
+                    <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:16px;">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 2. Top Unwinding / Deleveraged (₹ Cr) -->
+            <div class="mta-section">
+              <div class="mta-section-header">
+                <span>🔻 Top Margin Unwinding / Outflows (₹ Cr)</span>
+                <span class="mta-badge" style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;">Deleveraging</span>
+              </div>
+              <div style="overflow-x:auto;">
+                <table class="mta-table">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th style="text-align:right;">Book (₹ Cr)</th>
+                      <th style="text-align:right;">Delta (₹ Cr)</th>
+                      <th style="text-align:right;">% Unwind</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mtaMoversUnwindBody">
+                    <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:16px;">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 3. Top % MTF Gainers -->
+            <div class="mta-section">
+              <div class="mta-section-header">
+                <span>📈 Fastest MTF % Surges</span>
+                <span class="mta-badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #93c5fd;">&gt;₹5 Cr Book</span>
+              </div>
+              <div style="overflow-x:auto;">
+                <table class="mta-table">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th style="text-align:right;">Book (₹ Cr)</th>
+                      <th style="text-align:right;">Prev Book</th>
+                      <th style="text-align:right;">% Growth</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mtaMoversGainersBody">
+                    <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:16px;">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 4. Squeeze & Liquidation Radar -->
+            <div class="mta-section">
+              <div class="mta-section-header">
+                <span>⚠️ Margin Squeeze &amp; Liquidation Radar</span>
+                <span class="mta-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;">Alert Matrix</span>
+              </div>
+              <div style="overflow-x:auto;">
+                <table class="mta-table">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th>Trigger Type</th>
+                      <th style="text-align:right;">Book (₹ Cr)</th>
+                      <th>Signal Note</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mtaMoversRadarBody">
+                    <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:16px;">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: Sector Breakdown ─────────────────────────────── -->
+        <div class="mta-inner-panel" id="mtaPanel-sectors">
+          <!-- Sector Full Table & Bar Comparison -->
+          <div class="mta-section">
+            <div class="mta-section-header">
+              <span>🏭 Sector-Wise MTF Book &amp; Concentration Distribution</span>
+              <span class="mta-badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">Total Book ₹1.49L Cr</span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="mta-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Sector Industry</th>
+                    <th style="text-align:right;">MTF Book (₹ Cr)</th>
+                    <th style="text-align:left;width:220px;">Market Share</th>
+                    <th style="text-align:right;">Share %</th>
+                    <th style="text-align:center;">Active Stocks</th>
+                    <th>Top Funded Stock</th>
+                  </tr>
+                </thead>
+                <tbody id="mtaSectorTableBody">
+                  <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px;">Loading sectors...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="mta-inner-panel" id="mtaPanel-trend">
+          <div class="mta-section">
+            <div class="mta-section-header" style="flex-wrap:wrap;gap:10px;">
+              <div>
+                <span>📈 NSE + BSE MTF Outstanding — Historical Chart</span>
+                <div style="font-size:11px;color:#64748b;margin-top:2px;">Source: mtf.trading/mtf_daily_totals.json</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <div class="mta-tf-group" id="mtaTfGroup">
+                  <button class="mta-tf-btn" data-tf="1M" onclick="mtaSetTimeframe('1M')">1M</button>
+                  <button class="mta-tf-btn" data-tf="3M" onclick="mtaSetTimeframe('3M')">3M</button>
+                  <button class="mta-tf-btn active" data-tf="6M" onclick="mtaSetTimeframe('6M')">6M</button>
+                  <button class="mta-tf-btn" data-tf="1Y" onclick="mtaSetTimeframe('1Y')">1Y</button>
+                  <button class="mta-tf-btn" data-tf="3Y" onclick="mtaSetTimeframe('3Y')">3Y</button>
+                  <button class="mta-tf-btn" data-tf="ALL" onclick="mtaSetTimeframe('ALL')">ALL</button>
+                </div>
+                <label class="mta-toggle-label">
+                  <input type="checkbox" id="mtaShowFreshLiq" onchange="mtaRenderTrendChart()" style="margin-right:4px;">
+                  Fresh vs Liquidated
+                </label>
+              </div>
+            </div>
+
+            <!-- Trend Stats -->
+            <div class="mta-trend-stats" id="mtaTrendStats">
+              <div class="mta-tstat">
+                <div class="mta-tstat-label">Peak NSE Book</div>
+                <div class="mta-tstat-val" id="mtaTsPeak">—</div>
+              </div>
+              <div class="mta-tstat">
+                <div class="mta-tstat-label">Current vs Peak</div>
+                <div class="mta-tstat-val" id="mtaTsVsPeak">—</div>
+              </div>
+              <div class="mta-tstat">
+                <div class="mta-tstat-label">52W High</div>
+                <div class="mta-tstat-val" id="mtaTs52High">—</div>
+              </div>
+              <div class="mta-tstat">
+                <div class="mta-tstat-label">52W Low</div>
+                <div class="mta-tstat-val" id="mtaTs52Low">—</div>
+              </div>
+              <div class="mta-tstat">
+                <div class="mta-tstat-label">Data Points</div>
+                <div class="mta-tstat-val" id="mtaTsDataPts">—</div>
+              </div>
+            </div>
+
+            <!-- SVG Chart -->
+            <div class="mta-chart-container" id="mtaTrendChartContainer">
+              <svg id="mtaTrendSvg" width="100%" height="340" style="overflow:visible;display:block;"></svg>
+              <div class="mta-chart-tooltip" id="mtaChartTooltip" style="display:none;"></div>
+              <div style="display:flex;align-items:center;justify-content:center;height:340px;color:#94a3b8;font-size:13px;" id="mtaChartLoading">Loading historical data from mtf.trading...</div>
+            </div>
+            <div class="mta-chart-legend">
+              <span class="mta-spark-dot" style="background:#2563eb;"></span><span>NSE Outstanding (₹ Cr)</span>
+              <span class="mta-spark-dot" style="background:#16a34a;margin-left:18px;"></span><span>BSE Outstanding</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: Broker Desk ──────────────────────────────────── -->
+        <div class="mta-inner-panel" id="mtaPanel-broker">
+          <!-- Top 3 Broker Cards -->
+          <div class="mta-broker-top3" id="mtaBrokerTop3">
+            <!-- Populated dynamically -->
+          </div>
+          <!-- HHI Concentration Risk -->
+          <div class="mta-section" style="margin-bottom:16px;">
+            <div class="mta-section-header">
+              <span>📐 Concentration Risk — Herfindahl-Hirschman Index (HHI)</span>
+              <span class="mta-badge" id="mtaHhiBadge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;">—</span>
+            </div>
+            <div class="mta-hhi-row">
+              <div class="mta-hhi-stat">
+                <div class="mta-hhi-label">HHI Score</div>
+                <div class="mta-hhi-val" id="mtaHhiScore">—</div>
+                <div class="mta-hhi-sub">0–1000 = Low • 1000–1800 = Moderate • &gt;1800 = High concentration</div>
+              </div>
+              <div class="mta-hhi-stat">
+                <div class="mta-hhi-label">Top 3 Control</div>
+                <div class="mta-hhi-val text-amber" id="mtaTop3Share">—</div>
+                <div class="mta-hhi-sub">Of total disclosed broker book</div>
+              </div>
+              <div class="mta-hhi-stat">
+                <div class="mta-hhi-label">Total Brokers Disclosed</div>
+                <div class="mta-hhi-val text-blue" id="mtaBrokerCount">—</div>
+                <div class="mta-hhi-sub">Brokers reporting MTF book data</div>
+              </div>
+            </div>
+          </div>
+          <!-- Full Broker Table -->
+          <div class="mta-section">
+            <div class="mta-section-header">
+              <span>🏦 Broker-Wise Disclosed MTF Book</span>
+              <span class="mta-badge mta-badge-nse">Ranked by Book Size</span>
+            </div>
+            <div style="overflow-x:auto;max-height:480px;">
+              <table class="mta-table mta-table-sticky">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Brokerage Firm</th>
+                    <th style="text-align:right;">MTF Book (₹ Cr)</th>
+                    <th style="text-align:left;width:220px;">Market Share</th>
+                    <th style="text-align:right;">Disclosed Share %</th>
+                    <th style="text-align:center;">As of Date</th>
+                  </tr>
+                </thead>
+                <tbody id="mtfBrokersTableBody">
+                  <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- Legacy broker bars (hidden, kept for backward compat) -->
+            <div id="mtfBrokerBars" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: Global Lens ──────────────────────────────────── -->
+        <div class="mta-inner-panel" id="mtaPanel-global">
+          <div class="mta-section">
+            <div class="mta-section-header">
+              <span>🌍 Global Stock Margin Debt Comparison</span>
+              <span class="mta-badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">FINRA / JPX / CMA / NSE / BSE</span>
+            </div>
+            <!-- Global Bar Chart -->
+            <div class="mta-global-bar-chart" id="mtaGlobalBarChart" style="margin-bottom:20px;padding:16px 0;">
+              <div style="color:#94a3b8;font-size:13px;text-align:center;">Loading global comparison...</div>
+            </div>
+            <!-- Global Table -->
+            <div style="overflow-x:auto;">
+              <table class="mta-table">
+                <thead>
+                  <tr>
+                    <th>Country</th>
+                    <th>Metric / Source</th>
+                    <th style="text-align:right;">INR Value (₹ Lk Cr)</th>
+                    <th style="text-align:right;">USD Value ($Bn)</th>
+                    <th style="text-align:right;">Margin Debt % of Mcap</th>
+                    <th style="text-align:center;">As of</th>
+                  </tr>
+                </thead>
+                <tbody id="mtfGlobalTableBody">
+                  <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: MTF Margin & Carrying Cost Calculator ────────────── -->
+        <div class="mta-inner-panel" id="mtaPanel-calculator">
+          <div class="mta-section">
+            <div class="mta-section-header">
+              <div>
+                <span style="font-size:14px;font-weight:800;color:var(--text-primary);">🧮 MTF Leverage &amp; Carrying Cost Calculator</span>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Simulate margin funding, broker loan borrowing rates, breakeven moves &amp; liquidation thresholds</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span class="mta-badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">SEBI Regulated MTF</span>
+              </div>
+            </div>
+
+            <div class="mta-calc-grid">
+              <!-- Left: Inputs -->
+              <div class="mta-calc-card">
+                <h4 style="margin:0 0 14px 0;font-size:13px;font-weight:700;color:var(--text-primary);border-bottom:1px solid var(--border-default);padding-bottom:8px;">⚙️ Position &amp; Margin Parameters</h4>
+                
+                <div class="mta-calc-field">
+                  <label style="font-size:11.5px;font-weight:700;color:var(--text-secondary);display:block;margin-bottom:4px;">Select Stock from Screener (Auto-fills Price):</label>
+                  <select id="mtaCalcStockSelect" class="mta-input" style="width:100%;" onchange="mtaOnCalcStockChange()">
+                    <option value="">-- Choose Stock to Pre-fill --</option>
+                  </select>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+                  <div class="mta-calc-field">
+                    <label style="font-size:11.5px;font-weight:700;color:var(--text-secondary);display:block;margin-bottom:4px;">Stock Price (₹)</label>
+                    <input type="number" id="mtaCalcPrice" class="mta-input" value="1500" min="1" step="0.5" oninput="mtaCalculateMargin()">
+                  </div>
+                  <div class="mta-calc-field">
+                    <label style="font-size:11.5px;font-weight:700;color:var(--text-secondary);display:block;margin-bottom:4px;">Your Capital / Margin (₹)</label>
+                    <input type="number" id="mtaCalcCapital" class="mta-input" value="50000" min="1000" step="5000" oninput="mtaCalculateMargin()">
+                  </div>
+                </div>
+
+                <div class="mta-calc-field" style="margin-top:14px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <label style="font-size:11.5px;font-weight:700;color:var(--text-secondary);">Leverage Multiplier: <strong id="mtaCalcLevLabel" style="color:#2563eb;">4.0x (25% Margin)</strong></label>
+                  </div>
+                  <input type="range" id="mtaCalcLevSlider" min="2" max="5" step="0.5" value="4" style="width:100%;margin-top:6px;cursor:pointer;" oninput="mtaOnLevSliderChange()">
+                  <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:2px;">
+                    <span>2.0x (50% Margin)</span>
+                    <span>3.0x (33.3%)</span>
+                    <span>4.0x (25%)</span>
+                    <span>5.0x (20% Max SEBI)</span>
+                  </div>
+                </div>
+
+                <div class="mta-calc-field" style="margin-top:14px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <label style="font-size:11.5px;font-weight:700;color:var(--text-secondary);">Planned Holding Period: <strong id="mtaCalcDaysLabel" style="color:#2563eb;">30 Days</strong></label>
+                  </div>
+                  <input type="range" id="mtaCalcDaysSlider" min="1" max="365" step="1" value="30" style="width:100%;margin-top:6px;cursor:pointer;" oninput="mtaOnDaysSliderChange()">
+                  <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-compact" style="font-size:10px;padding:2px 8px;" onclick="mtaSetCalcDays(7)">7D</button>
+                    <button type="button" class="btn btn-compact" style="font-size:10px;padding:2px 8px;" onclick="mtaSetCalcDays(15)">15D</button>
+                    <button type="button" class="btn btn-compact" style="font-size:10px;padding:2px 8px;" onclick="mtaSetCalcDays(30)">30D</button>
+                    <button type="button" class="btn btn-compact" style="font-size:10px;padding:2px 8px;" onclick="mtaSetCalcDays(90)">3M</button>
+                    <button type="button" class="btn btn-compact" style="font-size:10px;padding:2px 8px;" onclick="mtaSetCalcDays(180)">6M</button>
+                    <button type="button" class="btn btn-compact" style="font-size:10px;padding:2px 8px;" onclick="mtaSetCalcDays(365)">1Y</button>
+                  </div>
+                </div>
+
+                <div class="mta-calc-field" style="margin-top:14px;">
+                  <label style="font-size:11.5px;font-weight:700;color:var(--text-secondary);display:block;margin-bottom:4px;">Broker Annual Interest Rate (% p.a.)</label>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <input type="number" id="mtaCalcRate" class="mta-input" value="12.5" min="5" max="24" step="0.25" style="width:100px;" oninput="mtaCalculateMargin()">
+                    <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                      <button type="button" class="btn btn-compact" style="font-size:10px;padding:3px 7px;" onclick="mtaSetCalcRate(9.99)">mStock (9.99%)</button>
+                      <button type="button" class="btn btn-compact" style="font-size:10px;padding:3px 7px;" onclick="mtaSetCalcRate(12.5)">Angel / Dhan (12.5%)</button>
+                      <button type="button" class="btn btn-compact" style="font-size:10px;padding:3px 7px;" onclick="mtaSetCalcRate(15.0)">Traditional (15.0%)</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Results & Liquidation Trigger -->
+              <div class="mta-calc-card">
+                <h4 style="margin:0 0 14px 0;font-size:13px;font-weight:700;color:var(--text-primary);border-bottom:1px solid var(--border-default);padding-bottom:8px;">📊 Capital Power &amp; Carrying Cost Breakdown</h4>
+                
+                <div class="mta-calc-stat-grid">
+                  <div class="mta-calc-stat-box">
+                    <div class="mta-calc-stat-lbl">Total Purchasing Power</div>
+                    <div class="mta-calc-stat-val text-blue" id="mtaResTotalPower">₹2,00,000</div>
+                    <div class="mta-calc-stat-sub">Stock position size</div>
+                  </div>
+                  <div class="mta-calc-stat-box">
+                    <div class="mta-calc-stat-lbl">Broker Funded Debt</div>
+                    <div class="mta-calc-stat-val text-amber" id="mtaResBrokerLoan">₹1,50,000</div>
+                    <div class="mta-calc-stat-sub">Borrowed capital</div>
+                  </div>
+                  <div class="mta-calc-stat-box">
+                    <div class="mta-calc-stat-lbl">Shares Purchasable</div>
+                    <div class="mta-calc-stat-val" id="mtaResShares">133 Qty</div>
+                    <div class="mta-calc-stat-sub" id="mtaResStockName">Based on ₹1,500/sh</div>
+                  </div>
+                  <div class="mta-calc-stat-box">
+                    <div class="mta-calc-stat-lbl">Daily Interest Cost</div>
+                    <div class="mta-calc-stat-val" id="mtaResDailyCost">₹51.37 / day</div>
+                    <div class="mta-calc-stat-sub">Accrued continuously</div>
+                  </div>
+                  <div class="mta-calc-stat-box">
+                    <div class="mta-calc-stat-lbl">Total Period Interest</div>
+                    <div class="mta-calc-stat-val text-red" id="mtaResTotalInterest">₹1,541</div>
+                    <div class="mta-calc-stat-sub" id="mtaResDaysSub">For 30 days holding</div>
+                  </div>
+                  <div class="mta-calc-stat-box">
+                    <div class="mta-calc-stat-lbl">Breakeven Stock Move</div>
+                    <div class="mta-calc-stat-val" id="mtaResBreakevenPct">+0.77%</div>
+                    <div class="mta-calc-stat-sub">To clear carrying interest</div>
+                  </div>
+                </div>
+
+                <!-- Margin Call & Liquidation Callout Box -->
+                <div style="margin-top:16px;padding:14px;border-radius:8px;background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.25);">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <span style="font-size:16px;">⚠️</span>
+                      <strong style="font-size:12.5px;color:#dc2626;">Margin Call / Liquidation Threshold</strong>
+                    </div>
+                    <span class="mta-badge" style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;">20% Maint. Margin</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;">
+                    <div>
+                      <div style="font-size:11px;color:var(--text-secondary);">Liquidation Trigger Price:</div>
+                      <div style="font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;color:#dc2626;" id="mtaResLiqPrice">₹1,409.77</div>
+                    </div>
+                    <div style="text-align:right;">
+                      <div style="font-size:11px;color:var(--text-secondary);">Max Adverse Price Drop:</div>
+                      <div style="font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;color:#dc2626;" id="mtaResLiqDropPct">-6.02%</div>
+                    </div>
+                  </div>
+                  <div style="font-size:10.5px;color:var(--text-muted);margin-top:8px;line-height:1.4;">
+                    If the stock falls below <strong id="mtaResLiqPriceNote">₹1,409.77</strong>, your equity drops below the broker's minimum 20% maintenance margin requirement, triggering a margin call or automatic square-off.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: 2-Stock Compare Desk ────────────────────────── -->
+        <div class="mta-inner-panel" id="mtaPanel-compare">
+          <div class="mta-section">
+            <div class="mta-section-header">
+              <div>
+                <span style="font-size:14px;font-weight:800;color:var(--text-primary);">⚖️ 2-Stock MTF Head-to-Head Compare Desk</span>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Direct side-by-side leverage buildup, retail/institutional profile &amp; trajectory comparison</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <button type="button" class="btn btn-compact" onclick="mtaPresetCompare('RELIANCE','TATASTEEL')">Reliance vs Tata Steel</button>
+                <button type="button" class="btn btn-compact" onclick="mtaPresetCompare('HDFCBANK','ICICIBANK')">HDFC vs ICICI</button>
+                <button type="button" class="btn btn-compact" onclick="mtaPresetCompare('SUZLON','YESBANK')">Suzlon vs Yes Bank</button>
+              </div>
+            </div>
+
+            <!-- Selector Row -->
+            <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;background:var(--bg-card-hover);border-radius:8px;margin-bottom:16px;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:220px;">
+                <span style="font-weight:700;color:#2563eb;font-size:12px;">Stock A (Primary):</span>
+                <input type="text" id="mtaCompSymA" class="mta-input" value="RELIANCE" placeholder="e.g. RELIANCE" style="text-transform:uppercase;font-weight:700;flex:1;">
+              </div>
+              <div style="font-size:14px;font-weight:800;color:var(--text-muted);">VS</div>
+              <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:220px;">
+                <span style="font-weight:700;color:#16a34a;font-size:12px;">Stock B (Compare):</span>
+                <input type="text" id="mtaCompSymB" class="mta-input" value="TATASTEEL" placeholder="e.g. TATASTEEL" style="text-transform:uppercase;font-weight:700;flex:1;">
+              </div>
+              <button type="button" onclick="mtaRunStockComparison()" class="btn btn-primary" style="padding:6px 16px;font-weight:700;font-size:12px;">⚡ Compare Now</button>
+            </div>
+
+            <!-- Side-by-Side Comparison Metric Cards -->
+            <div class="mta-dual-grid" id="mtaCompareCards">
+              <!-- Stock A Card -->
+              <div class="mta-side-card" style="border-top:3px solid #2563eb;">
+                <div class="mta-side-header" style="background:rgba(37,99,235,0.05);">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span id="mtaCompCardSymA" style="font-size:15px;font-weight:800;color:#2563eb;">RELIANCE</span>
+                    <span id="mtaCompCardExchA" class="mta-badge mta-badge-nse">NSE</span>
+                    <span id="mtaCompCardSegA" class="mta-badge mta-badge-fno">F&amp;O</span>
+                  </div>
+                  <span id="mtaCompCardClsA" class="mta-badge mta-badge-inst">INSTITUTIONAL</span>
+                </div>
+                <div class="mta-side-body" id="mtaCompMetricsA">
+                  <div style="padding:16px;text-align:center;color:var(--text-muted);">Loading Stock A metrics...</div>
+                </div>
+              </div>
+
+              <!-- Stock B Card -->
+              <div class="mta-side-card" style="border-top:3px solid #16a34a;">
+                <div class="mta-side-header" style="background:rgba(22,163,74,0.05);">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span id="mtaCompCardSymB" style="font-size:15px;font-weight:800;color:#16a34a;">TATASTEEL</span>
+                    <span id="mtaCompCardExchB" class="mta-badge mta-badge-nse">NSE</span>
+                    <span id="mtaCompCardSegB" class="mta-badge mta-badge-fno">F&amp;O</span>
+                  </div>
+                  <span id="mtaCompCardClsB" class="mta-badge mta-badge-retail">RETAIL HEAVY</span>
+                </div>
+                <div class="mta-side-body" id="mtaCompMetricsB">
+                  <div style="padding:16px;text-align:center;color:var(--text-muted);">Loading Stock B metrics...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dual-line History Trend Overlay Chart -->
+            <div class="mta-section" style="margin-top:16px;box-shadow:none;border:1px solid var(--border-default);">
+              <div class="mta-section-header">
+                <span style="font-size:12.5px;font-weight:700;">📈 Multi-Session Normalized Leverage Growth (% Change)</span>
+                <div style="display:flex;gap:16px;font-size:11px;font-weight:700;">
+                  <span style="color:#2563eb;">● <span id="mtaCompLegendA">Stock A</span></span>
+                  <span style="color:#16a34a;">● <span id="mtaCompLegendB">Stock B</span></span>
+                </div>
+              </div>
+              <div id="mtaCompareChartContainer" style="position:relative;height:240px;width:100%;">
+                <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:12px;">Click "Compare Now" to render dual overlay trend</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Sub-tab: Leverage Fragility Radar ────────────────────── -->
+        <div class="mta-inner-panel" id="mtaPanel-fragility">
+          <div class="mta-section">
+            <div class="mta-section-header">
+              <div>
+                <span style="font-size:14px;font-weight:800;color:var(--text-primary);">🎯 Leverage Vulnerability &amp; Liquidation Fragility Radar</span>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Stress-test scanner detecting overleveraged retail positions susceptible to margin call liquidation cascades</div>
+              </div>
+              <div class="mta-pills-bar">
+                <button type="button" class="mta-pill active" data-frag="ALL" onclick="mtaFilterFragility('ALL')">All Stocks (<span id="mtaFragCountAll">0</span>)</button>
+                <button type="button" class="mta-pill" data-frag="HIGH" onclick="mtaFilterFragility('HIGH')">🚨 High Fragility (<span id="mtaFragCountHigh">0</span>)</button>
+                <button type="button" class="mta-pill" data-frag="MODERATE" onclick="mtaFilterFragility('MODERATE')">⚠️ Moderate Risk (<span id="mtaFragCountMod">0</span>)</button>
+                <button type="button" class="mta-pill" data-frag="STABLE" onclick="mtaFilterFragility('STABLE')">🟢 Stable Anchors (<span id="mtaFragCountSafe">0</span>)</button>
+              </div>
+            </div>
+
+            <!-- Fragility Explanation Card -->
+            <div style="padding:10px 14px;background:rgba(217,119,6,0.06);border-left:3px solid #d97706;border-radius:4px;margin-bottom:14px;font-size:11.5px;color:var(--text-secondary);line-height:1.5;">
+              <strong>How Fragility Score is Calculated:</strong> Synthesizes MTF book concentration (% of exchange total), financed quantity density (debt per share), retail participation, and session delta. Stocks with high scores (>70) suffer forced deleveraging and long unwinding during market sell-offs.
+            </div>
+
+            <div style="overflow-x:auto;max-height:560px;">
+              <table class="mta-table mta-table-sticky">
+                <thead>
+                  <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Symbol</th>
+                    <th>Company Name</th>
+                    <th style="text-align:right;">MTF Book (₹ Cr)</th>
+                    <th style="text-align:right;">Financed Qty</th>
+                    <th style="text-align:right;">Debt / Share (₹)</th>
+                    <th style="text-align:center;">Vulnerability Rating</th>
+                    <th style="text-align:left;width:180px;">Fragility Score (0-100)</th>
+                    <th>Risk Rationale / Liquidation Exposure</th>
+                  </tr>
+                </thead>
+                <tbody id="mtaFragilityTableBody">
+                  <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:20px;">Analyzing fragility matrix...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Educational Card -->
+        <div class="mta-section" style="margin-top:16px;background:#f8fafc;border-left:4px solid #2563eb;">
+          <h4 style="margin:0 0 6px 0;font-size:14px;font-weight:800;color:#1e293b;">📌 How MTF (Margin Trading Facility) Data Works</h4>
+          <p style="margin:0;font-size:12px;color:#475569;line-height:1.6;">
+            <strong>Margin Trading Facility (MTF)</strong> allows investors to take leveraged positions in cash market equities by putting up a fraction of the capital (collateral), while the broker funds the rest.
+            Under SEBI regulations, NSE and BSE publish mandatory EOD MTF disclosures with a 1-session reporting lag.
+            Rising aggregate MTF book indicates building bullish retail/institutional leverage, while sharp drops signal margin liquidation and deleveraging cascades.
+            <strong>Retail signals</strong> are detected using F&O stock concentration patterns; <strong>institutional signals</strong> are identified by large-cap non-F&O positions above ₹300 Cr.
+          </p>
+        </div>
+      </div> <!-- /panelMtf -->
+
+      <!-- Stock Drilldown Modal -->
+      <div id="mtaStockModal" class="mta-modal-backdrop" style="display:none;" onclick="if(event.target===this) mtaCloseStockModal();">
+        <div class="mta-modal-box">
+          <div class="mta-modal-header">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <h3 id="mtaModalSymbol" style="margin:0;font-size:18px;font-weight:800;color:var(--text-primary);letter-spacing:-0.3px;">SYMBOL</h3>
+                <span id="mtaModalExchange" class="mta-badge mta-badge-nse">NSE</span>
+                <span id="mtaModalSegment" class="mta-badge mta-badge-fno">F&amp;O</span>
+                <span id="mtaModalSector" class="mta-badge" style="background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;">Sector</span>
+              </div>
+              <div id="mtaModalName" style="font-size:12px;color:var(--text-muted);margin-top:3px;">Company Name Full</div>
+            </div>
+            <!-- Cross-Desk Jump Buttons -->
+            <div style="display:flex;align-items:center;gap:6px;margin-left:auto;margin-right:12px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-compact" onclick="mtaJumpToDesk('options')" title="Inspect Option Chain" style="font-size:11px;padding:4px 9px;font-weight:700;background:#7c3aed;color:#fff;border:none;border-radius:5px;cursor:pointer;">⚡ Options Desk</button>
+              <button type="button" class="btn btn-compact" onclick="mtaJumpToDesk('delivery')" title="View Delivery Accumulation" style="font-size:11px;padding:4px 9px;font-weight:700;background:#059669;color:#fff;border:none;border-radius:5px;cursor:pointer;">📦 Delivery Desk</button>
+            </div>
+            <button type="button" onclick="mtaCloseStockModal()" style="background:none;border:none;font-size:24px;color:var(--text-muted);cursor:pointer;padding:2px 8px;line-height:1;border-radius:4px;" aria-label="Close modal">&times;</button>
+          </div>
+          <div class="mta-modal-body">
+            <!-- Stats Strip -->
+            <div class="mta-modal-stats">
+              <div class="mta-mstat">
+                <div class="mta-mstat-lbl">Current MTF Book</div>
+                <div class="mta-mstat-val text-blue" id="mtaModalBook">—</div>
+              </div>
+              <div class="mta-mstat">
+                <div class="mta-mstat-lbl">Financed Quantity</div>
+                <div class="mta-mstat-val" id="mtaModalQty">—</div>
+              </div>
+              <div class="mta-mstat">
+                <div class="mta-mstat-lbl">Margin Debt / Share</div>
+                <div class="mta-mstat-val" id="mtaModalEstPrice">—</div>
+                <div style="font-size:9.5px;color:#64748b;margin-top:1px;">Broker funded debt</div>
+              </div>
+              <div class="mta-mstat">
+                <div class="mta-mstat-lbl">Share of Total Book</div>
+                <div class="mta-mstat-val text-purple" id="mtaModalShare">—</div>
+              </div>
+              <div class="mta-mstat">
+                <div class="mta-mstat-lbl">Session Delta</div>
+                <div class="mta-mstat-val" id="mtaModalDelta">—</div>
+              </div>
+            </div>
+
+            <!-- Historical Multi-Session Trend Chart -->
+            <div class="mta-section" style="margin-top:14px;padding:12px 14px;box-shadow:none;border:1px solid #e2e8f0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:12px;font-weight:700;color:#1e293b;">📈 Multi-Session MTF Leverage Trend (₹ Cr)</span>
+                <span id="mtaModalSessionsCount" class="mta-badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">Multi-Session</span>
+              </div>
+              <div id="mtaModalChartWrap" style="position:relative;height:160px;width:100%;">
+                <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:12px;">Loading history...</div>
+              </div>
+            </div>
+
+            <!-- Recent Sessions History Table -->
+            <div class="mta-section" style="margin-top:14px;padding:0;overflow:hidden;box-shadow:none;border:1px solid #e2e8f0;">
+              <div style="overflow-x:auto;max-height:220px;">
+                <table class="mta-table" style="font-size:11.5px;">
+                  <thead>
+                    <tr>
+                      <th>Session Date</th>
+                      <th style="text-align:right;">MTF Book (₹ Cr)</th>
+                      <th style="text-align:right;">Financed Qty</th>
+                      <th style="text-align:right;">Debt / Share (₹)</th>
+                      <th style="text-align:right;">Session Delta</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mtaModalHistoryTableBody">
+                    <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:14px;">Loading session history...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================
+           Panel 6: Broker Settings & Multi-Broker Switcher
+           ================================================================ -->
+      <div id="panelSettings" class="tab-panel" style="display:none;">
+        <div class="settings-container">
+          
+          <!-- Top Header -->
+          <div class="settings-top-header">
+            <div>
+              <h2 class="settings-title">⚙️ Broker Integration &amp; API Settings</h2>
+              <p class="settings-subtitle">Configure your trading accounts and toggle active broker in 1-click without restarting server.</p>
+            </div>
+            <div class="settings-header-actions">
+              <button type="button" id="btnTestBrokerConn" class="settings-btn btn-test">🧪 Test Connection</button>
+              <button type="button" id="btnSaveAllSettings" class="settings-btn btn-save">💾 Save All Settings</button>
+            </div>
+          </div>
+
+          <!-- Alert / Toast Banner -->
+          <div id="settingsAlertBanner" class="settings-alert" style="display:none;"></div>
+
+          <!-- User Profile & Supabase Cloud Sync Card -->
+          <div class="settings-section-card" style="border: 1px solid rgba(37, 99, 235, 0.3); background: linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(30, 41, 59, 0.2) 100%);">
+            <div class="section-title-wrap" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div>
+                <span class="section-badge" style="background:#2563eb; color:#fff;">CLOUD WORKSPACE SYNC</span>
+                <h3>👤 Account &amp; Multi-Device Synchronization</h3>
+                <p>Sign in to automatically synchronize your watchlists, selected desks, and personal analytics across devices.</p>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button type="button" class="auth-signin-btn" onclick="if(window.AuthSync){window.AuthSync.currentTab='signin';window.AuthSync.openAuthModal();}">
+                  🔑 Sign In
+                </button>
+                <button type="button" class="auth-signup-btn" onclick="if(window.AuthSync){window.AuthSync.currentTab='signup';window.AuthSync.openAuthModal();}">
+                  ✨ Sign Up
+                </button>
+              </div>
+            </div>
+            <div style="margin-top:16px; padding:12px 16px; background:rgba(15, 23, 42, 0.6); border-radius:8px; border:1px solid var(--border-default); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <span style="font-size:12px; color:var(--text-muted);">Platform Administrator or Master Server Management:</span>
+              <a href="/admin.html" target="_blank" style="display:inline-flex; align-items:center; gap:6px; color:#60a5fa; font-size:12px; font-weight:700; text-decoration:none;">
+                🔒 Open Admin Command Center ↗
+              </a>
+            </div>
+          </div>
+
+          <!-- Active Broker Selector Strip -->
+          <div class="settings-section-card active-broker-box">
+            <div class="section-title-wrap">
+              <span class="section-badge">1-CLICK SWITCH</span>
+              <h3>Select Active Data Broker</h3>
+              <p>The chosen broker will be used for live quotes, historical candles, and option chain analytics.</p>
+            </div>
+            <div class="broker-picker-row">
+              <label class="broker-card-radio active" data-broker="ANGEL" id="brokerCardAngel">
+                <input type="radio" name="brokerSelect" value="ANGEL" checked>
+                <div class="broker-card-inner">
+                  <div class="broker-card-top">
+                    <span class="broker-logo">🪽</span>
+                    <span class="broker-status-pill" id="badgeAngelStatus">Checking...</span>
+                  </div>
+                  <h4 class="broker-name">Angel One</h4>
+                  <p class="broker-desc">SmartAPI v1 • Free</p>
+                  <span class="broker-active-tag">ACTIVE</span>
+                </div>
+              </label>
+
+              <label class="broker-card-radio" data-broker="UPSTOX" id="brokerCardUpstox">
+                <input type="radio" name="brokerSelect" value="UPSTOX">
+                <div class="broker-card-inner">
+                  <div class="broker-card-top">
+                    <span class="broker-logo">📈</span>
+                    <span class="broker-status-pill" id="badgeUpstoxStatus">Not Configured</span>
+                  </div>
+                  <h4 class="broker-name">Upstox</h4>
+                  <p class="broker-desc">Upstox API v2 • OAuth Token</p>
+                  <span class="broker-active-tag">ACTIVE</span>
+                </div>
+              </label>
+
+              <label class="broker-card-radio" data-broker="KOTAK" id="brokerCardKotak">
+                <input type="radio" name="brokerSelect" value="KOTAK">
+                <div class="broker-card-inner">
+                  <div class="broker-card-top">
+                    <span class="broker-logo">⚡</span>
+                    <span class="broker-status-pill" id="badgeKotakStatus">Not Configured</span>
+                  </div>
+                  <h4 class="broker-name">Kotak Neo</h4>
+                  <p class="broker-desc">Kotak Securities Neo API</p>
+                  <span class="broker-active-tag">ACTIVE</span>
+                </div>
+              </label>
+
+              <label class="broker-card-radio" data-broker="FYERS" id="brokerCardFyers">
+                <input type="radio" name="brokerSelect" value="FYERS">
+                <div class="broker-card-inner">
+                  <div class="broker-card-top">
+                    <span class="broker-logo">🎯</span>
+                    <span class="broker-status-pill" id="badgeFyersStatus">Not Configured</span>
+                  </div>
+                  <h4 class="broker-name">Fyers</h4>
+                  <p class="broker-desc">Fyers API v3 • Fast Feeds</p>
+                  <span class="broker-active-tag">ACTIVE</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 4 Cards Grid for Configuration -->
+          <div class="settings-grid">
+
+            <!-- Card 1: Angel One -->
+            <div class="settings-card broker-angel-card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <span class="card-icon">🪽</span>
+                  <div>
+                    <h4>Angel One SmartAPI</h4>
+                    <span class="card-tag">Default Supported</span>
+                  </div>
+                </div>
+                <a href="https://smartapi.angelbroking.com/" target="_blank" rel="noopener" class="card-link">Portal ↗</a>
+              </div>
+              <div class="card-body">
+                <div class="form-row">
+                  <label for="cfgAngelApiKey">API Key</label>
+                  <div class="input-with-btn">
+                    <input type="password" id="cfgAngelApiKey" placeholder="e.g. C1Fqx9cy" autocomplete="off">
+                    <button type="button" class="btn-toggle-vis" onclick="toggleFieldVis('cfgAngelApiKey')">👁️</button>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label for="cfgAngelClientCode">Client Code</label>
+                  <input type="text" id="cfgAngelClientCode" placeholder="e.g. A1418198">
+                </div>
+                <div class="form-row">
+                  <label for="cfgAngelPin">MPIN / Password</label>
+                  <div class="input-with-btn">
+                    <input type="password" id="cfgAngelPin" placeholder="4-digit PIN" autocomplete="off">
+                    <button type="button" class="btn-toggle-vis" onclick="toggleFieldVis('cfgAngelPin')">👁️</button>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label for="cfgAngelTotpSecret">TOTP Secret (Base32)</label>
+                  <div class="input-with-btn">
+                    <input type="password" id="cfgAngelTotpSecret" placeholder="Auto-generate OTP" autocomplete="off">
+                    <button type="button" class="btn-toggle-vis" onclick="toggleFieldVis('cfgAngelTotpSecret')">👁️</button>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label for="cfgAngelTotpCode">Manual TOTP Code (Optional)</label>
+                  <input type="text" id="cfgAngelTotpCode" placeholder="6-digit live OTP if secret not set">
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Upstox -->
+            <div class="settings-card broker-upstox-card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <span class="card-icon">📈</span>
+                  <div>
+                    <h4>Upstox API v2</h4>
+                    <span class="card-tag">Daily OAuth Token</span>
+                  </div>
+                </div>
+                <a href="https://service.upstox.com/developer/" target="_blank" rel="noopener" class="card-link">Portal ↗</a>
+              </div>
+              <div class="card-body">
+                <div class="form-row">
+                  <label for="cfgUpstoxAccessToken">Access Token (Bearer)</label>
+                  <div class="input-with-btn">
+                    <input type="password" id="cfgUpstoxAccessToken" placeholder="Paste Upstox access token here" autocomplete="off">
+                    <button type="button" class="btn-toggle-vis" onclick="toggleFieldVis('cfgUpstoxAccessToken')">👁️</button>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label for="cfgUpstoxApiKey">API Key / Client ID (Optional)</label>
+                  <input type="text" id="cfgUpstoxApiKey" placeholder="Your Upstox API Key">
+                </div>
+                <div class="form-row">
+                  <label for="cfgUpstoxApiSecret">API Secret (Optional)</label>
+                  <div class="input-with-btn">
+                    <input type="password" id="cfgUpstoxApiSecret" placeholder="Your Upstox API Secret" autocomplete="off">
+                    <button type="button" class="btn-toggle-vis" onclick="toggleFieldVis('cfgUpstoxApiSecret')">👁️</button>
+                  </div>
+                </div>
+                <div class="form-hint">
+                  ℹ️ Generate access token once in the morning from Upstox Developer Console and paste here.
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Kotak Neo -->
+            <div class="settings-card broker-kotak-card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <span class="card-icon">⚡</span>
+                  <div>
+                    <h4>Kotak Securities Neo API</h4>
+                    <span class="card-tag">Session / Key Token</span>
+                  </div>
+                </div>
+                <a href="https://neo.kotaksecurities.com/" target="_blank" rel="noopener" class="card-link">Portal ↗</a>
+              </div>
+              <div class="card-body">
+                <div class="form-row">
+                  <label for="cfgKotakAccessToken">Access Token / Bearer Token</label>
+                  <div class="input-with-btn">
+                    <input type="password" id="cfgKotakAccessToken" placeholder="Kotak Neo session token" autocomplete="off">
+                    <button type="button" class="btn-toggle-vis" onclick="toggleFieldVis('cfgKotakAccessToken')">👁️</button>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label for="cfgKotakConsumerKey">Consumer Key</label>
+                  <input type="text" id="cfgKotakConsumerKey" placeholder="Kotak Consumer Key">
+                </div>
+                <div class="form-row">
+                  <label for="cfgKotakConsumerSecret">Consumer Secret</label>
+                  <div class="input-with-btn">
+                    <input type="password" id="cfgKotakConsumerSecret" placeholder="Kotak Consumer Secret" autocomplete="off">
+                    <button type="button" class="btn-toggle-vis" onclick="toggleFieldVis('cfgKotakConsumerSecret')">👁️</button>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label for="cfgKotakMobileNo">Registered Mobile No.</label>
+                  <input type="text" id="cfgKotakMobileNo" placeholder="10-digit mobile number">
+                </div>
+                <div class="form-row">
+                  <label for="cfgKotakMpin">MPIN / Password</label>
+                  <div class="input-with-btn">
+                    <input type="password" id="cfgKotakMpin" placeholder="MPIN" autocomplete="off">
+                    <button type="button" class="btn-toggle-vis" onclick="toggleFieldVis('cfgKotakMpin')">👁️</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Fyers -->
+            <div class="settings-card broker-fyers-card">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <span class="card-icon">🎯</span>
+                  <div>
+                    <h4>Fyers API v3</h4>
+                    <span class="card-tag">Fast Feeds</span>
+                  </div>
+                </div>
+                <a href="https://myapi.fyers.in/" target="_blank" rel="noopener" class="card-link">Portal ↗</a>
+              </div>
+              <div class="card-body">
+                <div class="form-row">
+                  <label for="cfgFyersAppId">App ID</label>
+                  <input type="text" id="cfgFyersAppId" placeholder="e.g. XXXXXX-100">
+                </div>
+                <div class="form-row">
+                  <label for="cfgFyersAccessToken">Access Token</label>
+                  <div class="input-with-btn">
+                    <input type="password" id="cfgFyersAccessToken" placeholder="Paste Fyers access token" autocomplete="off">
+                    <button type="button" class="btn-toggle-vis" onclick="toggleFieldVis('cfgFyersAccessToken')">👁️</button>
+                  </div>
+                </div>
+                <div class="form-hint">
+                  ℹ️ Fyers App ID (e.g. <code>XXXXX-100</code>) and access token generated from Fyers API v3 dashboard.
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Floating Action Bar -->
+          <div class="settings-bottom-bar">
+            <span class="bottom-info-text">Changes are immediately applied to the active backend without restarting.</span>
+            <div class="bottom-btns">
+              <button type="button" id="btnTestBrokerConnBottom" class="settings-btn btn-test">🧪 Test Connection</button>
+              <button type="button" id="btnSaveAllSettingsBottom" class="settings-btn btn-save">💾 Save All Settings</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================================================================ -->
+      <!-- Panel 7: Quant Tools (Institutional Data-Based Tools)            -->
+      <!-- ================================================================ -->
+      <div id="panelTools" class="tab-panel">
+        <section class="tools-header-card">
+          <div class="tools-title-row">
+            <div>
+              <h2 class="tools-title">🛠️ Institutional Quant Tools &amp; Alpha Desks</h2>
+              <p class="tools-subtitle">Advanced mathematical models, hidden exchange data feeds, and proprietary institutional flow metrics.</p>
+            </div>
+            <div class="tools-quick-actions">
+              <button type="button" id="btnRefreshActiveTool" class="primary-btn">🔄 Refresh Active Tool</button>
+            </div>
+          </div>
+
+          <!-- Tools Sub-Navigation Bar -->
+          <div class="tools-subnav-bar">
+            <button type="button" class="tool-subtab-btn active" data-target="toolAbsorptionView">
+              <span>🧱 Delivery Absorption Scanner</span>
+              <span class="tool-badge">Bhavcopy</span>
+            </button>
+            <button type="button" class="tool-subtab-btn" data-target="toolVolSpreadView">
+              <span>⚡ VIX vs ATM IV Vol Spread</span>
+              <span class="tool-badge">Arbitrage</span>
+            </button>
+            <button type="button" class="tool-subtab-btn" data-target="toolTrapDetectorView">
+              <span>🧲 Spot vs OI Trap Detector</span>
+              <span class="tool-badge">Wall Squeeze</span>
+            </button>
+            <button type="button" class="tool-subtab-btn" data-target="toolAvwapView">
+              <span>🎯 Auto-Anchored VWAP Engine</span>
+              <span class="tool-badge">AVWAP</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Sub-view 1: Delivery Absorption Scanner -->
+        <section id="toolAbsorptionView" class="tool-subview active">
+          <div class="tool-control-band">
+            <div class="ctrl-group">
+              <label>
+                <span>Min Delivery %</span>
+                <input id="toolAbsMinDeliv" type="number" value="50" min="30" max="99" style="width:70px;">
+              </label>
+              <label>
+                <span>Max Daily Range %</span>
+                <input id="toolAbsMaxRange" type="number" value="2.5" min="0.5" max="5.0" step="0.1" style="width:70px;">
+              </label>
+              <label>
+                <span>Top Results</span>
+                <select id="toolAbsTopN" style="width:80px;">
+                  <option value="15">Top 15</option>
+                  <option value="30" selected>Top 30</option>
+                  <option value="50">Top 50</option>
+                </select>
+              </label>
+            </div>
+            <div class="tool-hint-box">
+              💡 <b>Logic:</b> Scans official NSE bhavcopy for stocks with high delivery + severe daily range contraction (tight squeeze) where institutions silently absorb supply.
+            </div>
+          </div>
+
+          <div class="tool-table-card">
+            <div class="tool-table-header">
+              <h3>🔥 Top Institutional Silent Accumulation Candidates</h3>
+              <span id="toolAbsDateBadge" class="date-badge">Bhavcopy Date: --</span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="tableAbsorption">
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Close</th>
+                    <th>Delivery %</th>
+                    <th>20D Delivery Multiple</th>
+                    <th>Range Squeeze %</th>
+                    <th>Absorption Score</th>
+                    <th>Conviction</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="toolAbsTableBody">
+                  <tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-muted);">Loading absorption data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sub-view 2: VIX vs ATM IV Spread -->
+        <section id="toolVolSpreadView" class="tool-subview" style="display:none;">
+          <div class="tool-control-band">
+            <div class="ctrl-group">
+              <label>
+                <span>Index</span>
+                <select id="toolVolIndexSelect">
+                  <option value="nifty50">Nifty 50</option>
+                  <option value="banknifty">Bank Nifty</option>
+                  <option value="finnifty">FinNifty</option>
+                  <option value="sensex">BSE Sensex</option>
+                </select>
+              </label>
+            </div>
+            <div class="tool-hint-box">
+              💡 <b>Logic:</b> Compares live weekly option ATM IV with 30-day India VIX to identify volatility mispricing (Bloated Options vs Dirt Cheap Options).
+            </div>
+          </div>
+
+          <div class="vol-grid-row">
+            <div class="vol-stat-card">
+              <div class="vol-stat-header">Weekly ATM IV</div>
+              <div class="vol-stat-val" id="toolVolAtmIv">--%</div>
+              <div class="vol-stat-sub">Live implied volatility</div>
+            </div>
+            <div class="vol-stat-card">
+              <div class="vol-stat-header">India VIX</div>
+              <div class="vol-stat-val text-blue" id="toolVolIndiaVix">--%</div>
+              <div class="vol-stat-sub">30-day annual benchmark</div>
+            </div>
+            <div class="vol-stat-card">
+              <div class="vol-stat-header">Volatility Spread (&Delta;Vol)</div>
+              <div class="vol-stat-val" id="toolVolSpreadVal">--%</div>
+              <div class="vol-stat-sub">ATM IV minus India VIX</div>
+            </div>
+            <div class="vol-stat-card">
+              <div class="vol-stat-header">Market Regime</div>
+              <div class="vol-stat-val" id="toolVolRegimeBadge" style="font-size:16px;">--</div>
+              <div class="vol-stat-sub" id="toolVolDailyMove">Expected Move: -- pts</div>
+            </div>
+          </div>
+
+          <div class="vol-edge-card">
+            <h4 id="toolVolEdgeTitle">🎯 Quantitative Volatility Edge &amp; Rationale</h4>
+            <p id="toolVolRationale" style="color:var(--text-secondary); font-size:13px; margin:8px 0 16px;">Loading volatility analysis...</p>
+            <div class="vol-rec-list" id="toolVolRecList"></div>
+          </div>
+        </section>
+
+        <!-- Sub-view 3: Spot Velocity vs OI Trap Wall Detector -->
+        <section id="toolTrapDetectorView" class="tool-subview" style="display:none;">
+          <div class="tool-control-band">
+            <div class="ctrl-group">
+              <label>
+                <span>Index</span>
+                <select id="toolTrapIndexSelect">
+                  <option value="nifty50">Nifty 50</option>
+                  <option value="banknifty">Bank Nifty</option>
+                  <option value="finnifty">FinNifty</option>
+                </select>
+              </label>
+            </div>
+            <div class="tool-hint-box">
+              💡 <b>Logic:</b> Detects when price velocity diverges from Call/Put OI additions (e.g. rally absorbed by aggressive Call Writing or drop stopped by Put Writing).
+            </div>
+          </div>
+
+          <div class="trap-dashboard-grid">
+            <div class="trap-alert-card" id="toolTrapAlertCard">
+              <div class="trap-alert-badge" id="toolTrapStatusBadge">Analyzing Order Flow...</div>
+              <h3 id="toolTrapActionSignal" style="margin:8px 0; font-size:18px;">--</h3>
+              <p id="toolTrapDesc" style="color:var(--text-secondary); font-size:13px; margin-bottom:12px;">Monitoring real-time divergence between price change and OI expansion.</p>
+              <div class="trap-score-bar-track">
+                <div class="trap-score-bar-fill" id="toolTrapScoreFill" style="width:0%;"></div>
+              </div>
+              <span style="font-size:11px; color:var(--text-muted); display:block; margin-top:4px;" id="toolTrapScoreText">Trap Conviction Score: --</span>
+            </div>
+
+            <div class="trap-walls-card">
+              <h4>🧱 Institutional Walls</h4>
+              <div class="wall-row">
+                <div class="wall-box call-wall-box">
+                  <span class="wall-label">Major Call Wall (Resistance)</span>
+                  <span class="wall-strike" id="toolCallWallStrike">--</span>
+                  <span class="wall-sub" id="toolCallWallOi">OI: --</span>
+                </div>
+                <div class="wall-box put-wall-box">
+                  <span class="wall-label">Major Put Wall (Support Floor)</span>
+                  <span class="wall-strike" id="toolPutWallStrike">--</span>
+                  <span class="wall-sub" id="toolPutWallOi">OI: --</span>
+                </div>
+              </div>
+              <div class="wall-stats-footer" style="margin-top:12px; font-size:12px; color:var(--text-muted);">
+                <span>15m Spot Velocity: <b id="toolSpotVelocity">--%</b></span> | 
+                <span>Call OI Chg: <b id="toolTotalCallOiChg">--</b></span> | 
+                <span>Put OI Chg: <b id="toolTotalPutOiChg">--</b></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sub-view 4: Auto-Anchored VWAP Engine -->
+        <section id="toolAvwapView" class="tool-subview" style="display:none;">
+          <div class="tool-control-band">
+            <div class="ctrl-group">
+              <label>
+                <span>Index</span>
+                <select id="toolAvwapIndexSelect">
+                  <option value="nifty50">Nifty 50</option>
+                  <option value="banknifty">Bank Nifty</option>
+                  <option value="finnifty">FinNifty</option>
+                  <option value="sensex">BSE Sensex</option>
+                </select>
+              </label>
+            </div>
+            <div class="tool-hint-box">
+              💡 <b>Logic:</b> Automatically anchors VWAP to recent structural Swing High, Swing Low, and Session Open with &plusmn;1&sigma; and &plusmn;2&sigma; volatility bands.
+            </div>
+          </div>
+
+          <div class="avwap-dashboard-grid">
+            <div class="avwap-card" style="border-top:3px solid #ef4444;">
+              <span class="avwap-card-lbl">Swing High Anchor</span>
+              <div class="avwap-card-val text-red" id="toolAvwapHighVal">--</div>
+              <div class="avwap-card-sub" id="toolAvwapHighTime">Peak: --</div>
+              <div class="avwap-bands-sub" id="toolAvwapHighBands">+1&sigma;: -- | -1&sigma;: --</div>
+            </div>
+
+            <div class="avwap-card" style="border-top:3px solid #10b981;">
+              <span class="avwap-card-lbl">Swing Low Anchor</span>
+              <div class="avwap-card-val text-green" id="toolAvwapLowVal">--</div>
+              <div class="avwap-card-sub" id="toolAvwapLowTime">Valley: --</div>
+              <div class="avwap-bands-sub" id="toolAvwapLowBands">+1&sigma;: -- | -1&sigma;: --</div>
+            </div>
+
+            <div class="avwap-card" style="border-top:3px solid #3b82f6;">
+              <span class="avwap-card-lbl">Intraday Session (09:15)</span>
+              <div class="avwap-card-val text-blue" id="toolAvwapSessionVal">--</div>
+              <div class="avwap-card-sub" id="toolAvwapSessionTime">Session Open</div>
+              <div class="avwap-bands-sub" id="toolAvwapSessionBands">+1&sigma;: -- | -1&sigma;: --</div>
+            </div>
+
+            <div class="avwap-card" style="border-top:3px solid #f59e0b;">
+              <span class="avwap-card-lbl">AVWAP Pinch / Squeeze Status</span>
+              <div class="avwap-card-val" id="toolAvwapPinchBadge" style="font-size:16px;">--</div>
+              <div class="avwap-card-sub" id="toolAvwapSpreadPts">Spread: -- pts</div>
+              <p id="toolAvwapPinchDesc" style="font-size:11px; color:var(--text-muted); margin-top:4px;">Calculating convergence...</p>
+            </div>
+          </div>
+
+          <div class="avwap-participant-card">
+            <h4>👥 Participant Profit/Loss Positioning</h4>
+            <div class="participant-row">
+              <div class="participant-item">
+                <span class="p-label">Buyers from Swing Low:</span>
+                <span class="p-status" id="toolAvwapBuyerStatus">--</span>
+              </div>
+              <div class="participant-item">
+                <span class="p-label">Sellers from Swing High:</span>
+                <span class="p-status" id="toolAvwapSellerStatus">--</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+
+
+      <!-- Messages / Logs Panel -->
+      <section class="message-panel" id="messagePanel" aria-live="polite"></section>
+
+      <!-- Institutional Footer with Legal & Compliance Links -->
+      <footer class="terminal-footer">
+        <div class="footer-inner">
+          <div class="footer-col-brand">
+            <div class="footer-logo">⚡ Breadth Lab &amp; Analytics Desk</div>
+            <p class="footer-tagline">Institutional quantitative intelligence, market internals, real-time Options Greeks, Smart Money positioning &amp; verified broker research.</p>
+            <p class="footer-regulatory">SEBI Compliance Notice: Quantitative and educational research platform. Not a SEBI registered investment advisor.</p>
+          </div>
+          <div class="footer-col-links">
+            <div class="footer-link-group">
+              <h4>Platform Desks</h4>
+              <a href="#" onclick="switchTab('breadth'); return false;">Market Breadth</a>
+              <a href="#" onclick="switchTab('options'); return false;">Options Desk &amp; Greeks</a>
+              <a href="#" onclick="switchTab('smartMoney'); return false;">Smart Money EOD</a>
+              <a href="#" onclick="switchTab('delivery'); return false;">Delivery Analytics</a>
+              <a href="/page2.html">Advanced OI Suite ↗</a>
+            </div>
+            <div class="footer-link-group">
+              <h4>Regulatory &amp; Compliance</h4>
+              <a href="/disclaimer.html">SEBI Regulatory Disclaimer</a>
+              <a href="/privacy.html">Privacy Policy</a>
+              <a href="/terms.html">Terms of Service</a>
+              <a href="/about.html">About Quantitative Models</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>&copy; 2026 Breadth Lab &bull; All calculations Black-Scholes algorithmically certified.</span>
+          <span>Version 2.4.0 (Production Stable)</span>
+        </div>
+      </footer>
+    </main>
+
+    <script src="/app.js?v=20260920_v1"></script>
+    <script src="/auth_sync.js?v=20260919_v1"></script>
+  </body>
+</html>
