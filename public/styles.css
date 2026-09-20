@@ -10572,6 +10572,142 @@ body[data-theme="light"] .inst-dash-module:hover {
   display: block;
 }
 
+/* ── Macro Ribbon (Top of Dashboard) ── */
+.inst-macro-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 0 18px 0;
+  scrollbar-width: none;
+}
+.inst-macro-ribbon::-webkit-scrollbar { display: none; }
 
+.macro-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.macro-pill:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-hover);
+}
+.macro-pill .mp-lbl {
+  font-weight: 700;
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+}
+.macro-pill .mp-val {
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.macro-pill .mp-chg {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.macro-pill .mp-chg.positive {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+}
+.macro-pill .mp-chg.negative {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
 
+/* ── Indices Row (4 Major Indian Indices) ── */
+.inst-indices-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+@media (max-width: 1000px) {
+  .inst-indices-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 550px) {
+  .inst-indices-row { grid-template-columns: 1fr; }
+}
+
+.inst-idx-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.inst-idx-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border-color: #3b82f6;
+}
+.idx-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.idx-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: 0.2px;
+}
+.idx-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.idx-badge.live {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  animation: pulseLive 1.8s ease-in-out infinite;
+}
+.idx-spot {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.1;
+}
+.idx-chg {
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+.idx-chg.positive { color: #10b981; }
+.idx-chg.negative { color: #ef4444; }
+
+.idx-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 6px;
+  margin-top: 2px;
+}
+.idx-meta b {
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+.idx-meta b.positive { color: #10b981; }
+.idx-meta b.negative { color: #ef4444; }
 

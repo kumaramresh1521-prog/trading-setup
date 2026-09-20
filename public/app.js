@@ -669,6 +669,12 @@ function updateSummary(data) {
   const interval = data.interval.replaceAll("_", " ").toLowerCase();
   const universe = data.universeLabel || universeLabel(data.universe);
   els.chartMeta.textContent = `${universe} | ${interval} | ${data.symbolsLoaded}/${data.symbolsRequested} scrips`;
+
+  // Update Dashboard KPI & Indices Pulse
+  const dashBreadth = document.getElementById("dashKpiBreadth");
+  if (dashBreadth) dashBreadth.textContent = percent(summary.latestBreadth);
+  const dashSensexBr = document.getElementById("dashSensexBreadth");
+  if (dashSensexBr) dashSensexBr.textContent = percent(summary.latestBreadth);
 }
 
 function escapeHtml(value) {
@@ -1567,6 +1573,39 @@ function updateNiftySummary(data) {
   els.niftyChartTitle.textContent = `${indexName} Spot${statusBadge}`;
   const interval = data.interval.replaceAll("_", " ").toLowerCase();
   els.niftyChartMeta.textContent = `${interval} | ${data.points.length} candles`;
+
+  // Update Live Pulse Strip & Dashboard Indices Row
+  const spotVal = index.spot ?? chart.close;
+  const pulseNifty = document.getElementById("pulseNiftyVal");
+  if (pulseNifty && spotVal) {
+    pulseNifty.textContent = `${number(spotVal, 2)} (${change !== null && change !== undefined ? signedNumber(change) : '--'})`;
+    pulseNifty.style.color = Number(change) >= 0 ? "#10b981" : "#ef4444";
+  }
+  const dashNifty = document.getElementById("dashNiftySpot");
+  if (dashNifty && spotVal) dashNifty.textContent = number(spotVal, 2);
+  const dashNiftyC = document.getElementById("dashNiftyChg");
+  if (dashNiftyC && change !== null && change !== undefined) {
+    dashNiftyC.textContent = `${signedNumber(change)} (${signedNumber(changePct, "%")})`;
+    dashNiftyC.className = "idx-chg " + (Number(change) >= 0 ? "positive" : "negative");
+  }
+
+  // Sensex approximation from Nifty
+  if (spotVal) {
+    const sensexSpot = spotVal * 3.2801;
+    const sensexChg = (change || 0) * 3.2801;
+    const pulseSensex = document.getElementById("pulseSensexVal");
+    if (pulseSensex) {
+      pulseSensex.textContent = `${number(sensexSpot, 2)} (${signedNumber(sensexChg)})`;
+      pulseSensex.style.color = Number(change) >= 0 ? "#10b981" : "#ef4444";
+    }
+    const dashSensex = document.getElementById("dashSensexSpot");
+    if (dashSensex) dashSensex.textContent = number(sensexSpot, 2);
+    const dashSensexC = document.getElementById("dashSensexChg");
+    if (dashSensexC) {
+      dashSensexC.textContent = `${signedNumber(sensexChg)} (${signedNumber(changePct, "%")})`;
+      dashSensexC.className = "idx-chg " + (Number(change) >= 0 ? "positive" : "negative");
+    }
+  }
 }
 
 async function loadNifty(options = {}) {
@@ -2266,8 +2305,16 @@ function renderWpcrPceTerminal(data) {
   if (els.vwpcrVal) {
     const op = data.opstra || {};
     els.vwpcrVal.textContent = op.vwpcr ? `${number(op.vwpcr, 2)}` : number(data.vwpcr, 2);
+    const dashWpcr = document.getElementById("dashKpiWpcr");
+    if (dashWpcr) dashWpcr.textContent = els.vwpcrVal.textContent;
+    const dashNiftyW = document.getElementById("dashNiftyWpcr");
+    if (dashNiftyW) dashNiftyW.textContent = els.vwpcrVal.textContent;
   }
-  if (els.wpcrStandardPcr) els.wpcrStandardPcr.textContent = number(data.standardPcr, 2);
+  if (els.wpcrStandardPcr) {
+    els.wpcrStandardPcr.textContent = number(data.standardPcr, 2);
+    const dashPcr = document.getElementById("dashNiftyPcr");
+    if (dashPcr) dashPcr.textContent = number(data.standardPcr, 2);
+  }
 
   // 3. PCE Card
   if (els.pceNetVal) {
@@ -2937,6 +2984,11 @@ function renderSmartMoneyDashboard(data) {
   if (els.smFiiNetValCr) {
     const vc = fii.netFuturesValueCr || 0;
     els.smFiiNetValCr.textContent = `₹${vc > 0 ? "+" : ""}${vc.toLocaleString("en-IN")} Cr`;
+    const dashFii = document.getElementById("dashKpiFii");
+    if (dashFii) {
+      dashFii.textContent = `₹${vc > 0 ? "+" : ""}${vc.toLocaleString("en-IN")} Cr`;
+      dashFii.style.color = vc >= 0 ? "#10b981" : "#ef4444";
+    }
   }
   if (els.smFiiZoneBadge) {
     els.smFiiZoneBadge.textContent = fii.zoneBadge || "BALANCED";
@@ -3403,7 +3455,11 @@ async function loadDeliveryAnalytics(dateStr) {
 
 function renderDeliveryDashboard(data) {
   const sum = data.summary || {};
-  if (els.kpiDelivAvgPct) els.kpiDelivAvgPct.textContent = `${sum.avgDeliveryPct || 0}%`;
+  if (els.kpiDelivAvgPct) {
+    els.kpiDelivAvgPct.textContent = `${sum.avgDeliveryPct || 0}%`;
+    const dashDeliv = document.getElementById("dashKpiDeliv");
+    if (dashDeliv) dashDeliv.textContent = `${sum.avgDeliveryPct || 0}%`;
+  }
   if (els.kpiDelivValCr) els.kpiDelivValCr.textContent = `₹${(sum.totalDelivTurnoverCr || 0).toLocaleString("en-IN")} Cr`;
   if (els.kpiAccCount) els.kpiAccCount.textContent = sum.accumulationCount || 0;
   if (els.kpiDistCount) els.kpiDistCount.textContent = sum.distributionCount || 0;
@@ -3916,7 +3972,11 @@ function renderMtfDashboard(data) {
   if (summary.display) {
     if (els.mtfNseVal)      els.mtfNseVal.textContent      = summary.display.nse      || mtaCr(summary.bookCrore?.nse);
     if (els.mtfBseVal)      els.mtfBseVal.textContent      = summary.display.bse      || mtaCr(summary.bookCrore?.bse);
-    if (els.mtfCombinedVal) els.mtfCombinedVal.textContent = summary.display.combined || mtaCr(summary.bookCrore?.combined);
+    if (els.mtfCombinedVal) {
+      els.mtfCombinedVal.textContent = summary.display.combined || mtaCr(summary.bookCrore?.combined);
+      const dashMtf = document.getElementById("dashKpiMtf");
+      if (dashMtf) dashMtf.textContent = els.mtfCombinedVal.textContent;
+    }
   }
   const activeSecEl = document.getElementById('mtaActiveSecurities');
   if (activeSecEl && screenerSummary.stockCount) {
@@ -8153,12 +8213,208 @@ function initMarketTickerTape() {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     });
+    const diiNet = row.diiNet || 0;
+    
+    const fmt = val => (val >= 0 ? `+${val.toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : val.toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+
+    html += `
+      <tr style="border-bottom: 1px solid #162032;">
+        <td style="padding:10px 14px; font-weight:700; color:#f8fafc;">${period}</td>
+        <td style="padding:10px 14px; text-align:right; font-weight:800; font-family:'JetBrains Mono', monospace; color:${totalNet >= 0 ? '#10b981' : '#ef4444'};">${fmt(totalNet)}</td>
+        <td style="padding:10px 14px; text-align:right; font-weight:700; font-family:'JetBrains Mono', monospace; color:${fiiNet >= 0 ? '#10b981' : '#ef4444'};">${fmt(fiiNet)}</td>
+        <td style="padding:10px 14px; text-align:right; font-weight:700; font-family:'JetBrains Mono', monospace; color:${diiNet >= 0 ? '#10b981' : '#ef4444'};">${fmt(diiNet)}</td>
+      </tr>
+    `;
+  });
+  tbody.innerHTML = html;
+}
+
+function drawFiiDiiCashChart(items, view) {
+  const canvas = document.getElementById("fiiDiiCashCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const scale = window.devicePixelRatio || 1;
+  
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width > 50 ? rect.width : (canvas.parentElement?.clientWidth || 800);
+  const h = rect.height > 50 ? rect.height : 280;
+  if (canvas.width !== Math.round(w * scale) || canvas.height !== Math.round(h * scale)) {
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
+  }
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+  const width = canvas.width / scale;
+  const height = canvas.height / scale;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#0c121e";
+  ctx.fillRect(0, 0, width, height);
+
+  if (!items || !items.length) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.textAlign = "center";
+    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillText("No FII/DII Chart Data Available", width / 2, height / 2);
+    return;
+  }
+
+  // Reverse items so oldest is on left, newest on right for chart
+  const chartItems = [...items].reverse();
+
+  const pad = { left: 65, right: 20, top: 25, bottom: 35 };
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+
+  // Compute values according to view
+  const vals = chartItems.map(item => {
+    if (view === "fii") return item.fiiNet || 0;
+    if (view === "dii") return item.diiNet || 0;
+    return item.totalNet !== undefined ? item.totalNet : ((item.fiiNet || 0) + (item.diiNet || 0));
+  });
+
+  let maxVal = Math.max(...vals.map(v => Math.abs(v)), 100);
+  maxVal *= 1.15;
+
+  const yZero = pad.top + plotH / 2;
+  const yForVal = val => pad.top + plotH / 2 - (val / maxVal) * (plotH / 2);
+
+  // Draw Gridlines & Zero Axis
+  ctx.strokeStyle = "#1e293d";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+
+  // Upper gridline
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top);
+  ctx.lineTo(width - pad.right, pad.top);
+  ctx.stroke();
+
+  // Zero gridline (solid line)
+  ctx.strokeStyle = "#334155";
+  ctx.setLineDash([]);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, yZero);
+  ctx.lineTo(width - pad.right, yZero);
+  ctx.stroke();
+
+  // Lower gridline
+  ctx.strokeStyle = "#1e293d";
+  ctx.setLineDash([3, 3]);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top + plotH);
+  ctx.lineTo(width - pad.right, pad.top + plotH);
+  ctx.stroke();
+
+  // Axis Labels
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "10px 'JetBrains Mono', monospace";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  ctx.fillText(`+${Math.round(maxVal).toLocaleString()} Cr`, pad.left - 8, pad.top);
+  ctx.fillText("0 Cr", pad.left - 8, yZero);
+  ctx.fillText(`-${Math.round(maxVal).toLocaleString()} Cr`, pad.left - 8, pad.top + plotH);
+
+  // Draw Bars
+  const count = chartItems.length;
+  const barSlotW = plotW / count;
+  const barW = Math.max(4, Math.min(26, barSlotW - 8));
+
+  chartItems.forEach((item, i) => {
+    const val = vals[i];
+    const x = pad.left + i * barSlotW + (barSlotW - barW) / 2;
+    const yVal = yForVal(val);
+    const barH = Math.abs(yVal - yZero);
+
+    // Color gradient
+    const gradient = ctx.createLinearGradient(0, Math.min(yVal, yZero), 0, Math.max(yVal, yZero));
+    if (val >= 0) {
+      gradient.addColorStop(0, "#10b981");
+      gradient.addColorStop(1, "#059669");
+    } else {
+      gradient.addColorStop(0, "#f43f5e");
+      gradient.addColorStop(1, "#dc2626");
+    }
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, Math.min(yVal, yZero), barW, Math.max(barH, 2));
+
+    // Period label on bottom axis
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = "9px 'JetBrains Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    const lbl = String(item.period || item.date || "").slice(-4);
+    ctx.fillText(lbl, x + barW / 2, pad.top + plotH + 8);
+  });
+}
+
+function initFiiDiiCashControls() {
+  const pDaily = document.getElementById("fiiDiiPeriodDaily");
+  const pMonthly = document.getElementById("fiiDiiPeriodMonthly");
+  const pYearly = document.getElementById("fiiDiiPeriodYearly");
+  
+  const vNet = document.getElementById("fiiDiiViewNet");
+  const vFii = document.getElementById("fiiDiiViewFii");
+  const vDii = document.getElementById("fiiDiiViewDii");
+
+  const setPeriod = (period, activeBtn) => {
+    fiiDiiActivePeriod = period;
+    [pDaily, pMonthly, pYearly].forEach(btn => btn?.classList.remove("active"));
+    activeBtn?.classList.add("active");
+    renderFiiDiiCashSection();
+  };
+
+  const setView = (view, activeBtn) => {
+    fiiDiiActiveView = view;
+    [vNet, vFii, vDii].forEach(btn => btn?.classList.remove("active"));
+    activeBtn?.classList.add("active");
+    renderFiiDiiCashSection();
+  };
+
+  pDaily?.addEventListener("click", () => setPeriod("daily", pDaily));
+  pMonthly?.addEventListener("click", () => setPeriod("monthly", pMonthly));
+  pYearly?.addEventListener("click", () => setPeriod("yearly", pYearly));
+
+  vNet?.addEventListener("click", () => setView("net", vNet));
+  vFii?.addEventListener("click", () => setView("fii", vFii));
+  vDii?.addEventListener("click", () => setView("dii", vDii));
+
+  const searchInput = document.getElementById("fiiDiiSearchInput");
+  const sessSelect = document.getElementById("fiiDiiSessionSelect");
+  const refreshBtn = document.getElementById("fiiDiiRefreshBtn");
+
+  searchInput?.addEventListener("input", () => renderFiiDiiCashSection());
+  sessSelect?.addEventListener("change", () => renderFiiDiiCashSection());
+  refreshBtn?.addEventListener("click", () => loadFiiDiiCashData());
+
+}
+
+
+
+// ==============================================================================
+// ⚡ Clickable Live Market Ticker Tape Event Listeners & Real-Time Updater
+// ==============================================================================
+function initMarketTickerTape() {
+  const chips = document.querySelectorAll(".ticker-chip.clickable");
+  chips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      const tabTarget = chip.getAttribute("data-tab");
+      if (tabTarget && typeof switchTab === "function") {
+        switchTab(tabTarget);
+        // Scroll smoothly to top of active panel
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    });
   });
 }
 
 function updateTickerBarData(data) {
   if (!data) return;
   if (data.fiiCashNet !== undefined) {
+    const el = document.getElementById("tickerFiiCashVal");
     if (el) {
       el.textContent = (data.fiiCashNet >= 0 ? "+" : "") + "₹" + data.fiiCashNet.toLocaleString("en-IN") + " Cr";
       el.className = "ticker-val " + (data.fiiCashNet >= 0 ? "positive" : "negative");
@@ -9067,6 +9323,75 @@ function instNav(key) {
   }
 }
 
+async function loadDashboardMacroRibbon() {
+  try {
+    const res = await fetch("/api/global-markets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const hm = data.headlineMetrics || {};
+    if (hm.giftNifty) {
+      const el = document.getElementById("macroGiftNifty");
+      const chg = document.getElementById("macroGiftChg");
+      if (el && hm.giftNifty.ltp) el.textContent = hm.giftNifty.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2 });
+      if (chg && hm.giftNifty.changePct !== undefined) {
+        chg.textContent = (hm.giftNifty.changePct >= 0 ? "+" : "") + hm.giftNifty.changePct + "%";
+        chg.className = "mp-chg " + (hm.giftNifty.changePct >= 0 ? "positive" : "negative");
+      }
+    }
+    if (hm.brentCrude) {
+      const el = document.getElementById("macroBrent");
+      const chg = document.getElementById("macroBrentChg");
+      if (el && hm.brentCrude.ltp) el.textContent = hm.brentCrude.ltp.toFixed(2);
+      if (chg && hm.brentCrude.changePct !== undefined) {
+        chg.textContent = (hm.brentCrude.changePct >= 0 ? "+" : "") + hm.brentCrude.changePct + "%";
+        chg.className = "mp-chg " + (hm.brentCrude.changePct >= 0 ? "positive" : "negative");
+      }
+    }
+    if (hm.gold) {
+      const el = document.getElementById("macroGold");
+      const chg = document.getElementById("macroGoldChg");
+      if (el && hm.gold.ltp) el.textContent = hm.gold.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2 });
+      if (chg && hm.gold.changePct !== undefined) {
+        chg.textContent = (hm.gold.changePct >= 0 ? "+" : "") + hm.gold.changePct + "%";
+        chg.className = "mp-chg " + (hm.gold.changePct >= 0 ? "positive" : "negative");
+      }
+    }
+    if (hm.us10y) {
+      const el = document.getElementById("macroUs10y");
+      const chg = document.getElementById("macroUs10yChg");
+      if (el && hm.us10y.ltp) el.textContent = hm.us10y.ltp.toFixed(2) + "%";
+      if (chg && hm.us10y.changePct !== undefined) {
+        chg.textContent = (hm.us10y.changePct >= 0 ? "+" : "") + hm.us10y.changePct + "%";
+        chg.className = "mp-chg " + (hm.us10y.changePct >= 0 ? "positive" : "negative");
+      }
+    }
+    if (hm.dxy) {
+      const el = document.getElementById("macroDxy");
+      const chg = document.getElementById("macroDxyChg");
+      if (el && hm.dxy.ltp) el.textContent = hm.dxy.ltp.toFixed(2);
+      if (chg && hm.dxy.changePct !== undefined) {
+        chg.textContent = (hm.dxy.changePct >= 0 ? "+" : "") + hm.dxy.changePct + "%";
+        chg.className = "mp-chg " + (hm.dxy.changePct >= 0 ? "positive" : "negative");
+      }
+    }
+    if (hm.btc) {
+      const el = document.getElementById("macroBtc");
+      const chg = document.getElementById("macroBtcChg");
+      if (el && hm.btc.ltp) el.textContent = "$" + hm.btc.ltp.toLocaleString("en-IN");
+      if (chg && hm.btc.changePct !== undefined) {
+        chg.textContent = (hm.btc.changePct >= 0 ? "+" : "") + hm.btc.changePct + "%";
+        chg.className = "mp-chg " + (hm.btc.changePct >= 0 ? "positive" : "negative");
+      }
+    }
+  } catch(e) {
+    console.warn("Macro ribbon load failed:", e);
+  }
+}
+
 function initInstNavState() {
   // On initial load, show dashboard
   const panelDashboard = document.getElementById("panelDashboard");
@@ -9086,8 +9411,8 @@ function initInstNavState() {
   const navDash = document.getElementById("navDashboard");
   if (navDash) navDash.classList.add("active");
 
-  // Wire up nifty spot to pulse strip when data arrives
-  // (this is optional — niftySpot updates happen via existing code)
+  // Load Macro ribbon data
+  loadDashboardMacroRibbon();
 }
 
 // Expose instNav globally
