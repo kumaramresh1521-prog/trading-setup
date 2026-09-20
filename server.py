@@ -37,6 +37,7 @@ import supabase_engine
 import seo_engine
 import straddle_engine
 import breadth_contribution_engine
+import global_markets_engine
 
 ROOT = Path(__file__).resolve().parent
 PUBLIC_DIR = ROOT / "public"
@@ -6871,6 +6872,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             date_param = query.get("date", [""])[0] or "2026-09-18"
             force = query.get("refresh", ["false"])[0].lower() in ("1", "true")
             return self.send_json(200, get_cached_breadth_contribution(idx, date_param, force))
+        if path == "/api/global-markets":
+            query = urllib.parse.parse_qs(parsed.query)
+            cat = query.get("category", ["all"])[0]
+            return self.send_json(200, global_markets_engine.get_global_markets_data(cat))
         if path == "/api/indices-overview":
             query = urllib.parse.parse_qs(parsed.query)
             payload = {
@@ -7091,6 +7096,10 @@ class RequestHandler(BaseHTTPRequestHandler):
                 date_param = payload.get("date", "2026-09-18")
                 force = bool(payload.get("refresh") or payload.get("fastRefresh"))
                 return self.send_json(200, get_cached_breadth_contribution(idx, date_param, force))
+            if parsed.path == "/api/global-markets":
+                payload = self.read_body()
+                cat = payload.get("category", "all")
+                return self.send_json(200, global_markets_engine.get_global_markets_data(cat))
             if parsed.path == "/api/login-test":
                 payload = self.read_body()
                 manual_totp = payload.get("manualTotp") or ""

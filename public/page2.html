@@ -8,7 +8,7 @@
   <meta name="keywords" content="derivatives suite, open interest analysis, options oi, multi strike oi, volume pcr, niftytrader, definedge suite">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://breadthlab.com/page2.html">
-  <link rel="stylesheet" href="/page2.css?v=20260920_v6">
+  <link rel="stylesheet" href="/page2.css?v=20260920_v7">
 </head>
 <body class="page2-body">
 
@@ -32,7 +32,7 @@
             <span>📊</span> <span>NIFTYTRADER SUITE</span>
           </button>
           <button id="p2SuiteToolsBtn" class="page2-suite-btn" type="button">
-            <span>🛠️</span> <span>TOOLS</span>
+            <span>🌐</span> <span>OTHER TOOLS (GLOBAL MARKETS)</span>
           </button>
           <button id="p2SuiteFiiDiiBtn" class="page2-suite-btn" type="button">
             <span>🏛️</span> <span>FII / DII</span>
@@ -692,9 +692,130 @@
   </main>
 
   <!-- ====================================================================
-       SECTION 3: TOOLS SUITE (Live ATM Straddle & Options Analytics)
+       SECTION 3: OTHER TOOLS (Global Markets & Options Analytics)
        ==================================================================== -->
   <main id="p2SectionTools" class="page2-main-content" style="display:none;">
+
+    <!-- Sub-Navigation for Other Tools -->
+    <div class="gm-subnav-bar">
+      <div class="gm-subnav-group">
+        <button id="p2ToolGlobalMarketsBtn" class="gm-subnav-btn active" type="button">
+          <span>🌐</span> <span>GLOBAL MARKETS &amp; INDICES</span>
+        </button>
+        <button id="p2ToolStraddleBtn" class="gm-subnav-btn" type="button">
+          <span>📈</span> <span>ATM OPTIONS STRADDLE CHART</span>
+        </button>
+      </div>
+      <div class="gm-subnav-status">
+        <span class="gm-pulse-dot"></span>
+        <span id="gmDeskStatusText">REAL-TIME GLOBAL DESK ACTIVE</span>
+      </div>
+    </div>
+
+    <!-- SUBVIEW 1: GLOBAL MARKETS DESK -->
+    <div id="p2ViewGlobalMarkets" class="gm-view-container active">
+
+      <!-- Global Desk Header & Controls -->
+      <div class="gm-desk-header">
+        <div class="gm-title-wrap">
+          <h2>🌐 REAL-TIME GLOBAL INDICES &amp; MACRO DESK</h2>
+          <p>Institutional tracking of World Indices, Forex, Commodities, Crypto, Sovereign Yields &amp; Indian ADRs</p>
+        </div>
+
+        <div class="gm-controls-wrap">
+          <!-- Search Filter -->
+          <div class="gm-search-box">
+            <input type="text" id="gmSearchInput" placeholder="🔍 Search asset, symbol, country..." class="page2-ctrl-select" style="min-width:230px; padding:6px 12px;">
+          </div>
+
+          <!-- View Toggle: Cards vs Table -->
+          <div class="nt-exchange-selector">
+            <button id="gmViewCardsBtn" class="nt-exch-btn active" type="button">🔲 Cards</button>
+            <button id="gmViewTableBtn" class="nt-exch-btn" type="button">📑 Table</button>
+          </div>
+
+          <!-- Live Refresh Toggle -->
+          <label class="straddle-live-toggle" title="Auto-refresh quotes every 5 seconds">
+            <input type="checkbox" id="gmAutoRefresh" checked>
+            <span class="straddle-live-dot">●</span>
+            <span id="gmLiveLabel">Live 5s</span>
+          </label>
+
+          <!-- Manual Refresh Button -->
+          <button id="gmRefreshBtn" class="page2-refresh-btn" type="button">🔄 Fetch</button>
+        </div>
+      </div>
+
+      <!-- Top Macro KPI Ribbon (Key World Metrics) -->
+      <section class="gm-macro-strip" id="gmMacroStrip">
+        <!-- Rendered dynamically -->
+      </section>
+
+      <!-- Category Filter Tabs -->
+      <div class="gm-category-bar" id="gmCategoryBar">
+        <button class="gm-cat-btn active" data-cat="all" type="button">
+          <span>🌟 ALL ASSETS</span> <span class="gm-badge-count" id="countAll">46</span>
+        </button>
+        <button class="gm-cat-btn" data-cat="indices" type="button">
+          <span>🌐 GLOBAL INDICES</span> <span class="gm-badge-count" id="countIndices">13</span>
+        </button>
+        <button class="gm-cat-btn" data-cat="currency" type="button">
+          <span>💱 CURRENCIES / FOREX</span> <span class="gm-badge-count" id="countCurrency">8</span>
+        </button>
+        <button class="gm-cat-btn" data-cat="commodity" type="button">
+          <span>🛢️ COMMODITIES</span> <span class="gm-badge-count" id="countCommodity">8</span>
+        </button>
+        <button class="gm-cat-btn" data-cat="crypto" type="button">
+          <span>🪙 CRYPTOCURRENCIES</span> <span class="gm-badge-count" id="countCrypto">5</span>
+        </button>
+        <button class="gm-cat-btn" data-cat="bonds" type="button">
+          <span>📑 SOVEREIGN BONDS</span> <span class="gm-badge-count" id="countBonds">6</span>
+        </button>
+        <button class="gm-cat-btn" data-cat="adr" type="button">
+          <span>🇮🇳 INDIAN ADRs</span> <span class="gm-badge-count" id="countAdr">6</span>
+        </button>
+      </div>
+
+      <!-- Grid Cards View -->
+      <div id="gmCardsGrid" class="gm-cards-grid">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Table View -->
+      <div id="gmTableWrapper" class="p2-card" style="display:none; margin-top:16px;">
+        <div class="p2-card-header">
+          <div>
+            <span class="p2-card-title" id="gmTableTitle">Global Multi-Asset Institutional Matrix</span>
+            <div class="p2-card-subtitle">Real-time valuation, day range depth, 52-week boundaries, and session momentum</div>
+          </div>
+          <button id="gmExportCsvBtn" class="nt-btn-secondary" type="button">📥 Export CSV</button>
+        </div>
+
+        <div class="p2-table-container">
+          <table class="p2-table" id="tableGlobalMarkets">
+            <thead>
+              <tr>
+                <th>ASSET / BENCHMARK</th>
+                <th>CATEGORY</th>
+                <th>STATUS</th>
+                <th class="text-right">REAL-TIME LTP</th>
+                <th class="text-right">CHANGE</th>
+                <th class="text-right">% CHG</th>
+                <th style="min-width:140px;" class="text-center">DAY RANGE</th>
+                <th style="min-width:130px;" class="text-center">52-WEEK RANGE</th>
+                <th style="width:110px;" class="text-center">TREND</th>
+                <th class="text-right">PREV CLOSE</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyGlobalMarkets"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SUBVIEW 2: ATM OPTIONS STRADDLE DESK -->
+    <div id="p2ViewStraddle" class="gm-view-container" style="display:none;">
 
     <!-- Tools Header with Category, Index, Expiry & Real-time Auto-Refresh -->
     <div class="straddle-toolbar">
@@ -895,6 +1016,7 @@
         </table>
       </div>
     </div>
+    </div> <!-- /p2ViewStraddle -->
 
   </main>
 
@@ -1241,6 +1363,6 @@
     </div>
   </main>
 
-  <script src="/page2.js?v=20260920_v6"></script>
+  <script src="/page2.js?v=20260920_v7"></script>
 </body>
 </html>

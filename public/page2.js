@@ -15,6 +15,13 @@
   let ntPcrMode = "pcr"; // 'pcr' or 'chg'
   let isLightMode = false;
   let cachedNtSummary = null;
+  let currentToolsSubView = "global"; // 'global' or 'straddle'
+  let currentGmCategory = "all";
+  let currentGmView = "cards"; // 'cards' or 'table'
+  let gmSearchQuery = "";
+  let gmAutoRefreshTimer = null;
+  let gmPreviousPrices = {};
+  let gmCachedData = null;
 
   // Chart Cache
   const charts = {};
@@ -88,6 +95,7 @@
     setupNiftyTraderNav();
     setupGlobalControls();
     setupStraddleControls();
+    setupGlobalMarketsControls();
     setupFiiDiiControls();
     initBreadthContribution();
 
@@ -257,7 +265,11 @@
       loadNiftyTraderSummary();
       loadNiftyTraderTool(currentNtTool);
     } else if (currentSuite === "tools") {
-      loadStraddleTool();
+      if (currentToolsSubView === "straddle") {
+        loadStraddleTool();
+      } else {
+        loadGlobalMarketsSuite();
+      }
     } else if (currentSuite === "fiidii") {
       loadFiiDiiSuite();
     } else if (currentSuite === "contribution") {
@@ -272,7 +284,11 @@
       loadNiftyTraderSummary();
       loadNiftyTraderTool(currentNtTool);
     } else if (currentSuite === "tools") {
-      loadStraddleTool();
+      if (currentToolsSubView === "straddle") {
+        loadStraddleTool();
+      } else {
+        loadGlobalMarketsSuite();
+      }
     } else if (currentSuite === "fiidii") {
       loadFiiDiiSuite();
     } else if (currentSuite === "contribution") {
@@ -3610,6 +3626,526 @@
         </div>
       `;
     }
+  }
+
+  // ========================================================================
+  // 🌐 GLOBAL MARKETS & MULTI-ASSET DESK CONTROLLER
+  // ========================================================================
+  function setupGlobalMarketsControls() {
+    // 1. Sub-nav toggling between Global Markets and Straddle
+    const gmBtn = document.getElementById("p2ToolGlobalMarketsBtn");
+    const stBtn = document.getElementById("p2ToolStraddleBtn");
+    const gmView = document.getElementById("p2ViewGlobalMarkets");
+    const stView = document.getElementById("p2ViewStraddle");
+
+    if (gmBtn && stBtn && gmView && stView) {
+      gmBtn.addEventListener("click", () => {
+        currentToolsSubView = "global";
+        gmBtn.classList.add("active");
+        stBtn.classList.remove("active");
+        gmView.style.display = "block";
+        stView.style.display = "none";
+        loadGlobalMarketsSuite();
+      });
+
+      stBtn.addEventListener("click", () => {
+        currentToolsSubView = "straddle";
+        stBtn.classList.add("active");
+        gmBtn.classList.remove("active");
+        stView.style.display = "block";
+        gmView.style.display = "none";
+        loadStraddleTool();
+      });
+    }
+
+    // 2. Category Filter Pills
+    const catBtns = document.querySelectorAll(".gm-cat-btn");
+    catBtns.forEach((b) => {
+      b.addEventListener("click", () => {
+        catBtns.forEach((x) => x.classList.remove("active"));
+        b.classList.add("active");
+        currentGmCategory = b.getAttribute("data-cat") || "all";
+        renderFilteredGlobalAssets();
+      });
+    });
+
+    // 3. Search Filter
+    const searchInput = document.getElementById("gmSearchInput");
+    if (searchInput) {
+      searchInput.addEventListener("input", (e) => {
+        gmSearchQuery = (e.target.value || "").toLowerCase().trim();
+        renderFilteredGlobalAssets();
+      });
+    }
+
+    // 4. View Switcher (Cards vs Table)
+    const cardsBtn = document.getElementById("gmViewCardsBtn");
+    const tableBtn = document.getElementById("gmViewTableBtn");
+    const cardsGrid = document.getElementById("gmCardsGrid");
+    const tableWrap = document.getElementById("gmTableWrapper");
+
+    if (cardsBtn && tableBtn && cardsGrid && tableWrap) {
+      cardsBtn.addEventListener("click", () => {
+        currentGmView = "cards";
+        cardsBtn.classList.add("active");
+        tableBtn.classList.remove("active");
+        cardsGrid.style.display = "grid";
+        tableWrap.style.display = "none";
+      });
+
+      tableBtn.addEventListener("click", () => {
+        currentGmView = "table";
+        tableBtn.classList.add("active");
+        cardsBtn.classList.remove("active");
+        cardsGrid.style.display = "none";
+        tableWrap.style.display = "block";
+      });
+    }
+
+    // 5. Refresh Buttons & Auto-Refresh Interval
+    const refreshBtn = document.getElementById("gmRefreshBtn");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", () => {
+        loadGlobalMarketsSuite(false);
+      });
+    }
+
+    const exportBtn = document.getElementById("gmExportCsvBtn");
+    if (exportBtn) {
+      exportBtn.addEventListener("click", exportGlobalMarketsCsv);
+    }
+
+    // Auto-refresh interval (5 seconds)
+    if (gmAutoRefreshTimer) clearInterval(gmAutoRefreshTimer);
+    gmAutoRefreshTimer = setInterval(() => {
+      const autoBox = document.getElementById("gmAutoRefresh");
+      if (
+        autoBox &&
+        autoBox.checked &&
+        currentSuite === "tools" &&
+        currentToolsSubView === "global"
+      ) {
+        loadGlobalMarketsSuite(true);
+      }
+    }, 5000);
+  }
+
+  async function loadGlobalMarketsSuite(isSilent = false) {
+    try {
+      const res = await fetch(`/api/global-markets?category=all`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (!json || !json.ok) throw new Error("Invalid response");
+
+      gmCachedData = json;
+      updateGlobalMacroStrip(json.headlineMetrics);
+      updateCategoryBadges(json.categorySummary, json.totalAssets);
+      renderFilteredGlobalAssets();
+
+      const clockEl = document.getElementById("gmDeskStatusText");
+      if (clockEl && json.asOf) {
+        clockEl.textContent = `UPDATED ${json.asOf}`;
+      }
+    } catch (err) {
+      console.error("Failed to load global markets suite:", err);
+      if (!isSilent) {
+        const grid = document.getElementById("gmCardsGrid");
+        if (grid) {
+          grid.innerHTML = `<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--p2-red);">
+            Failed to connect to Global Markets Engine. Please check server connection.
+          </div>`;
+        }
+      }
+    }
+  }
+
+  function updateGlobalMacroStrip(metrics) {
+    const strip = document.getElementById("gmMacroStrip");
+    if (!strip || !metrics) return;
+
+    const cardsData = [
+      {
+        title: "GIFT NIFTY",
+        sub: "NSE IX FUTURES",
+        flag: "🇮🇳",
+        val: Number(metrics.giftNifty.ltp).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+        chg: metrics.giftNifty.change,
+        pct: metrics.giftNifty.changePct,
+        unit: "pts"
+      },
+      {
+        title: "BRENT CRUDE",
+        sub: "COMMODITY OIL",
+        flag: "🛢️",
+        val: `$${Number(metrics.brentCrude.ltp).toFixed(2)}`,
+        chg: metrics.brentCrude.change,
+        pct: metrics.brentCrude.changePct,
+        unit: "/bbl"
+      },
+      {
+        title: "GOLD SPOT",
+        sub: "PRECIOUS METAL",
+        flag: "🟡",
+        val: `$${Number(metrics.gold.ltp).toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+        chg: metrics.gold.change,
+        pct: metrics.gold.changePct,
+        unit: "/oz"
+      },
+      {
+        title: "US 10Y BENCHMARK",
+        sub: "SOVEREIGN YIELD",
+        flag: "🇺🇸",
+        val: `${Number(metrics.us10y.ltp).toFixed(2)}%`,
+        chg: metrics.us10y.change,
+        pct: metrics.us10y.changePct,
+        unit: "pts"
+      },
+      {
+        title: "US DOLLAR INDEX",
+        sub: "DXY CURRENCY BASKET",
+        flag: "💵",
+        val: Number(metrics.dxy.ltp).toFixed(2),
+        chg: metrics.dxy.change,
+        pct: metrics.dxy.changePct,
+        unit: "pts"
+      },
+      {
+        title: "BITCOIN SPOT",
+        sub: "CRYPTO LEADER",
+        flag: "₿",
+        val: `$${Number(metrics.btc.ltp).toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+        chg: metrics.btc.change,
+        pct: metrics.btc.changePct,
+        unit: "USD"
+      }
+    ];
+
+    strip.innerHTML = cardsData.map((c) => {
+      const isPos = c.chg >= 0;
+      const chgClass = isPos ? "text-green" : "text-red";
+      const sign = isPos ? "+" : "";
+      return `
+        <div class="gm-macro-card">
+          <div class="gm-macro-top">
+            <span>${c.flag} ${c.title}</span>
+            <span style="font-size:10px; opacity:0.8;">${c.sub}</span>
+          </div>
+          <div class="gm-macro-price">${c.val}</div>
+          <div class="gm-macro-bottom">
+            <span class="${chgClass}">${sign}${c.chg.toFixed(2)} (${sign}${c.pct.toFixed(2)}%)</span>
+            <span style="color:var(--p2-text-dim);">${c.unit}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function updateCategoryBadges(summary, totalCount) {
+    if (totalCount !== undefined) {
+      const el = document.getElementById("countAll");
+      if (el) el.textContent = totalCount;
+    }
+    if (!summary) return;
+
+    const map = {
+      indices: "countIndices",
+      currency: "countCurrency",
+      commodity: "countCommodity",
+      crypto: "countCrypto",
+      bonds: "countBonds",
+      adr: "countAdr"
+    };
+
+    Object.keys(map).forEach((k) => {
+      const el = document.getElementById(map[k]);
+      if (el && summary[k]) {
+        el.textContent = summary[k].count;
+      }
+    });
+  }
+
+  function renderFilteredGlobalAssets() {
+    if (!gmCachedData || !gmCachedData.assets) return;
+
+    let items = gmCachedData.assets;
+
+    // Filter by Category
+    if (currentGmCategory !== "all") {
+      items = items.filter((x) => x.category === currentGmCategory);
+    }
+
+    // Filter by Search Query
+    if (gmSearchQuery) {
+      items = items.filter((x) => {
+        const sym = (x.symbol || "").toLowerCase();
+        const name = (x.name || "").toLowerCase();
+        const country = (x.country || "").toLowerCase();
+        return sym.includes(gmSearchQuery) || name.includes(gmSearchQuery) || country.includes(gmSearchQuery);
+      });
+    }
+
+    renderGlobalCards(items);
+    renderGlobalTable(items);
+  }
+
+  function renderGlobalCards(items) {
+    const grid = document.getElementById("gmCardsGrid");
+    if (!grid) return;
+
+    if (!items || items.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1; padding:40px; text-align:center; color:var(--p2-text-muted);">
+        No assets found matching your criteria.
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = items.map((asset) => {
+      const isPos = asset.change >= 0;
+      const chgClass = isPos ? "text-green" : "text-red";
+      const sign = isPos ? "+" : "";
+
+      // Market Status Badge Class
+      let statusClass = "open";
+      if (asset.marketStatus === "CLOSED") statusClass = "closed";
+      else if (asset.marketStatus === "24/7 LIVE") statusClass = "live";
+
+      // Price Formatting
+      let ltpFormatted = formatAssetPrice(asset.ltp, asset.category, asset.currency);
+
+      // Flash determination
+      const prevPrice = gmPreviousPrices[asset.id];
+      let flashClass = "";
+      if (prevPrice !== undefined) {
+        if (asset.ltp > prevPrice) flashClass = "flash-green";
+        else if (asset.ltp < prevPrice) flashClass = "flash-red";
+      }
+      gmPreviousPrices[asset.id] = asset.ltp;
+
+      // Day Range calculation
+      const daySpread = asset.high - asset.low;
+      const dayPct = daySpread > 0 ? Math.min(100, Math.max(0, ((asset.ltp - asset.low) / daySpread) * 100)) : 50;
+
+      // 52W Range calculation
+      const w52Spread = asset.week52High - asset.week52Low;
+      const w52Pct = w52Spread > 0 ? Math.min(100, Math.max(0, ((asset.ltp - asset.week52Low) / w52Spread) * 100)) : 50;
+
+      // Sparkline SVG
+      const sparkSvg = generateSparklineSvg(asset.sparkline, isPos, 140, 36);
+
+      return `
+        <div class="gm-card" id="gmCard_${asset.id}">
+          <div class="gm-card-header">
+            <div class="gm-card-title-group">
+              <div class="gm-card-symbol-line">
+                <span class="gm-card-flag">${asset.flag || "🌐"}</span>
+                <span class="gm-card-symbol">${asset.symbol}</span>
+              </div>
+              <div class="gm-card-name" title="${asset.name}">${asset.name}</div>
+            </div>
+            <span class="gm-status-pill ${statusClass}">${asset.marketStatus}</span>
+          </div>
+
+          <div class="gm-card-price-row">
+            <div class="gm-card-ltp ${flashClass}">${ltpFormatted}</div>
+            <div class="gm-card-chg-wrap ${chgClass}">
+              <div class="gm-card-chg-val">${sign}${Number(asset.change).toFixed(2)}</div>
+              <div class="gm-card-chg-pct">${sign}${Number(asset.changePct).toFixed(2)}%</div>
+            </div>
+          </div>
+
+          <div class="gm-sparkline-wrap">
+            ${sparkSvg}
+          </div>
+
+          <div class="gm-range-group">
+            <div class="gm-range-bar-box">
+              <div class="gm-range-labels">
+                <span class="gm-range-tag">Day Range</span>
+                <span>L: ${formatCompactPrice(asset.low)} &nbsp;|&nbsp; H: ${formatCompactPrice(asset.high)}</span>
+              </div>
+              <div class="gm-range-track">
+                <div class="gm-range-fill ${!isPos ? 'bearish' : ''}" style="width:${dayPct.toFixed(1)}%;"></div>
+              </div>
+            </div>
+
+            <div class="gm-range-bar-box">
+              <div class="gm-range-labels">
+                <span class="gm-range-tag">52W Range</span>
+                <span>L: ${formatCompactPrice(asset.week52Low)} &nbsp;|&nbsp; H: ${formatCompactPrice(asset.week52High)}</span>
+              </div>
+              <div class="gm-range-track">
+                <div class="gm-range-fill ${!isPos ? 'bearish' : ''}" style="width:${w52Pct.toFixed(1)}%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Clear flash classes after 800ms
+    setTimeout(() => {
+      document.querySelectorAll(".gm-card-ltp.flash-green, .gm-card-ltp.flash-red").forEach((el) => {
+        el.classList.remove("flash-green", "flash-red");
+      });
+    }, 800);
+  }
+
+  function renderGlobalTable(items) {
+    const tbody = document.getElementById("tbodyGlobalMarkets");
+    if (!tbody) return;
+
+    if (!items || items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--p2-text-muted);">No assets available</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = items.map((asset) => {
+      const isPos = asset.change >= 0;
+      const chgClass = isPos ? "text-green" : "text-red";
+      const sign = isPos ? "+" : "";
+
+      let statusClass = "open";
+      if (asset.marketStatus === "CLOSED") statusClass = "closed";
+      else if (asset.marketStatus === "24/7 LIVE") statusClass = "live";
+
+      const ltpFormatted = formatAssetPrice(asset.ltp, asset.category, asset.currency);
+
+      const daySpread = asset.high - asset.low;
+      const dayPct = daySpread > 0 ? Math.min(100, Math.max(0, ((asset.ltp - asset.low) / daySpread) * 100)) : 50;
+
+      const sparkSvg = generateSparklineSvg(asset.sparkline, isPos, 90, 24);
+
+      return `
+        <tr>
+          <td>
+            <div class="gm-table-flag-col">
+              <span style="font-size:16px;">${asset.flag || "🌐"}</span>
+              <div>
+                <div class="gm-table-symbol">${asset.symbol}</div>
+                <div class="gm-table-name">${asset.name}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="p2-badge p2-badge-teal">${(asset.category || "").toUpperCase()}</span></td>
+          <td><span class="gm-status-pill ${statusClass}">${asset.marketStatus}</span></td>
+          <td class="text-right font-mono font-bold" style="font-size:14px;">${ltpFormatted}</td>
+          <td class="text-right font-mono ${chgClass}">${sign}${Number(asset.change).toFixed(2)}</td>
+          <td class="text-right font-mono ${chgClass} font-bold">${sign}${Number(asset.changePct).toFixed(2)}%</td>
+          <td>
+            <div class="gm-table-range-cell">
+              <div style="display:flex; justify-content:space-between; font-size:9px; font-family:var(--font-mono); color:var(--p2-text-dim);">
+                <span>${formatCompactPrice(asset.low)}</span>
+                <span>${formatCompactPrice(asset.high)}</span>
+              </div>
+              <div class="gm-table-range-track">
+                <div class="gm-range-fill ${!isPos ? 'bearish' : ''}" style="width:${dayPct.toFixed(1)}%;"></div>
+              </div>
+            </div>
+          </td>
+          <td class="text-center font-mono" style="font-size:11px; color:var(--p2-text-muted);">
+            ${formatCompactPrice(asset.week52Low)} - ${formatCompactPrice(asset.week52High)}
+          </td>
+          <td>
+            <div class="gm-table-sparkline-cell">${sparkSvg}</div>
+          </td>
+          <td class="text-right font-mono" style="color:var(--p2-text-muted);">${formatCompactPrice(asset.prevClose)}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function formatAssetPrice(ltp, category, currency) {
+    if (category === "bonds") {
+      return `${Number(ltp).toFixed(2)}%`;
+    }
+    if (category === "currency" && ltp < 5) {
+      return Number(ltp).toFixed(4);
+    }
+    if (currency === "USD") {
+      return `$${Number(ltp).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    if (currency === "INR" || !currency) {
+      return `₹${Number(ltp).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    return Number(ltp).toLocaleString("en-US", { minimumFractionDigits: 2 });
+  }
+
+  function formatCompactPrice(val) {
+    if (val === undefined || val === null) return "--";
+    const num = Number(val);
+    if (num >= 100000) {
+      return num.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+    }
+    if (num >= 1000) {
+      return num.toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    }
+    return num.toFixed(2);
+  }
+
+  function generateSparklineSvg(pts, isPositive, width = 120, height = 30) {
+    if (!pts || pts.length < 2) return "";
+
+    const min = Math.min(...pts);
+    const max = Math.max(...pts);
+    const range = max - min || 1;
+    const padding = 4;
+    const h = height - padding * 2;
+    const w = width;
+
+    const coords = pts.map((p, i) => {
+      const x = (i / (pts.length - 1)) * w;
+      const y = height - padding - ((p - min) / range) * h;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    });
+
+    const color = isPositive ? "#10b981" : "#f43f5e";
+    const fillId = `gmGrad_${Math.floor(Math.random() * 1000000)}`;
+
+    const polylineStr = coords.join(" ");
+    const areaStr = `0,${height} ${coords.join(" ")} ${w},${height}`;
+
+    return `
+      <svg viewBox="0 0 ${w} ${height}" preserveAspectRatio="none" style="width:100%; height:100%; overflow:visible;">
+        <defs>
+          <linearGradient id="${fillId}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${color}" stop-opacity="0.25" />
+            <stop offset="100%" stop-color="${color}" stop-opacity="0.0" />
+          </linearGradient>
+        </defs>
+        <polygon points="${areaStr}" fill="url(#${fillId})" />
+        <polyline points="${polylineStr}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    `;
+  }
+
+  function exportGlobalMarketsCsv() {
+    if (!gmCachedData || !gmCachedData.assets) return;
+    const items = gmCachedData.assets;
+    const headers = ["Symbol", "Name", "Category", "Country", "Market Status", "LTP", "Change", "Change Pct", "Day Low", "Day High", "52W Low", "52W High", "Prev Close"];
+    const rows = items.map((x) => [
+      `"${x.symbol}"`,
+      `"${x.name}"`,
+      x.category,
+      `"${x.country}"`,
+      x.marketStatus,
+      x.ltp,
+      x.change,
+      x.changePct,
+      x.low,
+      x.high,
+      x.week52Low,
+      x.week52High,
+      x.prevClose
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Global_Markets_Matrix_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
 })();
