@@ -58,7 +58,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css?v=20260920_v1">
+    <link rel="stylesheet" href="/styles.css?v=20260921_v2">
 
     <!-- Supabase JS Client for Cloud Google OAuth & State Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -67,49 +67,336 @@
   </head>
   <body>
     <main class="app">
-      <!-- Top Navigation Bar -->
-      <header class="topbar">
-        <div class="brand-wrapper">
-          <span class="brand-icon">⚡</span>
-          <div>
-            <h1>Breadth Lab &amp; Analytics Desk</h1>
-            <p class="eyebrow">Institutional Market Intelligence</p>
-          </div>
-        </div>
-        
-        <!-- Tab Navigation in Header -->
-        <nav class="tab-nav" aria-label="Main Navigation">
-          <button id="tabBreadth" class="tab-btn active" type="button">📈 Market Breadth</button>
-          <button id="tabOptions" class="tab-btn" type="button">⚡ Options Desk</button>
-          <button id="tabSmartMoney" class="tab-btn" type="button">🏛️ Smart Money EOD Tracker</button>
-          <button id="tabDelivery" class="tab-btn" type="button">📦 Delivery Desk</button>
-          <button id="tabMtf" class="tab-btn" type="button">📊 MTF Analytics</button>
-          <button id="tabTools" class="tab-btn" type="button">🛠️ Tools</button>
-          <a href="/page2.html" class="tab-btn" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(0,172,193,0.15); border-color:rgba(0,172,193,0.35); color:#00acc1; font-weight:700;" title="Open Page 2: Advanced Open Interest Suite">📑 Page 2: Advanced OI Suite ↗</a>
-          <button id="tabSettings" class="tab-btn" type="button">⚙️ Settings</button>
-        </nav>
+      <!-- ================================================================
+           INSTITUTIONAL HEADER — Brand Bar + Mega-Menu Nav
+           ================================================================ -->
+      <header class="inst-header" id="instHeader">
 
-        <div class="topbar-right-group">
-          <!-- Auth & Multi-Device Sync Area -->
-          <div id="topbarAuthArea">
-            <div class="auth-btn-group">
-              <button type="button" class="auth-signin-btn" id="btnOpenSignInModal" onclick="if(window.AuthSync){window.AuthSync.currentTab='signin';window.AuthSync.openAuthModal();}">
-                🔑 Sign In
-              </button>
-              <button type="button" class="auth-signup-btn" id="btnOpenSignUpModal" onclick="if(window.AuthSync){window.AuthSync.currentTab='signup';window.AuthSync.openAuthModal();}">
-                ✨ Sign Up
-              </button>
+        <!-- Row 1: Brand + Right Controls -->
+        <div class="inst-brand-bar">
+          <div class="inst-brand">
+            <span class="inst-brand-icon">⚡</span>
+            <div class="inst-brand-text">
+              <span class="inst-brand-name">Breadth Lab</span>
+              <span class="inst-brand-tagline">Institutional Market Intelligence</span>
+            </div>
+            <!-- Live market pulse ticker -->
+            <div class="inst-pulse-strip" id="instPulseStrip">
+              <span class="inst-pulse-item" id="pulseNifty">NIFTY — <span class="pval" id="pulseNiftyVal">--</span></span>
+              <span class="inst-pulse-sep">|</span>
+              <span class="inst-pulse-item" id="pulseSensex">SENSEX — <span class="pval" id="pulseSensexVal">--</span></span>
+              <span class="inst-pulse-sep">|</span>
+              <span class="inst-pulse-item inst-pulse-live">● LIVE</span>
             </div>
           </div>
-          <div class="status" id="apiStatus">Checking API...</div>
-          <button id="themeToggleBtn" type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark / Light Theme">🌙 Dark</button>
+
+          <div class="inst-right-controls">
+            <div class="status inst-api-status" id="apiStatus">Checking API...</div>
+            <div id="topbarAuthArea">
+              <div class="auth-btn-group">
+                <button type="button" class="auth-signin-btn" id="btnOpenSignInModal" onclick="if(window.AuthSync){window.AuthSync.currentTab='signin';window.AuthSync.openAuthModal();}">🔑 Sign In</button>
+                <button type="button" class="auth-signup-btn" id="btnOpenSignUpModal" onclick="if(window.AuthSync){window.AuthSync.currentTab='signup';window.AuthSync.openAuthModal();}">✨ Sign Up</button>
+              </div>
+            </div>
+            <button id="themeToggleBtn" type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark / Light Theme">🌙 Dark</button>
+          </div>
         </div>
+
+        <!-- Row 2: Institutional Mega-Menu Navigation -->
+        <nav class="inst-nav" aria-label="Main Navigation" id="instNav">
+
+          <!-- DASHBOARD -->
+          <div class="inst-nav-item">
+            <button class="inst-nav-btn active" id="navDashboard" type="button" onclick="instNav('dashboard')">
+              <span class="inst-nav-icon">⬛</span> Dashboard
+            </button>
+          </div>
+
+          <!-- FUTURES -->
+          <div class="inst-nav-item has-dropdown">
+            <button class="inst-nav-btn" id="navFutures" type="button" onclick="instNav('futures')">
+              <span class="inst-nav-icon">📈</span> Futures
+              <span class="inst-nav-arrow">▾</span>
+            </button>
+            <div class="inst-dropdown">
+              <div class="inst-dropdown-col">
+                <span class="inst-dropdown-header">Breadth Analytics</span>
+                <button class="inst-dd-item" onclick="instNav('futures'); return false;">📊 Market Breadth (PnF)</button>
+                <button class="inst-dd-item" onclick="instNav('futures'); return false;">📉 Advance / Decline</button>
+                <button class="inst-dd-item" onclick="instNav('futures'); return false;">🔥 Nifty 50 AD Tracker</button>
+              </div>
+              <div class="inst-dropdown-col">
+                <span class="inst-dropdown-header">Smart Money</span>
+                <button class="inst-dd-item" onclick="instNav('smartmoney'); return false;">🏛️ FII/DII EOD Tracker</button>
+                <button class="inst-dd-item" onclick="instNav('smartmoney'); return false;">💰 Cash vs Derivatives</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- OPTIONS -->
+          <div class="inst-nav-item has-dropdown">
+            <button class="inst-nav-btn" id="navOptions" type="button" onclick="instNav('options')">
+              <span class="inst-nav-icon">⚡</span> Options
+              <span class="inst-nav-arrow">▾</span>
+            </button>
+            <div class="inst-dropdown">
+              <div class="inst-dropdown-col">
+                <span class="inst-dropdown-header">Options Desk</span>
+                <button class="inst-dd-item" onclick="instNav('options'); return false;">📋 Option Chain Live</button>
+                <button class="inst-dd-item" onclick="instNav('options'); return false;">🎯 Max Pain Calculator</button>
+                <button class="inst-dd-item" onclick="instNav('options'); return false;">⚡ wPCR &amp; PCR Charts</button>
+              </div>
+              <div class="inst-dropdown-col">
+                <span class="inst-dropdown-header">Tools</span>
+                <button class="inst-dd-item" onclick="instNav('tools'); return false;">🛠️ ATM Straddle Decay</button>
+                <button class="inst-dd-item" onclick="instNav('tools'); return false;">📐 Greeks Calculator</button>
+                <a href="/page2.html" class="inst-dd-item" style="text-decoration:none; color:inherit;">📑 Advanced OI Suite ↗</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- ANALYTICS -->
+          <div class="inst-nav-item has-dropdown">
+            <button class="inst-nav-btn" id="navAnalytics" type="button" onclick="instNav('breadth')">
+              <span class="inst-nav-icon">🔬</span> Analytics
+              <span class="inst-nav-arrow">▾</span>
+            </button>
+            <div class="inst-dropdown">
+              <div class="inst-dropdown-col">
+                <span class="inst-dropdown-header">Market Analytics</span>
+                <button class="inst-dd-item" onclick="instNav('breadth'); return false;">📈 Market Breadth</button>
+                <button class="inst-dd-item" onclick="instNav('breadth'); return false;">📉 PnF Chart Engine</button>
+              </div>
+              <div class="inst-dropdown-col">
+                <span class="inst-dropdown-header">Research</span>
+                <button class="inst-dd-item" onclick="instNav('settings'); return false;">⚙️ Configuration</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- FII/DII -->
+          <div class="inst-nav-item">
+            <button class="inst-nav-btn" id="navFiiDii" type="button" onclick="instNav('smartmoney')">
+              <span class="inst-nav-icon">🏛️</span> FII / DII
+            </button>
+          </div>
+
+          <!-- MTF ANALYTICS -->
+          <div class="inst-nav-item">
+            <button class="inst-nav-btn" id="navMtf" type="button" onclick="instNav('mtf')">
+              <span class="inst-nav-icon">📊</span> MTF Analytics
+            </button>
+          </div>
+
+          <!-- DELIVERY DESK -->
+          <div class="inst-nav-item">
+            <button class="inst-nav-btn" id="navDelivery" type="button" onclick="instNav('delivery')">
+              <span class="inst-nav-icon">📦</span> Delivery Desk
+            </button>
+          </div>
+
+          <!-- RESOURCES -->
+          <div class="inst-nav-item has-dropdown">
+            <button class="inst-nav-btn" id="navResources" type="button" onclick="instNav('resources')">
+              <span class="inst-nav-icon">🌐</span> Resources
+              <span class="inst-nav-arrow">▾</span>
+            </button>
+            <div class="inst-dropdown">
+              <div class="inst-dropdown-col">
+                <span class="inst-dropdown-header">Research Tools</span>
+                <a href="/page2.html" class="inst-dd-item" style="text-decoration:none; color:inherit;">📑 Advanced OI Suite ↗</a>
+                <button class="inst-dd-item" onclick="instNav('tools'); return false;">🛠️ All Tools</button>
+              </div>
+              <div class="inst-dropdown-col">
+                <span class="inst-dropdown-header">Reference</span>
+                <button class="inst-dd-item" onclick="instNav('settings'); return false;">⚙️ Settings &amp; Config</button>
+                <a href="/disclaimer.html" class="inst-dd-item" style="text-decoration:none; color:inherit;">📜 SEBI Disclaimer</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- OLD TABS (hidden, preserved for JS compatibility) -->
+          <button id="tabBreadth" class="tab-btn inst-hidden-tab" type="button" style="display:none!important">Market Breadth</button>
+          <button id="tabOptions" class="tab-btn inst-hidden-tab" type="button" style="display:none!important">Options Desk</button>
+          <button id="tabSmartMoney" class="tab-btn inst-hidden-tab" type="button" style="display:none!important">Smart Money</button>
+          <button id="tabDelivery" class="tab-btn inst-hidden-tab" type="button" style="display:none!important">Delivery</button>
+          <button id="tabMtf" class="tab-btn inst-hidden-tab" type="button" style="display:none!important">MTF</button>
+          <button id="tabTools" class="tab-btn inst-hidden-tab" type="button" style="display:none!important">Tools</button>
+          <button id="tabSettings" class="tab-btn inst-hidden-tab" type="button" style="display:none!important">Settings</button>
+        </nav>
       </header>
+
+      <!-- Dashboard Panel (new) -->
+      <div id="panelDashboard" class="tab-panel inst-dashboard-panel active">
+        <div class="inst-dash-hero">
+          <div class="inst-dash-header">
+            <h2 class="inst-dash-title">Market Dashboard</h2>
+            <span class="inst-dash-subtitle">Real-time Institutional Intelligence — Nifty 50 Focus</span>
+          </div>
+        </div>
+
+        <!-- KPI Row -->
+        <div class="inst-kpi-row" id="dashKpiRow">
+          <div class="inst-kpi-card" onclick="instNav('breadth')">
+            <div class="inst-kpi-icon">📈</div>
+            <div class="inst-kpi-label">Market Breadth</div>
+            <div class="inst-kpi-val" id="dashKpiBreadth">--</div>
+            <div class="inst-kpi-sub">PnF Bullish %</div>
+          </div>
+          <div class="inst-kpi-card" onclick="instNav('options')">
+            <div class="inst-kpi-icon">⚡</div>
+            <div class="inst-kpi-label">wPCR</div>
+            <div class="inst-kpi-val" id="dashKpiWpcr">--</div>
+            <div class="inst-kpi-sub">Weighted PCR</div>
+          </div>
+          <div class="inst-kpi-card" onclick="instNav('smartmoney')">
+            <div class="inst-kpi-icon">🏛️</div>
+            <div class="inst-kpi-label">FII Net</div>
+            <div class="inst-kpi-val" id="dashKpiFii">--</div>
+            <div class="inst-kpi-sub">Cash Segment ₹Cr</div>
+          </div>
+          <div class="inst-kpi-card" onclick="instNav('mtf')">
+            <div class="inst-kpi-icon">📊</div>
+            <div class="inst-kpi-label">MTF Book</div>
+            <div class="inst-kpi-val" id="dashKpiMtf">--</div>
+            <div class="inst-kpi-sub">Total ₹Cr (NSE+BSE)</div>
+          </div>
+          <div class="inst-kpi-card" onclick="instNav('delivery')">
+            <div class="inst-kpi-icon">📦</div>
+            <div class="inst-kpi-label">Delivery %</div>
+            <div class="inst-kpi-val" id="dashKpiDeliv">--</div>
+            <div class="inst-kpi-sub">Nifty 50 Avg</div>
+          </div>
+        </div>
+
+        <!-- Quick Access Grid -->
+        <div class="inst-dash-grid">
+          <!-- Futures / Breadth -->
+          <div class="inst-dash-module" onclick="instNav('breadth')">
+            <div class="inst-dm-header">
+              <span class="inst-dm-icon">📈</span>
+              <span class="inst-dm-title">Futures &amp; Breadth</span>
+              <span class="inst-dm-badge">LIVE</span>
+            </div>
+            <div class="inst-dm-body">
+              <p>PnF Market Breadth, Nifty 50 AD Tracker, Advance/Decline analysis with institutional-grade filtering.</p>
+            </div>
+            <div class="inst-dm-footer">
+              <span class="inst-dm-go">Open Analytics →</span>
+            </div>
+          </div>
+
+          <!-- Options Desk -->
+          <div class="inst-dash-module" onclick="instNav('options')">
+            <div class="inst-dm-header">
+              <span class="inst-dm-icon">⚡</span>
+              <span class="inst-dm-title">Options Desk</span>
+              <span class="inst-dm-badge inst-dm-badge--blue">LIVE</span>
+            </div>
+            <div class="inst-dm-body">
+              <p>Live Option Chain, Max Pain, wPCR &amp; PCR dual-subplot charts, Black-Scholes Greeks surfaces.</p>
+            </div>
+            <div class="inst-dm-footer">
+              <span class="inst-dm-go">Open Options →</span>
+            </div>
+          </div>
+
+          <!-- FII/DII -->
+          <div class="inst-dash-module" onclick="instNav('smartmoney')">
+            <div class="inst-dm-header">
+              <span class="inst-dm-icon">🏛️</span>
+              <span class="inst-dm-title">FII / DII</span>
+              <span class="inst-dm-badge inst-dm-badge--purple">EOD</span>
+            </div>
+            <div class="inst-dm-body">
+              <p>Smart Money EOD Tracker — FII/DII Cash vs Derivatives positioning, participation trends.</p>
+            </div>
+            <div class="inst-dm-footer">
+              <span class="inst-dm-go">Open FII/DII →</span>
+            </div>
+          </div>
+
+          <!-- MTF Analytics -->
+          <div class="inst-dash-module" onclick="instNav('mtf')">
+            <div class="inst-dm-header">
+              <span class="inst-dm-icon">📊</span>
+              <span class="inst-dm-title">MTF Analytics</span>
+              <span class="inst-dm-badge inst-dm-badge--amber">EOD</span>
+            </div>
+            <div class="inst-dm-body">
+              <p>Margin Trading Facility data — broker-wise MTF books, retail leverage exposure, sector trends.</p>
+            </div>
+            <div class="inst-dm-footer">
+              <span class="inst-dm-go">Open MTF →</span>
+            </div>
+          </div>
+
+          <!-- Delivery Desk -->
+          <div class="inst-dash-module" onclick="instNav('delivery')">
+            <div class="inst-dm-header">
+              <span class="inst-dm-icon">📦</span>
+              <span class="inst-dm-title">Delivery Desk</span>
+              <span class="inst-dm-badge inst-dm-badge--green">EOD</span>
+            </div>
+            <div class="inst-dm-body">
+              <p>NSE Delivery analytics — delivery %, conviction scanner, high delivery spike detection.</p>
+            </div>
+            <div class="inst-dm-footer">
+              <span class="inst-dm-go">Open Delivery →</span>
+            </div>
+          </div>
+
+          <!-- Resources / Advanced OI -->
+          <div class="inst-dash-module" onclick="window.location.href='/page2.html'">
+            <div class="inst-dm-header">
+              <span class="inst-dm-icon">📑</span>
+              <span class="inst-dm-title">Advanced OI Suite</span>
+              <span class="inst-dm-badge inst-dm-badge--cyan">PRO ↗</span>
+            </div>
+            <div class="inst-dm-body">
+              <p>14-tool Definedge-style OI Suite — PCR Desk, OI Unwinding, wPCR, Global Markets, Research Hub.</p>
+            </div>
+            <div class="inst-dm-footer">
+              <span class="inst-dm-go">Open Suite →</span>
+            </div>
+          </div>
+
+          <!-- Tools -->
+          <div class="inst-dash-module" onclick="instNav('tools')">
+            <div class="inst-dm-header">
+              <span class="inst-dm-icon">🛠️</span>
+              <span class="inst-dm-title">Tools</span>
+              <span class="inst-dm-badge">CALC</span>
+            </div>
+            <div class="inst-dm-body">
+              <p>ATM Straddle Decay, Greeks Calculator, Straddle analyzer and all quantitative tools.</p>
+            </div>
+            <div class="inst-dm-footer">
+              <span class="inst-dm-go">Open Tools →</span>
+            </div>
+          </div>
+
+          <!-- Analytics / Research -->
+          <div class="inst-dash-module" onclick="instNav('settings')">
+            <div class="inst-dm-header">
+              <span class="inst-dm-icon">⚙️</span>
+              <span class="inst-dm-title">Settings</span>
+              <span class="inst-dm-badge">CONFIG</span>
+            </div>
+            <div class="inst-dm-body">
+              <p>Broker API configuration, data source settings, auto-refresh intervals, display preferences.</p>
+            </div>
+            <div class="inst-dm-footer">
+              <span class="inst-dm-go">Open Settings →</span>
+            </div>
+          </div>
+        </div>
+      </div><!-- /panelDashboard -->
 
       <!-- ================================================================
            Panel 1: Market Breadth
            ================================================================ -->
-      <div id="panelBreadth" class="tab-panel active">
+      <div id="panelBreadth" class="tab-panel">
         <!-- Compact Control Band -->
         <section class="control-band" aria-label="Controls">
           <div class="ctrl-group">
@@ -3522,7 +3809,7 @@
       </footer>
     </main>
 
-    <script src="/app.js?v=20260920_v1"></script>
+    <script src="/app.js?v=20260921_v2"></script>
     <script src="/auth_sync.js?v=20260919_v1"></script>
   </body>
 </html>

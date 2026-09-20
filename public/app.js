@@ -56,8 +56,20 @@ const els = {
   panelMtf: document.getElementById("panelMtf"),
   panelTools: document.getElementById("panelTools"),
   panelSettings: document.getElementById("panelSettings"),
+  panelDashboard: document.getElementById("panelDashboard"),
+
+  // Institutional Nav Buttons
+  navDashboard: document.getElementById("navDashboard"),
+  navFutures: document.getElementById("navFutures"),
+  navOptions: document.getElementById("navOptions"),
+  navAnalytics: document.getElementById("navAnalytics"),
+  navFiiDii: document.getElementById("navFiiDii"),
+  navMtf: document.getElementById("navMtf"),
+  navDelivery: document.getElementById("navDelivery"),
+  navResources: document.getElementById("navResources"),
 
   // MTF Desk Elements
+
   mtfSessionSelect: document.getElementById("mtfSessionSelect"),
   mtfRefreshBtn: document.getElementById("mtfRefreshBtn"),
   mtfAsOfBadge: document.getElementById("mtfAsOfBadge"),
@@ -8965,11 +8977,118 @@ if (document.readyState === "loading") {
     initMarketTickerTape();
     initBrokerSettingsControls();
     initQuantTools();
+    initInstNavState();
   });
 } else {
   initMarketTickerTape();
   initBrokerSettingsControls();
   initQuantTools();
+  initInstNavState();
 }
 
+/* ==========================================================================
+   INSTITUTIONAL NAVIGATION ROUTER
+   Maps the new mega-menu nav to the existing tab panel system
+   ========================================================================== */
 
+// Map of instNav keys → which old switchTab() key they correspond to
+const INST_NAV_MAP = {
+  dashboard:  null,          // new dashboard panel
+  breadth:    "breadth",
+  futures:    "breadth",     // Futures → Market Breadth panel
+  options:    "options",
+  analytics:  "breadth",
+  smartmoney: "smartMoney",
+  fiidii:     "smartMoney",
+  mtf:        "mtf",
+  delivery:   "delivery",
+  tools:      "tools",
+  settings:   "settings",
+  resources:  "tools",
+};
+
+// All institutional nav buttons
+const INST_NAV_BTN_IDS = [
+  "navDashboard", "navFutures", "navOptions", "navAnalytics",
+  "navFiiDii", "navMtf", "navDelivery", "navResources"
+];
+
+// Map from old tab key → which inst-nav-btn to highlight
+const INST_NAV_ACTIVE_MAP = {
+  dashboard:   "navDashboard",
+  breadth:     "navAnalytics",
+  futures:     "navFutures",
+  options:     "navOptions",
+  smartMoney:  "navFiiDii",
+  mtf:         "navMtf",
+  delivery:    "navDelivery",
+  tools:       "navResources",
+  settings:    "navResources",
+};
+
+function instNav(key) {
+  const panelDashboard = document.getElementById("panelDashboard");
+
+  // Clear all inst-nav-btn active states
+  INST_NAV_BTN_IDS.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.remove("active");
+  });
+
+  if (key === "dashboard") {
+    // Show dashboard panel, hide all others
+    const allPanels = document.querySelectorAll(".tab-panel");
+    allPanels.forEach(p => {
+      p.classList.remove("active");
+      p.style.display = "none";
+    });
+    if (panelDashboard) {
+      panelDashboard.classList.add("active");
+      panelDashboard.style.display = "block";
+    }
+    const navBtn = document.getElementById("navDashboard");
+    if (navBtn) navBtn.classList.add("active");
+  } else {
+    // Hide dashboard, route to existing panel via switchTab()
+    if (panelDashboard) {
+      panelDashboard.classList.remove("active");
+      panelDashboard.style.display = "none";
+    }
+    const tabKey = INST_NAV_MAP[key] || key;
+    if (tabKey && typeof switchTab === "function") {
+      switchTab(tabKey);
+    }
+    // Highlight the matching inst-nav-btn
+    const activeBtnId = INST_NAV_ACTIVE_MAP[tabKey] || INST_NAV_ACTIVE_MAP[key];
+    if (activeBtnId) {
+      const btn = document.getElementById(activeBtnId);
+      if (btn) btn.classList.add("active");
+    }
+  }
+}
+
+function initInstNavState() {
+  // On initial load, show dashboard
+  const panelDashboard = document.getElementById("panelDashboard");
+  // Hide all existing panels first
+  const allPanels = document.querySelectorAll(".tab-panel");
+  allPanels.forEach(p => {
+    if (p.id !== "panelDashboard") {
+      p.classList.remove("active");
+      p.style.display = "none";
+    }
+  });
+  if (panelDashboard) {
+    panelDashboard.classList.add("active");
+    panelDashboard.style.display = "block";
+  }
+  // Activate the Dashboard nav button
+  const navDash = document.getElementById("navDashboard");
+  if (navDash) navDash.classList.add("active");
+
+  // Wire up nifty spot to pulse strip when data arrives
+  // (this is optional — niftySpot updates happen via existing code)
+}
+
+// Expose instNav globally
+window.instNav = instNav;

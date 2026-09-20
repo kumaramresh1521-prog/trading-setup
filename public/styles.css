@@ -10007,6 +10007,570 @@ html[data-theme="dark"] .opstra-chart-tooltip {
 
 
 
+/* ==========================================================================
+   INSTITUTIONAL HEADER — Professional Mega-Menu Navigation
+   ==========================================================================
+   Supports:
+     - Dark mode (default): deep navy/black background
+     - Light mode: clean white with subtle borders
+     - Dropdown mega-menus with column groups
+     - Active state underline indicator (blue glow)
+     - Dashboard panel with KPI cards + module grid
+   ========================================================================== */
+
+/* ── Institutional Header Container ── */
+.inst-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: linear-gradient(180deg, #06091a 0%, #080d1f 100%);
+  border-bottom: 1px solid rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="light"] .inst-header,
+body[data-theme="light"] .inst-header {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+/* ── Brand Bar (Row 1) ── */
+.inst-brand-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px 6px 20px;
+  gap: 16px;
+}
+
+.inst-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.inst-brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+  border-radius: 9px;
+  font-size: 17px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45);
+}
+
+.inst-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.inst-brand-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.1px;
+  line-height: 1.2;
+}
+
+html[data-theme="light"] .inst-brand-name,
+body[data-theme="light"] .inst-brand-name {
+  color: #0f172a;
+}
+
+.inst-brand-tagline {
+  font-size: 10px;
+  font-weight: 600;
+  color: #3b82f6;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ── Live Pulse Strip ── */
+.inst-pulse-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 20px;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.3px;
+}
+
+html[data-theme="light"] .inst-pulse-strip,
+body[data-theme="light"] .inst-pulse-strip {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+.inst-pulse-sep {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+html[data-theme="light"] .inst-pulse-sep,
+body[data-theme="light"] .inst-pulse-sep {
+  color: #cbd5e1;
+}
+
+.inst-pulse-item .pval {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+html[data-theme="light"] .inst-pulse-item .pval,
+body[data-theme="light"] .inst-pulse-item .pval {
+  color: #0f172a;
+}
+
+.inst-pulse-live {
+  color: #10b981 !important;
+  font-weight: 700;
+  animation: pulseLive 1.8s ease-in-out infinite;
+}
+
+@keyframes pulseLive {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Right Controls ── */
+.inst-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.inst-api-status {
+  font-size: 11px;
+}
+
+/* ── Mega-Menu Navigation (Row 2) ── */
+.inst-nav {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0 14px;
+  background: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.inst-nav::-webkit-scrollbar { display: none; }
+
+html[data-theme="light"] .inst-nav,
+body[data-theme="light"] .inst-nav {
+  border-top: 1px solid #e2e8f0;
+}
+
+/* ── Nav Item + Dropdown Wrapper ── */
+.inst-nav-item {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+/* ── Nav Button ── */
+.inst-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  letter-spacing: 0.1px;
+}
+
+html[data-theme="light"] .inst-nav-btn,
+body[data-theme="light"] .inst-nav-btn {
+  color: #64748b;
+}
+
+.inst-nav-btn:hover {
+  color: #ffffff;
+  border-bottom-color: rgba(59, 130, 246, 0.45);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+html[data-theme="light"] .inst-nav-btn:hover,
+body[data-theme="light"] .inst-nav-btn:hover {
+  color: #1e293b;
+  background: rgba(15, 23, 42, 0.04);
+  border-bottom-color: rgba(37, 99, 235, 0.4);
+}
+
+.inst-nav-btn.active {
+  color: #ffffff !important;
+  border-bottom-color: #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.1);
+  font-weight: 700;
+  text-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+}
+
+html[data-theme="light"] .inst-nav-btn.active,
+body[data-theme="light"] .inst-nav-btn.active {
+  color: #1d4ed8 !important;
+  background: rgba(37, 99, 235, 0.06);
+  text-shadow: none;
+}
+
+.inst-nav-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.inst-nav-arrow {
+  font-size: 10px;
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+
+.inst-nav-item:hover .inst-nav-arrow,
+.inst-nav-item:focus-within .inst-nav-arrow {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+/* ── Mega-Menu Dropdown ── */
+.inst-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 0;
+  min-width: 420px;
+  background: #0d1529;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  border-top: 2px solid #3b82f6;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  padding: 16px;
+  gap: 24px;
+  flex-direction: row;
+  animation: dropIn 0.18s ease forwards;
+}
+
+html[data-theme="light"] .inst-dropdown,
+body[data-theme="light"] .inst-dropdown {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  border-top-color: #2563eb;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.inst-nav-item.has-dropdown:hover .inst-dropdown,
+.inst-nav-item.has-dropdown:focus-within .inst-dropdown {
+  display: flex;
+}
+
+.inst-dropdown-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.inst-dropdown-header {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #3b82f6;
+  padding: 0 10px 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  margin-bottom: 4px;
+}
+
+html[data-theme="light"] .inst-dropdown-header,
+body[data-theme="light"] .inst-dropdown-header {
+  color: #2563eb;
+  border-bottom-color: #e2e8f0;
+}
+
+.inst-dd-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.14s ease;
+  width: 100%;
+}
+
+html[data-theme="light"] .inst-dd-item,
+body[data-theme="light"] .inst-dd-item {
+  color: #334155;
+}
+
+.inst-dd-item:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: #ffffff;
+  padding-left: 14px;
+}
+
+html[data-theme="light"] .inst-dd-item:hover,
+body[data-theme="light"] .inst-dd-item:hover {
+  background: rgba(37, 99, 235, 0.08);
+  color: #1e293b;
+}
+
+/* ── Dashboard Panel ── */
+.inst-dashboard-panel {
+  padding: 20px 20px 40px 20px;
+  background: var(--bg-base);
+  min-height: calc(100vh - 100px);
+}
+
+.inst-dash-hero {
+  margin-bottom: 20px;
+  padding: 16px 0 0 0;
+}
+
+.inst-dash-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.inst-dash-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.inst-dash-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ── KPI Row ── */
+.inst-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1100px) {
+  .inst-kpi-row { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 700px) {
+  .inst-kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+.inst-kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-top: 3px solid #3b82f6;
+  border-radius: 12px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-top-color 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inst-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-top-color: #60a5fa;
+}
+
+.inst-kpi-icon {
+  font-size: 20px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.inst-kpi-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.inst-kpi-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.1;
+}
+
+.inst-kpi-sub {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Dashboard Module Grid ── */
+.inst-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .inst-dash-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 900px) {
+  .inst-dash-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .inst-dash-grid { grid-template-columns: 1fr; }
+}
+
+.inst-dash-module {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 14px;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s ease;
+}
+
+.inst-dash-module:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  border-color: var(--border-hover);
+}
+
+.inst-dm-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.inst-dm-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.inst-dm-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.inst-dm-badge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  flex-shrink: 0;
+}
+
+.inst-dm-badge--blue  { background: rgba(59,130,246,0.15); color: #3b82f6; border-color: rgba(59,130,246,0.25); }
+.inst-dm-badge--green { background: rgba(16,185,129,0.15); color: #10b981; border-color: rgba(16,185,129,0.25); }
+.inst-dm-badge--amber { background: rgba(245,158,11,0.15); color: #f59e0b; border-color: rgba(245,158,11,0.25); }
+.inst-dm-badge--purple{ background: rgba(124,58,237,0.15); color: #8b5cf6; border-color: rgba(124,58,237,0.25); }
+.inst-dm-badge--cyan  { background: rgba(6,182,212,0.15);  color: #06b6d4; border-color: rgba(6,182,212,0.25); }
+
+.inst-dm-body {
+  padding: 12px 16px;
+  flex: 1;
+}
+
+.inst-dm-body p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.inst-dm-footer {
+  padding: 10px 16px 14px 16px;
+  display: flex;
+  align-items: center;
+}
+
+.inst-dm-go {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3b82f6;
+  transition: gap 0.15s ease;
+}
+
+.inst-dash-module:hover .inst-dm-go {
+  color: #60a5fa;
+  letter-spacing: 0.2px;
+}
+
+/* ── Light mode overrides for dashboard ── */
+html[data-theme="light"] .inst-dash-module,
+body[data-theme="light"] .inst-dash-module {
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .inst-dash-module:hover,
+body[data-theme="light"] .inst-dash-module:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+}
+
+/* ── Utility: Hide old tab buttons ── */
+.inst-hidden-tab {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* ── Ensure all panels start hidden ── */
+.tab-panel.inst-dashboard-panel {
+  display: block;
+}
 
 
 
