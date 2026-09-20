@@ -2359,7 +2359,7 @@ function renderWpcrPceTerminal(data) {
   }
 }
 
-let wpcrDays = 1;
+let wpcrDays = 250;
 let wpcrChartMode = "wpcr_spot";
 let wpcrTsGeometry = null;
 let wpcrTsHoverIndex = null;
