@@ -7438,7 +7438,7 @@ async function loadStatus() {
   if (els.endDateInput) els.endDateInput.value = today;
   if (els.participantOiDate) els.participantOiDate.value = today;
 
-  const bName = (data.activeBroker || "UPSTOX").toUpperCase();
+  const bName = (data.activeBroker || "ANGEL").toUpperCase();
   window.__activeBroker = bName;
   const brokerDisplayName = {
     ANGEL: "Angel One (SmartAPI)",

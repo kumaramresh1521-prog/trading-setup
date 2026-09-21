@@ -575,13 +575,14 @@ class AngelClient(brokers.BaseBrokerClient):
         if self.load_session():
             return
         elapsed_since_fail = time.time() - self._login_failed_at
-        if self._login_failed_at > 0 and elapsed_since_fail < self._login_cooldown_sec:
+        if not self.manual_totp and self._login_failed_at > 0 and elapsed_since_fail < self._login_cooldown_sec:
             remaining = int(self._login_cooldown_sec - elapsed_since_fail)
-            raise RuntimeError(f"Login failed recently, cooling down ({remaining}s remaining). Fix credentials or wait.")
+            raise RuntimeError(f"Login failed recently, cooling down ({remaining}s remaining). Fix credentials or enter a fresh 6-digit TOTP.")
+        totp_val = self.manual_totp if self.manual_totp else (env("ANGEL_TOTP_CODE") or current_totp())
         body = {
             "clientcode": self.client_code,
             "password": self.pin,
-            "totp": self.manual_totp if self.manual_totp else current_totp(),
+            "totp": totp_val,
         }
         try:
             result = http_json(
@@ -7526,7 +7527,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 else:
                     client = AngelClient()
                 
-                manual_totp = payload.get("manualTotp") or ""
+                manual_totp = str(payload.get("manualTotp") or env("ANGEL_TOTP_CODE") or "").strip()
                 if hasattr(client, "manual_totp") and manual_totp:
                     client.manual_totp = manual_totp
 

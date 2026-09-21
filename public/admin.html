@@ -478,87 +478,46 @@
             </div>
           </div>
 
-          <div class="adm-card">
-            <div class="adm-card-header">
-              <h3>Active Broker Selection</h3>
+          <div class="adm-card" style="border: 2px solid #3b82f6;">
+            <div class="adm-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="color:#60a5fa; margin:0;">🪽 Angel One SmartAPI (Sole Primary Broker)</h3>
+                <small style="color:var(--adm-muted);">Direct Exchange Live Data, Option Chain, Breadth & Straddles</small>
+              </div>
+              <span class="p2-badge p2-badge-teal" style="font-size:11px; padding:4px 10px;">ACTIVE BROKER</span>
             </div>
-            <div style="display:flex; gap:16px; flex-wrap:wrap;">
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                <input type="radio" name="admActiveBroker" value="UPSTOX" /> <span>📈 Upstox API v2 (Default)</span>
-              </label>
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                <input type="radio" name="admActiveBroker" value="ANGEL" /> <span>🪽 Angel One SmartAPI</span>
-              </label>
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                <input type="radio" name="admActiveBroker" value="KOTAK" /> <span>⚡ Kotak Neo</span>
-              </label>
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                <input type="radio" name="admActiveBroker" value="FYERS" /> <span>🎯 Fyers API v3</span>
-              </label>
-            </div>
-          </div>
+            <input type="hidden" name="admActiveBroker" value="ANGEL" />
 
-          <div class="adm-card">
-            <div class="adm-card-header"><h3>📈 Upstox Configuration</h3></div>
-            <div class="adm-form-group">
-              <label>Upstox Access Token</label>
-              <input type="password" id="admUpstoxToken" class="adm-input" />
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
               <div class="adm-form-group">
                 <label>API Key</label>
-                <input type="text" id="admUpstoxKey" class="adm-input" />
-              </div>
-              <div class="adm-form-group">
-                <label>API Secret</label>
-                <input type="password" id="admUpstoxSecret" class="adm-input" />
-              </div>
-            </div>
-          </div>
-
-          <div class="adm-card">
-            <div class="adm-card-header"><h3>🪽 Angel One SmartAPI Configuration</h3></div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-              <div class="adm-form-group">
-                <label>API Key</label>
-                <input type="text" id="admAngelKey" class="adm-input" />
+                <input type="text" id="admAngelKey" class="adm-input" placeholder="e.g. C1Fqx9cy" />
               </div>
               <div class="adm-form-group">
                 <label>Client Code</label>
-                <input type="text" id="admAngelClient" class="adm-input" />
+                <input type="text" id="admAngelClient" class="adm-input" placeholder="e.g. A1418198" />
               </div>
             </div>
+
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
               <div class="adm-form-group">
                 <label>MPIN / Password</label>
-                <input type="password" id="admAngelPin" class="adm-input" />
+                <input type="password" id="admAngelPin" class="adm-input" placeholder="4-digit MPIN" />
               </div>
               <div class="adm-form-group">
-                <label>TOTP Secret (Base32)</label>
-                <input type="password" id="admAngelTotp" class="adm-input" />
+                <label>TOTP Secret (Base32 - For Automatic Login)</label>
+                <input type="password" id="admAngelTotp" class="adm-input" placeholder="e.g. 6RXBHDTQAX3W4ZRUSEC5A4JBZU" />
+                <small style="color:var(--adm-muted); font-size:11px;">If entered, server auto-generates TOTP every 30s.</small>
               </div>
             </div>
-          </div>
 
-          <div class="adm-card">
-            <div class="adm-card-header"><h3>⚡ Kotak Neo Configuration</h3></div>
-            <div class="adm-form-group">
-              <label>Kotak Access Token</label>
-              <input type="password" id="admKotakToken" class="adm-input" />
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
-              <div class="adm-form-group">
-                <label>Consumer Key</label>
-                <input type="text" id="admKotakKey" class="adm-input" />
+            <div class="adm-form-group" style="margin-top:8px; background:rgba(16,185,129,0.08); padding:14px; border-radius:8px; border:1px solid rgba(16,185,129,0.25);">
+              <label style="color:#34d399; font-weight:700;">⚡ Current 6-Digit Live TOTP Code (From Authenticator App)</label>
+              <div style="display:flex; gap:12px; align-items:center; margin-top:6px;">
+                <input type="text" id="admAngelTotpCode" class="adm-input" placeholder="e.g. 123456" maxlength="6" style="letter-spacing:6px; font-weight:800; font-size:18px; color:#10b981; max-width:200px; text-align:center;" />
+                <button type="button" class="btn-adm-danger" onclick="testActiveBroker()" style="padding:10px 18px;">🧪 Authorize & Test Angel One</button>
               </div>
-              <div class="adm-form-group">
-                <label>Mobile Number</label>
-                <input type="text" id="admKotakMobile" class="adm-input" />
-              </div>
-              <div class="adm-form-group">
-                <label>MPIN</label>
-                <input type="password" id="admKotakMpin" class="adm-input" />
-              </div>
+              <small style="color:var(--adm-muted); font-size:11px; margin-top:4px; display:block;">Enter your live 6-digit TOTP code here for instant session authentication.</small>
             </div>
           </div>
         </section>
@@ -768,6 +727,7 @@
       }
 
       // 2. Master Brokers
+      // 2. Master Brokers (Angel One Primary)
       async function loadMasterBrokers() {
         try {
           const res = await fetch('/api/admin/broker-config', { headers: getAuthHeaders() });
@@ -775,53 +735,28 @@
           const data = await res.json();
           if (!data.ok) return;
 
-          // Set radio
-          const r = document.querySelector(`input[name="admActiveBroker"][value="${data.activeBroker}"]`);
-          if (r) r.checked = true;
-
-          // Upstox
-          if (data.upstox) {
-            document.getElementById('admUpstoxToken').value = data.upstox.accessToken || '';
-            document.getElementById('admUpstoxKey').value = data.upstox.apiKey || '';
-            document.getElementById('admUpstoxSecret').value = data.upstox.apiSecret || '';
-          }
           // Angel
           if (data.angel) {
             document.getElementById('admAngelKey').value = data.angel.apiKey || '';
             document.getElementById('admAngelClient').value = data.angel.clientCode || '';
             document.getElementById('admAngelPin').value = data.angel.pin || '';
             document.getElementById('admAngelTotp').value = data.angel.totpSecret || '';
-          }
-          // Kotak
-          if (data.kotak) {
-            document.getElementById('admKotakToken').value = data.kotak.accessToken || '';
-            document.getElementById('admKotakKey').value = data.kotak.consumerKey || '';
-            document.getElementById('admKotakMobile').value = data.kotak.mobileNo || '';
-            document.getElementById('admKotakMpin').value = data.kotak.mpin || '';
+            if (document.getElementById('admAngelTotpCode')) {
+              document.getElementById('admAngelTotpCode').value = data.angel.totpCode || '';
+            }
           }
         } catch(e) {}
       }
 
       async function saveMasterBrokers() {
-        const activeRadio = document.querySelector('input[name="admActiveBroker"]:checked');
         const payload = {
-          activeBroker: activeRadio ? activeRadio.value : 'UPSTOX',
-          upstox: {
-            accessToken: document.getElementById('admUpstoxToken').value.trim(),
-            apiKey: document.getElementById('admUpstoxKey').value.trim(),
-            apiSecret: document.getElementById('admUpstoxSecret').value.trim()
-          },
+          activeBroker: 'ANGEL',
           angel: {
             apiKey: document.getElementById('admAngelKey').value.trim(),
             clientCode: document.getElementById('admAngelClient').value.trim(),
             pin: document.getElementById('admAngelPin').value.trim(),
-            totpSecret: document.getElementById('admAngelTotp').value.trim()
-          },
-          kotak: {
-            accessToken: document.getElementById('admKotakToken').value.trim(),
-            consumerKey: document.getElementById('admKotakKey').value.trim(),
-            mobileNo: document.getElementById('admKotakMobile').value.trim(),
-            mpin: document.getElementById('admKotakMpin').value.trim()
+            totpSecret: document.getElementById('admAngelTotp').value.trim(),
+            totpCode: (document.getElementById('admAngelTotpCode')?.value || '').trim()
           }
         };
 
@@ -833,7 +768,7 @@
           });
           const result = await res.json();
           if (result.ok) {
-            showAdmAlert('✓ Server Master Broker configuration saved!', 'success');
+            showAdmAlert('✓ Angel One SmartAPI configuration saved!', 'success');
             loadTelemetry();
           } else {
             showAdmAlert(result.message || 'Failed to save', 'error');
@@ -844,15 +779,14 @@
       }
 
       async function testActiveBroker() {
-        const activeRadio = document.querySelector('input[name="admActiveBroker"]:checked');
-        const broker = activeRadio ? activeRadio.value : 'UPSTOX';
-        showAdmAlert(`Testing live quote on ${broker}...`, 'success');
+        const liveTotp = (document.getElementById('admAngelTotpCode')?.value || '').trim();
+        showAdmAlert(`Connecting to Angel One SmartAPI with TOTP...`, 'success');
 
         try {
           const res = await fetch('/api/settings/test', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ broker: broker })
+            body: JSON.stringify({ broker: 'ANGEL', manualTotp: liveTotp })
           });
           const data = await res.json();
           if (data.ok) {
