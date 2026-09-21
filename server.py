@@ -6977,17 +6977,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         if path == "/api/status":
             active_broker = brokers.get_active_broker_name(env)
             angel_cfg = angel_configured()
-            upstox_token = env("UPSTOX_ACCESS_TOKEN", "").strip()
-            upstox_cfg = bool(upstox_token and len(upstox_token) > 40 and not upstox_token.isdigit())
-            kotak_cfg = bool(env("KOTAK_ACCESS_TOKEN") or (env("KOTAK_CONSUMER_KEY") and env("KOTAK_MOBILE_NO")))
-            fyers_cfg = bool(env("FYERS_APP_ID") and env("FYERS_ACCESS_TOKEN"))
-            broker_configured = (
-                angel_cfg if active_broker == "ANGEL"
-                else upstox_cfg if active_broker == "UPSTOX"
-                else kotak_cfg if active_broker in ("KOTAK", "KOTAK_NEO")
-                else fyers_cfg if active_broker == "FYERS"
-                else False
-            )
+            broker_configured = angel_cfg  # Angel One is sole broker
             return self.send_json(
                 200,
                 {
@@ -6995,9 +6985,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                     "activeBroker": active_broker,
                     "brokerConfigured": broker_configured,
                     "angelConfigured": angel_cfg,
-                    "upstoxConfigured": upstox_cfg,
-                    "kotakConfigured": kotak_cfg,
-                    "fyersConfigured": fyers_cfg,
+                    "upstoxConfigured": False,
+                    "kotakConfigured": False,
+                    "fyersConfigured": False,
                     "clientCode": mask(env("ANGEL_CLIENT_CODE")),
                     "baseUrl": env("ANGEL_BASE_URL", ANGEL_ROOT),
                     "hasTotpSecret": bool(env("ANGEL_TOTP_SECRET")),
@@ -7211,26 +7201,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                     "baseUrl": env("ANGEL_BASE_URL", ANGEL_ROOT),
                     "configured": angel_configured(),
                 },
-                "upstox": {
-                    "accessToken": env("UPSTOX_ACCESS_TOKEN"),
-                    "apiKey": env("UPSTOX_API_KEY"),
-                    "apiSecret": env("UPSTOX_API_SECRET"),
-                    "configured": bool(env("UPSTOX_ACCESS_TOKEN")),
-                },
-                "kotak": {
-                    "accessToken": env("KOTAK_ACCESS_TOKEN"),
-                    "consumerKey": env("KOTAK_CONSUMER_KEY"),
-                    "consumerSecret": env("KOTAK_CONSUMER_SECRET"),
-                    "viewToken": env("KOTAK_VIEW_TOKEN"),
-                    "mobileNo": env("KOTAK_MOBILE_NO"),
-                    "mpin": env("KOTAK_MPIN"),
-                    "configured": bool(env("KOTAK_ACCESS_TOKEN") or (env("KOTAK_CONSUMER_KEY") and env("KOTAK_MOBILE_NO"))),
-                },
-                "fyers": {
-                    "appId": env("FYERS_APP_ID"),
-                    "accessToken": env("FYERS_ACCESS_TOKEN"),
-                    "configured": bool(env("FYERS_APP_ID") and env("FYERS_ACCESS_TOKEN")),
-                },
+                "upstox": {"configured": False},
+                "kotak": {"configured": False},
+                "fyers": {"configured": False},
             })
 
         if path == "/api/admin/seo":
