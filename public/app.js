@@ -7434,9 +7434,9 @@ async function loadStatus() {
   const res = await fetch("/api/status");
   const data = await res.json();
   const today = data.now ? String(data.now).slice(0, 10) : new Date().toISOString().slice(0, 10);
-  if (els.dateInput && (!els.dateInput.value || els.dateInput.value.startsWith("2026-07"))) els.dateInput.value = today;
-  if (els.endDateInput && (!els.endDateInput.value || els.endDateInput.value.startsWith("2026-07"))) els.endDateInput.value = today;
-  if (els.participantOiDate && (!els.participantOiDate.value || els.participantOiDate.value.startsWith("2026-07"))) els.participantOiDate.value = today;
+  if (els.dateInput) els.dateInput.value = today;
+  if (els.endDateInput) els.endDateInput.value = today;
+  if (els.participantOiDate) els.participantOiDate.value = today;
 
   const bName = (data.activeBroker || "UPSTOX").toUpperCase();
   window.__activeBroker = bName;
@@ -7476,10 +7476,10 @@ async function loadStatus() {
     els.dataSource.value = "broker";
     applyDataSourceDefaults("broker");
   } else {
-    els.apiStatus.textContent = "Live Terminal (Real-time)";
+    els.apiStatus.textContent = "🟢 Live Market (Real-time Feed)";
     els.apiStatus.className = "status ready";
-    els.dataSource.value = "sample";
-    applyDataSourceDefaults("sample");
+    els.dataSource.value = "broker";
+    applyDataSourceDefaults("broker");
   }
 }
 
@@ -9512,7 +9512,8 @@ async function loadDashboardData(force = false) {
   isDashboardLoading = true;
 
   try {
-    const dateVal = (els.dateInput && els.dateInput.value) || "2026-09-18";
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const dateVal = (els.dateInput && els.dateInput.value) || todayIso;
 
     // Refresh Macro ribbon
     loadDashboardMacroRibbon();

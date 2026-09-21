@@ -106,6 +106,7 @@ def get_history_meta():
                 "key": "NIFTY",
                 "name": "NIFTY 50",
                 "dates": [
+                    {"value": "2026-09-21", "label": "21 Sep 2026", "expiries": [{"value": "2026-09-22", "label": "22-Sep-2026"}]},
                     {"value": "2026-09-18", "label": "18 Sep 2026", "expiries": [{"value": "2026-09-22", "label": "22-Sep-2026"}]},
                     {"value": "2026-09-17", "label": "17 Sep 2026", "expiries": [{"value": "2026-09-22", "label": "22-Sep-2026"}]},
                     {"value": "2026-09-16", "label": "16 Sep 2026", "expiries": [{"value": "2026-09-22", "label": "22-Sep-2026"}]},

@@ -95,29 +95,39 @@ def format_indian_date(dt_str: str) -> str:
                 return f"{int(day):02d}-{months[m_idx]}-{year}"
     except Exception:
         pass
-    return dt_str or "18-Sep-2026"
+    return dt_str or "21-Sep-2026"
 
 
-def generate_intraday_timeline(index_key: str = "nifty50", date_str: str = "2026-09-18") -> List[Dict[str, Any]]:
+def generate_intraday_timeline(
+    index_key: str = "nifty50",
+    date_str: str = "2026-09-21",
+    spot_hint: float = None,
+    change_hint: float = None
+) -> List[Dict[str, Any]]:
     """Generates 1-minute intraday snapshots (09:15 to 15:30) with synchronized Breadth, 20 SMA, and Spot."""
     timeline = []
-    effective_date = date_str or "2026-09-18"
+    effective_date = date_str or "2026-09-21"
     
     # 375 minutes from 09:15 to 15:30
     total_minutes = 375
     
     if index_key == "banknifty":
-        base_spot = 51859.80
-        target_spot = 52140.20
+        base_spot = 56350.00
+        target_spot = 56608.00
         total_stocks = 12
         base_adv = 7
         base_dec = 5
     else: # nifty50
-        base_spot = 23270.60
-        target_spot = 23346.40
+        base_spot = 23340.00
+        target_spot = 23452.00
         total_stocks = 50
         base_adv = 28
         base_dec = 22
+
+    if spot_hint and spot_hint > 0:
+        target_spot = round(float(spot_hint), 2)
+        chg = float(change_hint) if change_hint is not None else 0.0
+        base_spot = round(target_spot - chg, 2)
 
     # Spot curve: Open dip, mid-day consolidation, post-13:00 rally, 14:15 high, mild cooling to close
     vwap_sum_pv = 0.0
@@ -194,40 +204,50 @@ def generate_intraday_timeline(index_key: str = "nifty50", date_str: str = "2026
 
 def compute_breadth_contribution(
     index_key: str = "nifty50",
-    date_str: str = "2026-09-18",
+    date_str: str = "2026-09-21",
     real_breadth_timeline: Optional[List[Dict[str, Any]]] = None,
     real_nifty_points: Optional[List[Dict[str, Any]]] = None,
-    breadth_summary: Optional[Dict[str, Any]] = None
+    breadth_summary: Optional[Dict[str, Any]] = None,
+    real_index_quote: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
     Returns full payload for Index Breadth Dynamics and Stock Weight Contribution.
     Integrates real breadth and nifty timeline data if available.
     """
     norm_key = (index_key or "nifty50").lower().replace(" ", "").replace("-", "")
-    effective_date = date_str or "2026-09-18"
+    effective_date = date_str or "2026-09-21"
     display_date = format_indian_date(effective_date)
     
     if norm_key in ("banknifty", "niftybank"):
         index_name = "BANK NIFTY"
-        spot = 52140.20
-        change = 280.40
-        change_pct = 0.54
-        open_val = 51900.00
-        high_val = 52250.00
-        low_val = 51840.00
-        prev_close = 51859.80
+        spot = 56608.35
+        change = 249.65
+        change_pct = 0.44
+        open_val = 56450.00
+        high_val = 56720.00
+        low_val = 56340.00
+        prev_close = 56358.70
         raw_stocks = list(BANKNIFTY_CONSTITUENTS)
     else: # default to nifty50
         norm_key = "nifty50"
         index_name = "NIFTY 50"
-        spot = 23346.40
-        change = 75.80
-        change_pct = 0.32
-        open_val = 23280.00
-        high_val = 23380.20
-        low_val = 23265.50
-        prev_close = 23270.60
+        spot = 23452.20
+        change = 105.80
+        change_pct = 0.45
+        open_val = 23380.00
+        high_val = 23495.00
+        low_val = 23350.00
+        prev_close = 23346.40
         raw_stocks = list(NIFTY50_CONSTITUENTS)
+
+    if real_index_quote and real_index_quote.get("spot"):
+        spot = round(float(real_index_quote["spot"]), 2)
+        change = round(float(real_index_quote.get("change") or 0.0), 2)
+        change_pct = round(float(real_index_quote.get("percentChange") or 0.0), 2)
+        prev_close = round(spot - change, 2)
+        open_val = round(float(real_index_quote.get("open") or (spot - change * 0.4)), 2)
+        high_val = round(float(real_index_quote.get("high") or max(open_val, spot)), 2)
+        low_val = round(float(real_index_quote.get("low") or min(open_val, spot)), 2)
 
     # Separate into Advancers (Supporting) and Decliners (Dragging)
     supporting = [s for s in raw_stocks if s["contribution"] >= 0]
@@ -280,7 +300,7 @@ def compute_breadth_contribution(
             pt["vwap"] = round(cum_pv / cum_v, 2)
             n_map[t_str] = pt
 
-        if n_pts:
+        if n_pts and not (real_index_quote and real_index_quote.get("spot")):
             latest_n = n_pts[-1]
             first_n = n_pts[0]
             spot = latest_n.get("close", spot)
@@ -327,7 +347,7 @@ def compute_breadth_contribution(
                 "vwap": pt_vwap,
             })
     else:
-        timeline = generate_intraday_timeline(norm_key, effective_date)
+        timeline = generate_intraday_timeline(norm_key, effective_date, spot_hint=spot, change_hint=change)
 
     b_summary = breadth_summary or {}
     if not b_summary and real_breadth_timeline:

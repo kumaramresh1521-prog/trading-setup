@@ -3255,8 +3255,9 @@
   // ========================================================================
   // SECTION 5: INDEX BREADTH & STOCK WEIGHT CONTRIBUTION DESK
   // ========================================================================
+  const _todayStr = new Date().toISOString().slice(0, 10);
   let currentContribIndex = "nifty50";
-  let currentContribDate = "2026-09-18";
+  let currentContribDate = _todayStr;
   let currentContribSector = "ALL";
   let currentContribSearch = "";
   let contribDataCache = null;
@@ -3269,7 +3270,7 @@
     if (dateInput) {
       dateInput.value = currentContribDate;
       dateInput.addEventListener("change", (e) => {
-        currentContribDate = e.target.value || "2026-09-18";
+        currentContribDate = e.target.value || _todayStr;
         loadBreadthContributionSuite(currentContribIndex, currentContribDate);
       });
     }
@@ -3325,9 +3326,10 @@
     });
   }
 
-  async function loadBreadthContributionSuite(indexKey = "nifty50", dateStr = "2026-09-18", isRefresh = false) {
+  async function loadBreadthContributionSuite(indexKey = "nifty50", dateStr = null, isRefresh = false) {
     try {
-      const url = `/api/index-breadth-contribution?index=${encodeURIComponent(indexKey)}&date=${encodeURIComponent(dateStr)}${isRefresh ? '&refresh=true' : ''}`;
+      const effDate = dateStr || currentContribDate || _todayStr;
+      const url = `/api/index-breadth-contribution?index=${encodeURIComponent(indexKey)}&date=${encodeURIComponent(effDate)}${isRefresh ? '&refresh=true' : ''}`;
       const resp = await fetch(url);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();

@@ -190,14 +190,15 @@ class UpstoxClient(BaseBrokerClient):
         return "UPSTOX"
 
     def is_configured(self) -> bool:
-        return bool(self.access_token)
+        tok = (self.access_token or "").strip()
+        return bool(tok and len(tok) > 40 and not tok.isdigit())
 
     def load_session(self) -> bool:
-        return bool(self.access_token)
+        return self.is_configured()
 
     def ensure_session(self) -> None:
         if not self.is_configured():
-            raise RuntimeError("Upstox is not configured. Set UPSTOX_ACCESS_TOKEN in .env")
+            raise RuntimeError("Upstox is not configured with a valid OAuth access token. Generate in Settings.")
 
     def headers(self) -> dict[str, str]:
         token = self.access_token
