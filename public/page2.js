@@ -3323,13 +3323,19 @@
     // Setup Canvas interaction
     setupContribCanvasEvents();
 
-    // Window resize observer to re-render canvases
-    window.addEventListener("resize", () => {
-      if (currentSuite === "contribution" && contribTimeline && contribTimeline.length > 0) {
-        renderIntradayBreadthChart(contribTimeline);
-        renderIntradayIndexChart(contribTimeline, contribDataCache ? contribDataCache.indexInfo : null);
-      }
-    });
+    // Auto-refresh live data every 45 seconds if viewing today's session
+    if (!window._contribAutoRefreshTimer) {
+      window._contribAutoRefreshTimer = setInterval(() => {
+        const isContribActive = (typeof currentSuite !== "undefined" && currentSuite === "contribution") ||
+                                (document.getElementById("p2ViewContribution")?.style.display !== "none");
+        if (isContribActive) {
+          const isToday = !currentContribDate || currentContribDate === _todayStr;
+          if (isToday) {
+            loadBreadthContributionSuite(currentContribIndex, currentContribDate, true);
+          }
+        }
+      }, 45000);
+    }
   }
 
   async function loadBreadthContributionSuite(indexKey = "nifty50", dateStr = null, isRefresh = false) {
@@ -3355,6 +3361,7 @@
       const idxInfo = data.indexInfo || {};
       const spotTitle = document.getElementById("contribSpotTitle");
       const spotVal = document.getElementById("contribSpotVal");
+      const spotChg = document.getElementById("contribSpotChg");
       const niftyTitle = document.getElementById("niftyChartTitle");
       const breadthTitle = document.getElementById("contribBreadthTitle");
       const breadthMeta = document.getElementById("contribBreadthMeta");

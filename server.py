@@ -6883,13 +6883,93 @@ def build_indices_overview(payload: dict) -> dict:
     _INDICES_OVERVIEW_CACHE["data"] = data
     _INDICES_OVERVIEW_CACHE["timestamp"] = time.time()
 _BREADTH_CONTRIB_CACHE = {}
+_CONSTITUENTS_CACHE = {"timestamp": 0.0, "data": {}}
+
+def get_live_constituent_quotes(symbols: list[str]) -> dict[str, dict]:
+    """
+    Fetches real-time market prices for index constituents with a 30-second memory cache.
+    Tries Angel One broker if active/authenticated, otherwise fetches via parallel Yahoo Finance v8 queries.
+    """
+    global _CONSTITUENTS_CACHE
+    now = time.time()
+    cached = _CONSTITUENTS_CACHE.get("data", {})
+    if cached and (now - _CONSTITUENTS_CACHE.get("timestamp", 0.0)) < 30.0:
+        missing = [s for s in symbols if s not in cached]
+        if not missing:
+            return cached
+
+    quotes = dict(cached)
+    client = None
+    has_session = False
+    if is_active_broker_configured():
+        try:
+            client = get_active_client()
+            has_session = client.load_session()
+        except Exception:
+            has_session = False
+
+    if has_session and client:
+        try:
+            rows = [{"symbol": s} for s in symbols]
+            instruments, _ = resolve_instruments(rows)
+            if instruments:
+                q_res = client.quote(instruments, mode="FULL")
+                q_data = quote_map_by_token(q_res)
+                for inst in instruments:
+                    item = q_data.get(inst.token)
+                    if item:
+                        summary = quote_summary(item)
+                        ltp = summary.get("ltp")
+                        if ltp and ltp > 0:
+                            quotes[inst.symbol] = {
+                                "ltp": float(ltp),
+                                "change": float(summary.get("change", 0.0)),
+                                "changePct": float(summary.get("percentChange", 0.0)),
+                                "prevClose": float(summary.get("close") or (ltp - summary.get("change", 0.0))),
+                            }
+        except Exception:
+            pass
+
+    # For any symbols still missing or when cache expired, query Yahoo Finance in parallel
+    needed = [s for s in symbols if s not in quotes or (now - _CONSTITUENTS_CACHE.get("timestamp", 0.0)) >= 30.0]
+    if needed:
+        def _fetch_yf_quote(sym: str):
+            try:
+                yf_sym = f"{sym}.NS"
+                url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yf_sym}?interval=1d&range=1d"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+                with urllib.request.urlopen(req, timeout=3.5) as r:
+                    d = json.loads(r.read().decode("utf-8"))
+                    meta = d["chart"]["result"][0]["meta"]
+                    price = float(meta.get("regularMarketPrice") or 0.0)
+                    prev = float(meta.get("chartPreviousClose") or meta.get("previousClose") or price)
+                    chg = round(price - prev, 2)
+                    pct = round((chg / prev) * 100, 2) if prev else 0.0
+                    return sym, {"ltp": price, "prevClose": prev, "change": chg, "changePct": pct}
+            except Exception:
+                return sym, None
+
+        try:
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=10) as pool:
+                res = dict(pool.map(_fetch_yf_quote, needed))
+            for k, v in res.items():
+                if v and v.get("ltp", 0) > 0:
+                    quotes[k] = v
+        except Exception:
+            pass
+
+    if quotes:
+        _CONSTITUENTS_CACHE = {"timestamp": now, "data": quotes}
+    return quotes
+
 
 def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bool = False):
     effective_date = date_param or now_ist().strftime("%Y-%m-%d")
     cache_key = f"{(idx or 'nifty50').lower()}_{effective_date}"
     if not force_refresh:
         cached = _BREADTH_CONTRIB_CACHE.get(cache_key)
-        if cached and (time.time() - cached.get("_cached_at", 0)) < 60.0:
+        if cached and (time.time() - cached.get("_cached_at", 0)) < 30.0:
             return cached["data"]
 
     is_bank = "bank" in (idx or "").lower()
@@ -6897,6 +6977,8 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
     live_quotes = get_live_market_index_quotes()
     live_q = live_quotes.get(norm_idx)
 
+    # 1. Build Breadth Timeline (matching Analytics Tab 1:1)
+    b_res = {}
     try:
         b_res = build_breadth({
             "date": effective_date,
@@ -6916,16 +6998,23 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
             "startTime": "09:15",
             "endTime": "15:30"
         })
-        raw_b = b_res.get("timeline") or []
-        # Filter out warmup-session candles — keep ONLY today's date candles
-        real_b = [pt for pt in raw_b if str(pt.get("date", pt.get("time", "")))[:10] == effective_date]
-        # If filtering removed everything, fall back to full timeline (shouldn't happen)
-        if not real_b:
-            real_b = raw_b
-        real_b_summary = b_res.get("summary") or {}
     except Exception:
-        real_b = None
-        real_b_summary = None
+        pass
+
+    raw_b = b_res.get("timeline") or []
+    # Filter strictly to effective_date market hours (09:15 to 15:30)
+    real_b = [
+        pt for pt in raw_b
+        if str(pt.get("time", pt.get("date", "")))[:10] == effective_date
+        and "09:15" <= str(pt.get("time", ""))[11:16] <= "15:30"
+    ]
+    if not real_b:
+        real_b = [pt for pt in raw_b if effective_date in str(pt.get("time", ""))]
+
+    real_b_summary = b_res.get("summary") or {}
+
+    # 2. Build Nifty Spot Candles (matching Analytics Tab 1:1)
+    n_res = {}
     try:
         n_res = build_nifty({
             "date": effective_date,
@@ -6937,16 +7026,36 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
             "startTime": "09:15",
             "endTime": "15:30"
         })
-        raw_n = n_res.get("points") or []
-        # Filter nifty candles to effective_date only
-        real_n = [pt for pt in raw_n if str(pt.get("date", pt.get("time", "")))[:10] == effective_date]
-        if not real_n:
-            real_n = raw_n
     except Exception:
-        real_n = None
+        pass
+
+    raw_n = n_res.get("points") or []
+    # Filter strictly to effective_date market hours (09:15 to 15:30)
+    real_n = [
+        pt for pt in raw_n
+        if str(pt.get("time", pt.get("date", "")))[:10] == effective_date
+        and "09:15" <= str(pt.get("time", ""))[11:16] <= "15:30"
+    ]
+    if not real_n:
+        real_n = [pt for pt in raw_n if effective_date in str(pt.get("time", ""))]
+
+    # 3. Fetch Real-time Live Quotes for all constituents
+    constituents_list = (
+        breadth_contribution_engine.BANKNIFTY_CONSTITUENTS
+        if is_bank
+        else breadth_contribution_engine.NIFTY50_CONSTITUENTS
+    )
+    symbols = [s["symbol"] for s in constituents_list]
+    live_stock_quotes = get_live_constituent_quotes(symbols)
 
     data = breadth_contribution_engine.compute_breadth_contribution(
-        idx, effective_date, real_b, real_n, real_b_summary, real_index_quote=live_q
+        index_key=norm_idx,
+        date_str=effective_date,
+        real_breadth_timeline=real_b,
+        real_nifty_points=real_n,
+        breadth_summary=real_b_summary,
+        real_index_quote=live_q,
+        live_stock_quotes=live_stock_quotes
     )
     _BREADTH_CONTRIB_CACHE[cache_key] = {"data": data, "_cached_at": time.time()}
     return data

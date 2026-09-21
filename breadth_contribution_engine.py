@@ -95,21 +95,30 @@ def format_indian_date(date_str: str) -> str:
         return date_str
 
 
-def _recalculate_contributions(raw_stocks: List[Dict], spot: float) -> List[Dict]:
+def _recalculate_contributions(raw_stocks: List[Dict], spot: float, live_quotes: Optional[Dict[str, Dict]] = None) -> List[Dict]:
     """
-    Recalculate contribution for each stock using:
-      contribution = spot * (weight / 100) * (changePct / 100)
-    Returns new list with recalculated fields; does NOT mutate input.
+    Recalculate contribution for each stock using real-time quotes if available:
+      Point Contribution = Index_Spot * (Stock_Weight% / 100) * (Stock_%_Change / 100)
     """
     result = []
     for s in raw_stocks:
         s2 = dict(s)
+        sym = s2.get("symbol", "")
+        if live_quotes and sym in live_quotes:
+            q = live_quotes[sym]
+            if q and q.get("ltp") is not None:
+                s2["ltp"] = round(float(q["ltp"]), 2)
+                s2["change"] = round(float(q.get("change") or 0.0), 2)
+                s2["changePct"] = round(float(q.get("changePct") or 0.0), 2)
+
+        if "change" not in s2:
+            s2["change"] = round(float(s2.get("ltp", 0.0)) * (float(s2.get("changePct", 0.0)) / 100.0), 2)
+
         weight = float(s2.get("weight", 0.0))
         chg_pct = float(s2.get("changePct", 0.0))
-        # Real formula: Index_Spot * (Weight/100) * (changePct/100)
+        # Real-time point contribution
         contrib = round(spot * (weight / 100.0) * (chg_pct / 100.0), 2)
         s2["contribution"] = contrib
-        # Highlight large movers (|changePct| > 1.5)
         s2["isHighlighted"] = abs(chg_pct) >= 1.5
         result.append(s2)
     return result
@@ -223,11 +232,12 @@ def compute_breadth_contribution(
     real_breadth_timeline: Optional[List[Dict[str, Any]]] = None,
     real_nifty_points: Optional[List[Dict[str, Any]]] = None,
     breadth_summary: Optional[Dict[str, Any]] = None,
-    real_index_quote: Optional[Dict[str, Any]] = None
+    real_index_quote: Optional[Dict[str, Any]] = None,
+    live_stock_quotes: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """
     Returns full payload for Index Breadth Dynamics and Stock Weight Contribution.
-    Contributions are recalculated dynamically using real spot + weight + changePct.
+    Contributions are recalculated dynamically using real spot + weight + real-time stock quotes.
     """
     norm_key = (index_key or "nifty50").lower().replace(" ", "").replace("-", "")
     effective_date = date_str or "2026-09-21"
@@ -265,9 +275,9 @@ def compute_breadth_contribution(
         high_val = round(float(real_index_quote.get("high") or max(open_val, spot)), 2)
         low_val = round(float(real_index_quote.get("low") or min(open_val, spot)), 2)
 
-    # --- DYNAMIC CONTRIBUTION CALCULATION ---
-    # Use live spot to recalculate every stock's contribution via the correct formula
-    raw_stocks = _recalculate_contributions(raw_stocks_ref, spot)
+    # --- REAL-TIME CONTRIBUTION CALCULATION ---
+    # Use live spot + live constituent quotes to recalculate every stock's contribution
+    raw_stocks = _recalculate_contributions(raw_stocks_ref, spot, live_stock_quotes)
 
     # Separate into Advancers and Decliners based on recalculated contribution
     supporting = [s for s in raw_stocks if s["contribution"] >= 0]
@@ -333,8 +343,8 @@ def compute_breadth_contribution(
             t_raw = str(p.get("time", ""))
             t_str = t_raw[11:16] if len(t_raw) >= 16 else t_raw
             is_prev_day = effective_date not in t_raw
-            # Skip warmup/previous-day candles — chart should show only today's data
-            if is_prev_day:
+            # Skip warmup/previous-day candles and pre-market/post-market candles
+            if is_prev_day or t_str < "09:15" or t_str > "15:30":
                 continue
 
             n_pt = n_map.get(t_str)
