@@ -2753,6 +2753,14 @@
       exportBtn.addEventListener("click", exportFiiCsv);
     }
 
+    // Refresh Button click
+    const refreshBtn = document.getElementById("fiiRefreshBtn");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", () => {
+        loadFiiDiiSuite(true);
+      });
+    }
+
     // Attach canvas crosshair mouse events
     const canvas = document.getElementById("chartFiiDiiCanvas");
     if (canvas) {
@@ -2764,16 +2772,50 @@
     }
   }
 
-  async function loadFiiDiiSuite() {
+  let fiiAutoSyncInterval = null;
+
+  async function loadFiiDiiSuite(isForce = false) {
+    const refreshBtn = document.getElementById("fiiRefreshBtn");
+    const refreshText = document.getElementById("fiiRefreshText");
+    const refreshIcon = document.getElementById("fiiRefreshIcon");
+
+    if (isForce && refreshBtn) {
+      refreshBtn.disabled = true;
+      if (refreshText) refreshText.textContent = "Syncing...";
+      if (refreshIcon) refreshIcon.textContent = "⏳";
+    }
+
     try {
-      const res = await fetch("/api/fii-dii-cash");
+      const url = isForce ? "/api/fii-dii-cash?refresh=true" : "/api/fii-dii-cash";
+      const res = await fetch(url);
       const json = await res.json();
       if (json.ok) {
         fiiDiiData = json;
+        const updatedBadge = document.getElementById("fiiLastUpdatedBadge");
+        if (updatedBadge) {
+          updatedBadge.textContent = json.lastUpdated ? `Updated: ${json.lastUpdated}` : "Updated: Just now";
+        }
         renderFiiDiiView();
       }
     } catch (err) {
       console.error("Error loading FII/DII data:", err);
+    } finally {
+      if (isForce && refreshBtn) {
+        setTimeout(() => {
+          refreshBtn.disabled = false;
+          if (refreshText) refreshText.textContent = "Refresh FII/DII";
+          if (refreshIcon) refreshIcon.textContent = "🔄";
+        }, 600);
+      }
+    }
+
+    // Setup periodic 10-minute auto-sync timer while on this tab
+    if (!fiiAutoSyncInterval) {
+      fiiAutoSyncInterval = setInterval(() => {
+        if (currentSuite === "fiidii") {
+          loadFiiDiiSuite(false);
+        }
+      }, 10 * 60 * 1000);
     }
   }
 

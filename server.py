@@ -38,6 +38,7 @@ import seo_engine
 import straddle_engine
 import breadth_contribution_engine
 import global_markets_engine
+import fii_dii_engine
 
 ROOT = Path(__file__).resolve().parent
 PUBLIC_DIR = ROOT / "public"
@@ -5378,35 +5379,11 @@ def build_smart_money(payload: dict) -> dict:
 
 # ==============================================================================
 
-_FII_DII_CASH_CACHE = {"data": None, "timestamp": 0}
-
 def build_fii_dii_cash(payload: dict = None) -> dict:
-    """Returns FII/DII Cash Market daily, monthly, and yearly net buy/sell flow metrics instantly from cache."""
-    global _FII_DII_CASH_CACHE
-    now_ts = time.time()
-    if _FII_DII_CASH_CACHE["data"] and (now_ts - _FII_DII_CASH_CACHE["timestamp"]) < 60.0:
-        return _FII_DII_CASH_CACHE["data"]
-
-    json_path = ROOT / "data" / "fii_dii_cash_history.json"
-    data = {"yearly": [], "monthly": [], "daily": [], "lastUpdated": ""}
-    
-    if json_path.exists():
-        try:
-            with open(json_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception:
-            pass
-
-    res = {
-        "ok": True,
-        "yearly": data.get("yearly", []),
-        "monthly": data.get("monthly", []),
-        "daily": data.get("daily", []),
-        "lastUpdated": data.get("lastUpdated", "")
-    }
-    _FII_DII_CASH_CACHE["data"] = res
-    _FII_DII_CASH_CACHE["timestamp"] = now_ts
-    return res
+    """Returns FII/DII Cash Market daily, monthly, and yearly net buy/sell flow metrics instantly from cache or auto-sync."""
+    payload = payload or {}
+    force_refresh = bool(payload.get("refresh") or payload.get("fastRefresh"))
+    return fii_dii_engine.get_fii_dii_data(force_refresh=force_refresh)
 
 
 
@@ -7203,7 +7180,9 @@ class RequestHandler(BaseHTTPRequestHandler):
             sym = query.get("symbol", [""])[0]
             return self.send_json(200, build_mtf_stock_history(sym))
         if path == "/api/fii-dii-cash":
-            return self.send_json(200, build_fii_dii_cash({}))
+            query = urllib.parse.parse_qs(parsed.query)
+            force = query.get("refresh", ["false"])[0].lower() in ("1", "true")
+            return self.send_json(200, build_fii_dii_cash({"refresh": force}))
         if path == "/api/index-breadth-contribution":
             query = urllib.parse.parse_qs(parsed.query)
             idx = query.get("index", query.get("symbol", ["nifty50"]))[0]
@@ -7787,6 +7766,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 def main() -> None:
     ensure_cache()
     threading.Thread(target=lambda: build_indices_overview({}), daemon=True).start()
+    fii_dii_engine.start_fii_dii_background_worker()
     port = int(env("PORT", "8000") or 8000)
     host = env("HOST", "0.0.0.0")
     server = ThreadingHTTPServer((host, port), RequestHandler)

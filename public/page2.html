@@ -1093,6 +1093,14 @@
             <option value="all">All Available</option>
           </select>
         </div>
+
+        <!-- Refresh & Status Indicator -->
+        <div class="fii-refresh-wrap" style="display: flex; align-items: center; gap: 8px;">
+          <span id="fiiLastUpdatedBadge" class="p2-badge p2-badge-teal" style="font-size: 11px; padding: 4px 8px; font-family: 'JetBrains Mono', monospace;">Updated: --</span>
+          <button id="fiiRefreshBtn" class="nt-btn-primary" type="button" style="padding: 6px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+            <span id="fiiRefreshIcon">🔄</span> <span id="fiiRefreshText">Refresh FII/DII</span>
+          </button>
+        </div>
       </div>
     </div>
 
