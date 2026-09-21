@@ -6916,7 +6916,12 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
             "startTime": "09:15",
             "endTime": "15:30"
         })
-        real_b = b_res.get("timeline") or []
+        raw_b = b_res.get("timeline") or []
+        # Filter out warmup-session candles — keep ONLY today's date candles
+        real_b = [pt for pt in raw_b if str(pt.get("date", pt.get("time", "")))[:10] == effective_date]
+        # If filtering removed everything, fall back to full timeline (shouldn't happen)
+        if not real_b:
+            real_b = raw_b
         real_b_summary = b_res.get("summary") or {}
     except Exception:
         real_b = None
@@ -6932,7 +6937,11 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
             "startTime": "09:15",
             "endTime": "15:30"
         })
-        real_n = n_res.get("points") or []
+        raw_n = n_res.get("points") or []
+        # Filter nifty candles to effective_date only
+        real_n = [pt for pt in raw_n if str(pt.get("date", pt.get("time", "")))[:10] == effective_date]
+        if not real_n:
+            real_n = raw_n
     except Exception:
         real_n = None
 

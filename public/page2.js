@@ -3255,7 +3255,13 @@
   // ========================================================================
   // SECTION 5: INDEX BREADTH & STOCK WEIGHT CONTRIBUTION DESK
   // ========================================================================
-  const _todayStr = new Date().toISOString().slice(0, 10);
+  // Use IST (UTC+5:30) for today's date — toISOString() gives UTC which can be yesterday before 05:30 IST
+  const _todayStr = (() => {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST = UTC + 5h30m
+    const istNow = new Date(now.getTime() + istOffset);
+    return istNow.toISOString().slice(0, 10);
+  })();
   let currentContribIndex = "nifty50";
   let currentContribDate = _todayStr;
   let currentContribSector = "ALL";

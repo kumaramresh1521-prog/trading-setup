@@ -333,24 +333,22 @@ def compute_breadth_contribution(
             t_raw = str(p.get("time", ""))
             t_str = t_raw[11:16] if len(t_raw) >= 16 else t_raw
             is_prev_day = effective_date not in t_raw
+            # Skip warmup/previous-day candles — chart should show only today's data
             if is_prev_day:
-                pt_spot = prev_close
-                pt_vwap = prev_close
-                pt_high = prev_close
-                pt_low = prev_close
-            else:
-                n_pt = n_map.get(t_str)
-                if not n_pt and n_pts:
-                    n_pt = n_pts[-1]
-                pt_spot = n_pt.get("close", spot) if n_pt else spot
-                pt_vwap = n_pt.get("vwap", pt_spot) if n_pt else pt_spot
-                pt_high = n_pt.get("high", pt_spot) if n_pt else pt_spot
-                pt_low = n_pt.get("low", pt_spot) if n_pt else pt_spot
+                continue
+
+            n_pt = n_map.get(t_str)
+            if not n_pt and n_pts:
+                n_pt = n_pts[-1]
+            pt_spot = n_pt.get("close", spot) if n_pt else spot
+            pt_vwap = n_pt.get("vwap", pt_spot) if n_pt else pt_spot
+            pt_high = n_pt.get("high", pt_spot) if n_pt else pt_spot
+            pt_low = n_pt.get("low", pt_spot) if n_pt else pt_spot
 
             timeline.append({
                 "time": p.get("time", f"{effective_date}T{t_str}:00+05:30"),
                 "displayTime": t_str,
-                "date": t_raw[:10] if len(t_raw) >= 10 else effective_date,
+                "date": effective_date,
                 "breadth": p.get("breadth", 50.0),
                 "breadthRatio": p.get("breadth", 50.0),
                 "ma": p.get("ma"),
