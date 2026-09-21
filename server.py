@@ -7013,12 +7013,13 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
 
     real_b_summary = b_res.get("summary") or {}
 
-    # 2. Build Nifty Spot Candles (matching Analytics Tab 1:1)
+    # 2. Build Nifty Spot Candles (directly from Angel One broker if configured)
     n_res = {}
+    broker_src = "angel" if is_active_broker_configured() else "sample"
     try:
         n_res = build_nifty({
             "date": effective_date,
-            "dataSource": "sample",
+            "dataSource": broker_src,
             "index": norm_idx,
             "interval": "ONE_MINUTE",
             "includeOptionChain": False,

@@ -310,8 +310,16 @@ def compute_breadth_contribution(
 
     # --- TIMELINE ---
     timeline = []
-    if real_breadth_timeline and len(real_breadth_timeline) > 0:
-        # Build nifty candle map by HH:MM
+    if (real_breadth_timeline and len(real_breadth_timeline) > 0) or (real_nifty_points and len(real_nifty_points) > 0):
+        # 1. Build Breadth map by HH:MM
+        b_map = {}
+        for p in (real_breadth_timeline or []):
+            t_raw = str(p.get("time", ""))
+            t_str = t_raw[11:16] if len(t_raw) >= 16 else t_raw
+            if effective_date in t_raw and "09:15" <= t_str <= "15:30":
+                b_map[t_str] = p
+
+        # 2. Build Nifty Spot & VWAP map by HH:MM
         n_map = {}
         cum_pv = 0.0
         cum_v = 0.0
@@ -319,54 +327,59 @@ def compute_breadth_contribution(
         for pt in n_pts:
             t_raw = str(pt.get("time", ""))
             t_str = t_raw[11:16] if len(t_raw) >= 16 else t_raw
-            v = pt.get("volume", 1000) or 1000
-            c = pt.get("close", spot)
-            h = pt.get("high", c)
-            l = pt.get("low", c)
-            typ = (h + l + c) / 3.0
-            cum_pv += typ * v
-            cum_v += v
-            pt["vwap"] = round(cum_pv / cum_v, 2)
-            n_map[t_str] = pt
+            if effective_date in t_raw and "09:15" <= t_str <= "15:30":
+                v = float(pt.get("volume") or 1000) or 1000.0
+                c = float(pt.get("close") or spot)
+                h = float(pt.get("high") or c)
+                l = float(pt.get("low") or c)
+                typ = (h + l + c) / 3.0
+                cum_pv += typ * v
+                cum_v += v
+                pt["vwap"] = round(cum_pv / cum_v, 2)
+                n_map[t_str] = pt
 
         if n_pts and not (real_index_quote and real_index_quote.get("spot")):
             latest_n = n_pts[-1]
             first_n = n_pts[0]
-            spot = latest_n.get("close", spot)
-            open_val = first_n.get("open", open_val)
-            high_val = max(p.get("high", p.get("close", spot)) for p in n_pts)
-            low_val = min(p.get("low", p.get("close", spot)) for p in n_pts)
+            spot = round(float(latest_n.get("close") or spot), 2)
+            open_val = round(float(first_n.get("open") or spot), 2)
+            high_val = round(max(float(p.get("high") or p.get("close", spot)) for p in n_pts), 2)
+            low_val = round(min(float(p.get("low") or p.get("close", spot)) for p in n_pts), 2)
+            prev_close = open_val
             change = round(spot - prev_close, 2)
             change_pct = round((change / prev_close) * 100.0, 2) if prev_close else 0.0
 
-        for p in real_breadth_timeline:
-            t_raw = str(p.get("time", ""))
-            t_str = t_raw[11:16] if len(t_raw) >= 16 else t_raw
-            is_prev_day = effective_date not in t_raw
-            # Skip warmup/previous-day candles and pre-market/post-market candles
-            if is_prev_day or t_str < "09:15" or t_str > "15:30":
-                continue
+        # 3. Merge every minute from 09:15 to 15:30 with forward fill
+        all_minutes = sorted(set(list(b_map.keys()) + list(n_map.keys())))
+        last_b = None
+        last_n = None
 
-            n_pt = n_map.get(t_str)
-            if not n_pt and n_pts:
-                n_pt = n_pts[-1]
-            pt_spot = n_pt.get("close", spot) if n_pt else spot
-            pt_vwap = n_pt.get("vwap", pt_spot) if n_pt else pt_spot
-            pt_high = n_pt.get("high", pt_spot) if n_pt else pt_spot
-            pt_low = n_pt.get("low", pt_spot) if n_pt else pt_spot
+        for t_str in all_minutes:
+            if t_str in b_map:
+                last_b = b_map[t_str]
+            if t_str in n_map:
+                last_n = n_map[t_str]
+
+            b_obj = last_b or {}
+            n_obj = last_n or {}
+
+            pt_spot = float(n_obj.get("close", spot))
+            pt_vwap = float(n_obj.get("vwap", pt_spot))
+            pt_high = float(n_obj.get("high", pt_spot))
+            pt_low = float(n_obj.get("low", pt_spot))
 
             timeline.append({
-                "time": p.get("time", f"{effective_date}T{t_str}:00+05:30"),
+                "time": f"{effective_date}T{t_str}:00+05:30",
                 "displayTime": t_str,
                 "date": effective_date,
-                "breadth": p.get("breadth", 50.0),
-                "breadthRatio": p.get("breadth", 50.0),
-                "ma": p.get("ma"),
-                "x": p.get("x", 25),
-                "o": p.get("o", 25),
-                "advancers": p.get("x", 25),
-                "decliners": p.get("o", 25),
-                "netAdvancers": p.get("x", 25) - p.get("o", 25),
+                "breadth": b_obj.get("breadth", 50.0),
+                "breadthRatio": b_obj.get("breadth", 50.0),
+                "ma": b_obj.get("ma"),
+                "x": b_obj.get("x", 25),
+                "o": b_obj.get("o", 25),
+                "advancers": b_obj.get("x", 25),
+                "decliners": b_obj.get("o", 25),
+                "netAdvancers": (b_obj.get("x", 25) or 25) - (b_obj.get("o", 25) or 25),
                 "spot": pt_spot,
                 "close": pt_spot,
                 "high": pt_high,
