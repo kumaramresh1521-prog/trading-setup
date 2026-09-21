@@ -6977,13 +6977,14 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
     live_quotes = get_live_market_index_quotes()
     live_q = live_quotes.get(norm_idx)
 
-    # 1. Build Breadth Timeline (matching Analytics Tab 1:1)
+    # 1. Build Breadth Timeline (matching Analytics Tab 1:1 using active broker / Angel One data)
+    b_broker_src = "broker" if is_active_broker_configured() else "sample"
     b_res = {}
     try:
         b_res = build_breadth({
             "date": effective_date,
             "endDate": effective_date,
-            "dataSource": "sample",
+            "dataSource": b_broker_src,
             "universe": norm_idx,
             "interval": "ONE_MINUTE",
             "chartMode": "carry",
@@ -6998,8 +6999,8 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
             "startTime": "09:15",
             "endTime": "15:30"
         })
-    except Exception:
-        pass
+    except Exception as exc:
+        print(f"[breadth_contrib] build_breadth error: {exc}")
 
     raw_b = b_res.get("timeline") or []
     # Filter strictly to effective_date market hours (09:15 to 15:30)
@@ -7011,15 +7012,31 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
     if not real_b:
         real_b = [pt for pt in raw_b if effective_date in str(pt.get("time", ""))]
 
-    real_b_summary = b_res.get("summary") or {}
+    if real_b:
+        first_today = real_b[0]
+        last_today = real_b[-1]
+        real_b_summary = {
+            "latestBreadth": last_today.get("breadth"),
+            "openBreadth": first_today.get("breadth"),
+            "breadthChange": round((last_today.get("breadth") or 0) - (first_today.get("breadth") or 0), 2),
+            "latestTime": last_today.get("time"),
+            "latestX": last_today.get("x", 0),
+            "latestO": last_today.get("o", 0),
+            "x": last_today.get("x", 0),
+            "o": last_today.get("o", 0),
+            "totalSymbols": b_res.get("universeCount", 50),
+            "loadedSymbols": b_res.get("symbolsLoaded", 50),
+        }
+    else:
+        real_b_summary = b_res.get("summary") or {}
 
     # 2. Build Nifty Spot Candles (directly from Angel One broker if configured)
     n_res = {}
-    broker_src = "angel" if is_active_broker_configured() else "sample"
+    n_broker_src = "angel" if is_active_broker_configured() else "sample"
     try:
         n_res = build_nifty({
             "date": effective_date,
-            "dataSource": broker_src,
+            "dataSource": n_broker_src,
             "index": norm_idx,
             "interval": "ONE_MINUTE",
             "includeOptionChain": False,
@@ -7027,8 +7044,8 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
             "startTime": "09:15",
             "endTime": "15:30"
         })
-    except Exception:
-        pass
+    except Exception as exc:
+        print(f"[breadth_contrib] build_nifty error: {exc}")
 
     raw_n = n_res.get("points") or []
     # Filter strictly to effective_date market hours (09:15 to 15:30)
