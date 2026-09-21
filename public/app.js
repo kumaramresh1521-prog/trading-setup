@@ -1576,34 +1576,50 @@ function updateNiftySummary(data) {
 
   // Update Live Pulse Strip & Dashboard Indices Row
   const spotVal = index.spot ?? chart.close;
-  const pulseNifty = document.getElementById("pulseNiftyVal");
-  if (pulseNifty && spotVal) {
-    pulseNifty.textContent = `${number(spotVal, 2)} (${change !== null && change !== undefined ? signedNumber(change) : '--'})`;
-    pulseNifty.style.color = Number(change) >= 0 ? "#10b981" : "#ef4444";
-  }
-  const dashNifty = document.getElementById("dashNiftySpot");
-  if (dashNifty && spotVal) dashNifty.textContent = number(spotVal, 2);
-  const dashNiftyC = document.getElementById("dashNiftyChg");
-  if (dashNiftyC && change !== null && change !== undefined) {
-    dashNiftyC.textContent = `${signedNumber(change)} (${signedNumber(changePct, "%")})`;
-    dashNiftyC.className = "idx-chg " + (Number(change) >= 0 ? "positive" : "negative");
-  }
+  const isPos = Number(change) >= 0;
+  const symNorm = (indexName || "").toUpperCase();
 
-  // Sensex approximation from Nifty
-  if (spotVal) {
-    const sensexSpot = spotVal * 3.2801;
-    const sensexChg = (change || 0) * 3.2801;
+  if (symNorm.includes("NIFTY 50") || symNorm === "NIFTY") {
+    const pulseNifty = document.getElementById("pulseNiftyVal");
+    if (pulseNifty && spotVal) {
+      pulseNifty.textContent = `${number(spotVal, 2)} (${change !== null && change !== undefined ? signedNumber(change) : '--'})`;
+      pulseNifty.style.color = isPos ? "#10b981" : "#ef4444";
+    }
+    const dashNifty = document.getElementById("dashNiftySpot");
+    if (dashNifty && spotVal) dashNifty.textContent = number(spotVal, 2);
+    const dashNiftyC = document.getElementById("dashNiftyChg");
+    if (dashNiftyC && change !== null && change !== undefined) {
+      dashNiftyC.textContent = `${signedNumber(change)} (${signedNumber(changePct, "%")})`;
+      dashNiftyC.className = "idx-chg " + (isPos ? "positive" : "negative");
+    }
+  } else if (symNorm.includes("BANK")) {
+    const dashBank = document.getElementById("dashBankNiftySpot");
+    if (dashBank && spotVal) dashBank.textContent = number(spotVal, 2);
+    const dashBankC = document.getElementById("dashBankNiftyChg");
+    if (dashBankC && change !== null && change !== undefined) {
+      dashBankC.textContent = `${signedNumber(change)} (${signedNumber(changePct, "%")})`;
+      dashBankC.className = "idx-chg " + (isPos ? "positive" : "negative");
+    }
+  } else if (symNorm.includes("FIN")) {
+    const dashFin = document.getElementById("dashFinNiftySpot");
+    if (dashFin && spotVal) dashFin.textContent = number(spotVal, 2);
+    const dashFinC = document.getElementById("dashFinNiftyChg");
+    if (dashFinC && change !== null && change !== undefined) {
+      dashFinC.textContent = `${signedNumber(change)} (${signedNumber(changePct, "%")})`;
+      dashFinC.className = "idx-chg " + (isPos ? "positive" : "negative");
+    }
+  } else if (symNorm.includes("SENSEX")) {
     const pulseSensex = document.getElementById("pulseSensexVal");
-    if (pulseSensex) {
-      pulseSensex.textContent = `${number(sensexSpot, 2)} (${signedNumber(sensexChg)})`;
-      pulseSensex.style.color = Number(change) >= 0 ? "#10b981" : "#ef4444";
+    if (pulseSensex && spotVal) {
+      pulseSensex.textContent = `${number(spotVal, 2)} (${change !== null && change !== undefined ? signedNumber(change) : '--'})`;
+      pulseSensex.style.color = isPos ? "#10b981" : "#ef4444";
     }
     const dashSensex = document.getElementById("dashSensexSpot");
-    if (dashSensex) dashSensex.textContent = number(sensexSpot, 2);
+    if (dashSensex && spotVal) dashSensex.textContent = number(spotVal, 2);
     const dashSensexC = document.getElementById("dashSensexChg");
-    if (dashSensexC) {
-      dashSensexC.textContent = `${signedNumber(sensexChg)} (${signedNumber(changePct, "%")})`;
-      dashSensexC.className = "idx-chg " + (Number(change) >= 0 ? "positive" : "negative");
+    if (dashSensexC && change !== null && change !== undefined) {
+      dashSensexC.textContent = `${signedNumber(change)} (${signedNumber(changePct, "%")})`;
+      dashSensexC.className = "idx-chg " + (isPos ? "positive" : "negative");
     }
   }
 }
@@ -1782,6 +1798,11 @@ function renderIndicesOverview(data) {
   if (!data || !data.indices) return;
   const totals = data.marketTotals || {};
   const items = data.indices || [];
+
+  // Keep Dashboard Indices & Header Pulse in sync
+  if (typeof updateDashboardIndices === "function") {
+    updateDashboardIndices(items);
+  }
 
   // 1. KPI Strip
   if (els.idxTotVol) els.idxTotVol.textContent = totals.totalVolume ? Number(totals.totalVolume).toLocaleString("en-IN") : "--";
@@ -9304,6 +9325,9 @@ function instNav(key) {
     }
     const navBtn = document.getElementById("navDashboard");
     if (navBtn) navBtn.classList.add("active");
+    if (typeof loadDashboardData === "function") {
+      loadDashboardData();
+    }
   } else {
     // Hide dashboard, route to existing panel via switchTab()
     if (panelDashboard) {
@@ -9392,6 +9416,194 @@ async function loadDashboardMacroRibbon() {
   }
 }
 
+function updateDashboardIndices(indices) {
+  if (!Array.isArray(indices)) return;
+
+  indices.forEach(idx => {
+    const key = (idx.key || "").toLowerCase();
+    const sym = (idx.symbol || "").toUpperCase();
+    const spot = idx.spot;
+    const chg = idx.change;
+    const chgPct = idx.percentChange;
+    const pcr = idx.pcrOi ?? idx.volumePcr;
+    const wpcr = idx.wpcr;
+    const isPos = Number(chg) >= 0;
+    const chgText = (chg !== null && chg !== undefined)
+      ? `${isPos ? "+" : ""}${Number(chg).toFixed(2)} (${isPos ? "+" : ""}${Number(chgPct).toFixed(2)}%)`
+      : "--";
+    const chgClass = "idx-chg " + (isPos ? "positive" : "negative");
+
+    if (key === "nifty50" || sym === "NIFTY") {
+      const elSpot = document.getElementById("dashNiftySpot");
+      const elChg = document.getElementById("dashNiftyChg");
+      const elPcr = document.getElementById("dashNiftyPcr");
+      const elWpcr = document.getElementById("dashNiftyWpcr");
+      if (elSpot && spot) elSpot.textContent = Number(spot).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (elChg) { elChg.textContent = chgText; elChg.className = chgClass; }
+      if (elPcr && pcr) elPcr.textContent = Number(pcr).toFixed(2);
+      if (elWpcr && wpcr) elWpcr.textContent = Number(wpcr).toFixed(2);
+
+      // Topbar Pulse Nifty
+      const pulseNifty = document.getElementById("pulseNiftyVal");
+      if (pulseNifty && spot) {
+        pulseNifty.textContent = `${Number(spot).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${isPos ? "+" : ""}${Number(chg || 0).toFixed(2)})`;
+        pulseNifty.style.color = isPos ? "#10b981" : "#ef4444";
+      }
+
+      // KPI wPCR
+      const kpiWpcr = document.getElementById("dashKpiWpcr");
+      if (kpiWpcr && wpcr) {
+        kpiWpcr.textContent = Number(wpcr).toFixed(2);
+        kpiWpcr.style.color = Number(wpcr) >= 1.0 ? "#10b981" : (Number(wpcr) <= 0.7 ? "#ef4444" : "inherit");
+      }
+    } else if (key === "banknifty" || sym === "BANKNIFTY") {
+      const elSpot = document.getElementById("dashBankNiftySpot");
+      const elChg = document.getElementById("dashBankNiftyChg");
+      const elPcr = document.getElementById("dashBankNiftyPcr");
+      const elBias = document.getElementById("dashBankNiftyBias");
+      if (elSpot && spot) elSpot.textContent = Number(spot).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (elChg) { elChg.textContent = chgText; elChg.className = chgClass; }
+      if (elPcr && pcr) elPcr.textContent = Number(pcr).toFixed(2);
+      if (elBias) {
+        const bias = idx.buildupClass === "bullish" ? "Bullish" : (idx.buildupClass === "bearish" ? "Bearish" : "Neutral");
+        elBias.textContent = bias;
+        elBias.className = idx.buildupClass === "bullish" ? "positive" : (idx.buildupClass === "bearish" ? "negative" : "neutral");
+      }
+    } else if (key === "finnifty" || sym === "FINNIFTY") {
+      const elSpot = document.getElementById("dashFinNiftySpot");
+      const elChg = document.getElementById("dashFinNiftyChg");
+      const elPcr = document.getElementById("dashFinNiftyPcr");
+      const elBias = document.getElementById("dashFinNiftyBias");
+      if (elSpot && spot) elSpot.textContent = Number(spot).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (elChg) { elChg.textContent = chgText; elChg.className = chgClass; }
+      if (elPcr && pcr) elPcr.textContent = Number(pcr).toFixed(2);
+      if (elBias) {
+        const bias = idx.buildupClass === "bullish" ? "Bullish" : (idx.buildupClass === "bearish" ? "Bearish" : "Neutral");
+        elBias.textContent = bias;
+        elBias.className = idx.buildupClass === "bullish" ? "positive" : (idx.buildupClass === "bearish" ? "negative" : "neutral");
+      }
+    } else if (key === "sensex" || sym === "SENSEX") {
+      const elSpot = document.getElementById("dashSensexSpot");
+      const elChg = document.getElementById("dashSensexChg");
+      const elPcr = document.getElementById("dashSensexPcr") || document.getElementById("dashSensexBreadth");
+      const elBias = document.getElementById("dashSensexBias");
+      if (elSpot && spot) elSpot.textContent = Number(spot).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (elChg) { elChg.textContent = chgText; elChg.className = chgClass; }
+      if (elPcr && pcr) elPcr.textContent = Number(pcr).toFixed(2);
+      if (elBias) {
+        const bias = idx.buildupClass === "bullish" ? "Bullish" : (idx.buildupClass === "bearish" ? "Bearish" : "Neutral");
+        elBias.textContent = bias;
+        elBias.className = idx.buildupClass === "bullish" ? "positive" : (idx.buildupClass === "bearish" ? "negative" : "neutral");
+      }
+
+      // Topbar Pulse Sensex
+      const pulseSensex = document.getElementById("pulseSensexVal");
+      if (pulseSensex && spot) {
+        pulseSensex.textContent = `${Number(spot).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${isPos ? "+" : ""}${Number(chg || 0).toFixed(2)})`;
+        pulseSensex.style.color = isPos ? "#10b981" : "#ef4444";
+      }
+    }
+  });
+}
+
+let isDashboardLoading = false;
+async function loadDashboardData(force = false) {
+  if (isDashboardLoading) return;
+  isDashboardLoading = true;
+
+  try {
+    const dateVal = (els.dateInput && els.dateInput.value) || "2026-09-18";
+
+    // Refresh Macro ribbon
+    loadDashboardMacroRibbon();
+
+    const promises = [
+      // 1. Real Indices Overview (Spots, Changes, PCRs, wPCR)
+      fetch(`/api/indices-overview?date=${encodeURIComponent(dateVal)}&forceRefresh=${force ? "true" : "false"}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && data.indices) {
+            updateDashboardIndices(data.indices);
+          }
+        }).catch(e => console.warn("Dashboard indices error:", e)),
+
+      // 2. Real Market Breadth Bullish %
+      fetch("/api/breadth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: dateVal, fastRefresh: !force })
+      }).then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && data.summary) {
+            const kpi = document.getElementById("dashKpiBreadth");
+            if (kpi && data.summary.latestBreadth !== undefined) {
+              const bVal = Number(data.summary.latestBreadth);
+              kpi.textContent = bVal.toFixed(1) + "%";
+              kpi.style.color = bVal >= 50 ? "#10b981" : "#ef4444";
+            }
+          }
+        }).catch(e => console.warn("Dashboard breadth error:", e)),
+
+      // 3. Real Smart Money FII Net Futures Value
+      fetch("/api/smart-money", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: dateVal })
+      }).then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && data.fiiMetrics) {
+            const kpi = document.getElementById("dashKpiFii");
+            if (kpi) {
+              const val = data.fiiMetrics.netFuturesValueCr;
+              if (val !== undefined && val !== null) {
+                const absVal = Math.abs(Math.round(val)).toLocaleString("en-IN");
+                kpi.textContent = `₹${val < 0 ? "-" : "+"}${absVal} Cr`;
+                kpi.style.color = val >= 0 ? "#10b981" : "#ef4444";
+              }
+            }
+          }
+        }).catch(e => console.warn("Dashboard FII error:", e)),
+
+      // 4. Real MTF Combined Book
+      fetch("/api/mtf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: dateVal })
+      }).then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && data.summary) {
+            const kpi = document.getElementById("dashKpiMtf");
+            if (kpi) {
+              const cr = data.summary.bookCrore?.combined ?? (data.summary.book?.combined ? data.summary.book.combined / 100 : null);
+              if (cr) {
+                kpi.textContent = `₹${Math.round(cr).toLocaleString("en-IN")} Cr`;
+              }
+            }
+          }
+        }).catch(e => console.warn("Dashboard MTF error:", e)),
+
+      // 5. Real Delivery Desk Avg %
+      fetch("/api/delivery-analytics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: dateVal })
+      }).then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && data.summary) {
+            const kpi = document.getElementById("dashKpiDeliv");
+            if (kpi && data.summary.avgDeliveryPct !== undefined) {
+              kpi.textContent = Number(data.summary.avgDeliveryPct).toFixed(1) + "%";
+            }
+          }
+        }).catch(e => console.warn("Dashboard delivery error:", e))
+    ];
+
+    await Promise.allSettled(promises);
+  } finally {
+    isDashboardLoading = false;
+  }
+}
+
 function initInstNavState() {
   // On initial load, show dashboard
   const panelDashboard = document.getElementById("panelDashboard");
@@ -9411,9 +9623,19 @@ function initInstNavState() {
   const navDash = document.getElementById("navDashboard");
   if (navDash) navDash.classList.add("active");
 
-  // Load Macro ribbon data
+  // Load Macro ribbon data & full dashboard real data
   loadDashboardMacroRibbon();
+  loadDashboardData();
+
+  // Wire dateInput listener to refresh dashboard
+  if (els.dateInput) {
+    els.dateInput.addEventListener("change", () => {
+      loadDashboardData(true);
+    });
+  }
 }
 
-// Expose instNav globally
+// Expose instNav & dashboard loaders globally
 window.instNav = instNav;
+window.loadDashboardData = loadDashboardData;
+window.updateDashboardIndices = updateDashboardIndices;

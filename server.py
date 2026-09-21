@@ -6468,10 +6468,15 @@ def _compute_indices_overview_worker(date_value: str) -> dict:
                 d["inst"] = inst
                 spot_insts.append(inst)
 
-            spot_qmap = quote_map_by_token(client.quote(spot_insts, mode="FULL"))
+            raw_quotes = client.quote(spot_insts, mode="FULL")
+            spot_qmap = quote_map_by_token(raw_quotes)
+            valid_ltps = [float(quote_summary(spot_qmap.get(d["inst"].token)).get("ltp") or 0.0) for d in indices_defs if d.get("inst")]
+            if not valid_ltps or all(v <= 0 for v in valid_ltps):
+                raise ValueError("Broker returned no live spot quotes, using market engine fallback")
+
             for d in indices_defs:
                 sq = quote_summary(spot_qmap.get(d["inst"].token))
-                d["spot"] = float(sq.get("ltp") or 24000.0)
+                d["spot"] = float(sq.get("ltp") or 0.0)
                 d["change"] = float(sq.get("change") or 0.0)
                 d["percentChange"] = float(sq.get("percentChange") or 0.0)
 
@@ -6767,14 +6772,15 @@ def trigger_background_indices_update(date_val: str) -> None:
 
 def build_indices_overview(payload: dict) -> dict:
     global _INDICES_OVERVIEW_CACHE
+    force = bool(payload.get("forceRefresh"))
     date_val = payload.get("date") or now_ist().date().isoformat()
     now_ts = time.time()
     cache_age = now_ts - _INDICES_OVERVIEW_CACHE["timestamp"]
 
-    if _INDICES_OVERVIEW_CACHE["data"] and cache_age < 30.0:
+    if not force and _INDICES_OVERVIEW_CACHE["data"] and cache_age < 30.0:
         return _INDICES_OVERVIEW_CACHE["data"]
 
-    if _INDICES_OVERVIEW_CACHE["data"]:
+    if not force and _INDICES_OVERVIEW_CACHE["data"]:
         trigger_background_indices_update(date_val)
         return _INDICES_OVERVIEW_CACHE["data"]
 

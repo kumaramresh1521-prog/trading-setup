@@ -58,7 +58,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css?v=20260921_v4">
+    <link rel="stylesheet" href="/styles.css?v=20260921_v5">
 
     <!-- Supabase JS Client for Cloud Google OAuth & State Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -238,12 +238,12 @@
 
         <!-- Top Macro Ribbon -->
         <div class="inst-macro-ribbon" id="dashMacroRibbon">
-          <div class="macro-pill"><span class="mp-lbl">GIFT NIFTY</span> <span class="mp-val" id="macroGiftNifty">25,473.69</span> <span class="mp-chg positive" id="macroGiftChg">+0.41%</span></div>
-          <div class="macro-pill"><span class="mp-lbl">BRENT CRUDE</span> <span class="mp-val" id="macroBrent">74.53</span> <span class="mp-chg negative" id="macroBrentChg">-0.47%</span></div>
-          <div class="macro-pill"><span class="mp-lbl">GOLD</span> <span class="mp-val" id="macroGold">2,622.77</span> <span class="mp-chg positive" id="macroGoldChg">+1.40%</span></div>
-          <div class="macro-pill"><span class="mp-lbl">US 10Y</span> <span class="mp-val" id="macroUs10y">3.74%</span> <span class="mp-chg positive" id="macroUs10yChg">+0.81%</span></div>
-          <div class="macro-pill"><span class="mp-lbl">DXY (DOLLAR)</span> <span class="mp-val" id="macroDxy">100.74</span> <span class="mp-chg positive" id="macroDxyChg">+0.12%</span></div>
-          <div class="macro-pill"><span class="mp-lbl">BITCOIN</span> <span class="mp-val" id="macroBtc">$63,401</span> <span class="mp-chg positive" id="macroBtcChg">+2.36%</span></div>
+          <div class="macro-pill"><span class="mp-lbl">GIFT NIFTY</span> <span class="mp-val" id="macroGiftNifty">--</span> <span class="mp-chg" id="macroGiftChg">--</span></div>
+          <div class="macro-pill"><span class="mp-lbl">BRENT CRUDE</span> <span class="mp-val" id="macroBrent">--</span> <span class="mp-chg" id="macroBrentChg">--</span></div>
+          <div class="macro-pill"><span class="mp-lbl">GOLD</span> <span class="mp-val" id="macroGold">--</span> <span class="mp-chg" id="macroGoldChg">--</span></div>
+          <div class="macro-pill"><span class="mp-lbl">US 10Y</span> <span class="mp-val" id="macroUs10y">--</span> <span class="mp-chg" id="macroUs10yChg">--</span></div>
+          <div class="macro-pill"><span class="mp-lbl">DXY (DOLLAR)</span> <span class="mp-val" id="macroDxy">--</span> <span class="mp-chg" id="macroDxyChg">--</span></div>
+          <div class="macro-pill"><span class="mp-lbl">BITCOIN</span> <span class="mp-val" id="macroBtc">--</span> <span class="mp-chg" id="macroBtcChg">--</span></div>
         </div>
 
         <!-- KPI Row -->
@@ -287,9 +287,9 @@
               <span class="idx-name">NIFTY 50</span>
               <span class="idx-badge live">● LIVE</span>
             </div>
-            <div class="idx-spot" id="dashNiftySpot">25,185.40</div>
-            <div class="idx-chg positive" id="dashNiftyChg">+124.50 (+0.50%)</div>
-            <div class="idx-meta"><span>PCR: <b id="dashNiftyPcr">1.02</b></span> <span>wPCR: <b id="dashNiftyWpcr">0.60</b></span></div>
+            <div class="idx-spot" id="dashNiftySpot">--</div>
+            <div class="idx-chg" id="dashNiftyChg">--</div>
+            <div class="idx-meta"><span>PCR: <b id="dashNiftyPcr">--</b></span> <span>wPCR: <b id="dashNiftyWpcr">--</b></span></div>
           </div>
 
           <div class="inst-idx-card" onclick="instNav('options')">
@@ -297,9 +297,9 @@
               <span class="idx-name">BANK NIFTY</span>
               <span class="idx-badge live">● LIVE</span>
             </div>
-            <div class="idx-spot" id="dashBankNiftySpot">51,840.25</div>
-            <div class="idx-chg positive" id="dashBankNiftyChg">+285.60 (+0.55%)</div>
-            <div class="idx-meta"><span>PCR: <b id="dashBankNiftyPcr">0.94</b></span> <span>Bias: <b class="positive">Bullish</b></span></div>
+            <div class="idx-spot" id="dashBankNiftySpot">--</div>
+            <div class="idx-chg" id="dashBankNiftyChg">--</div>
+            <div class="idx-meta"><span>PCR: <b id="dashBankNiftyPcr">--</b></span> <span>Bias: <b id="dashBankNiftyBias">--</b></span></div>
           </div>
 
           <div class="inst-idx-card" onclick="instNav('options')">
@@ -307,9 +307,9 @@
               <span class="idx-name">FINNIFTY</span>
               <span class="idx-badge live">● LIVE</span>
             </div>
-            <div class="idx-spot" id="dashFinNiftySpot">23,980.10</div>
-            <div class="idx-chg positive" id="dashFinNiftyChg">+115.30 (+0.48%)</div>
-            <div class="idx-meta"><span>PCR: <b id="dashFinNiftyPcr">1.08</b></span> <span>Bias: <b class="positive">Bullish</b></span></div>
+            <div class="idx-spot" id="dashFinNiftySpot">--</div>
+            <div class="idx-chg" id="dashFinNiftyChg">--</div>
+            <div class="idx-meta"><span>PCR: <b id="dashFinNiftyPcr">--</b></span> <span>Bias: <b id="dashFinNiftyBias">--</b></span></div>
           </div>
 
           <div class="inst-idx-card" onclick="instNav('breadth')">
@@ -317,9 +317,9 @@
               <span class="idx-name">SENSEX</span>
               <span class="idx-badge live">● LIVE</span>
             </div>
-            <div class="idx-spot" id="dashSensexSpot">82,608.15</div>
-            <div class="idx-chg positive" id="dashSensexChg">+340.20 (+0.41%)</div>
-            <div class="idx-meta"><span>Breadth: <b id="dashSensexBreadth">58.2%</b></span> <span>Bias: <b class="positive">Strong</b></span></div>
+            <div class="idx-spot" id="dashSensexSpot">--</div>
+            <div class="idx-chg" id="dashSensexChg">--</div>
+            <div class="idx-meta"><span>PCR: <b id="dashSensexPcr">--</b></span> <span>Bias: <b id="dashSensexBias">--</b></span></div>
           </div>
         </div>
 
@@ -3863,7 +3863,7 @@
       </footer>
     </main>
 
-    <script src="/app.js?v=20260921_v3"></script>
+    <script src="/app.js?v=20260921_v5"></script>
     <script src="/auth_sync.js?v=20260919_v1"></script>
   </body>
 </html>
