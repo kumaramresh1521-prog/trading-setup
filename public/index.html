@@ -58,7 +58,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css?v=20260921_v3">
+    <link rel="stylesheet" href="/styles.css?v=20260921_v4">
 
     <!-- Supabase JS Client for Cloud Google OAuth & State Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -72,7 +72,7 @@
            ================================================================ -->
       <header class="inst-header" id="instHeader">
 
-        <!-- Row 1: Brand + Right Controls -->
+        <!-- Row 1: Brand + Pulse Strip + Right Controls -->
         <div class="inst-brand-bar">
           <div class="inst-brand">
             <span class="inst-brand-icon">⚡</span>
@@ -80,25 +80,26 @@
               <span class="inst-brand-name">Breadth Lab</span>
               <span class="inst-brand-tagline">Institutional Market Intelligence</span>
             </div>
-            <!-- Live market pulse ticker -->
-            <div class="inst-pulse-strip" id="instPulseStrip">
-              <span class="inst-pulse-item" id="pulseNifty">NIFTY — <span class="pval" id="pulseNiftyVal">--</span></span>
-              <span class="inst-pulse-sep">|</span>
-              <span class="inst-pulse-item" id="pulseSensex">SENSEX — <span class="pval" id="pulseSensexVal">--</span></span>
-              <span class="inst-pulse-sep">|</span>
-              <span class="inst-pulse-item inst-pulse-live">● LIVE</span>
-            </div>
+          </div>
+
+          <!-- Live market pulse ticker -->
+          <div class="inst-pulse-strip" id="instPulseStrip">
+            <span class="inst-pulse-item" id="pulseNifty">NIFTY — <span class="pval" id="pulseNiftyVal">--</span></span>
+            <span class="inst-pulse-sep">|</span>
+            <span class="inst-pulse-item" id="pulseSensex">SENSEX — <span class="pval" id="pulseSensexVal">--</span></span>
+            <span class="inst-pulse-sep">|</span>
+            <span class="inst-pulse-item inst-pulse-live">● LIVE</span>
           </div>
 
           <div class="inst-right-controls">
             <div class="status inst-api-status" id="apiStatus">Checking API...</div>
             <div id="topbarAuthArea">
               <div class="auth-btn-group">
-                <button type="button" class="auth-signin-btn" id="btnOpenSignInModal" onclick="if(window.AuthSync){window.AuthSync.currentTab='signin';window.AuthSync.openAuthModal();}">🔑 Sign In</button>
-                <button type="button" class="auth-signup-btn" id="btnOpenSignUpModal" onclick="if(window.AuthSync){window.AuthSync.currentTab='signup';window.AuthSync.openAuthModal();}">✨ Sign Up</button>
+                <button type="button" class="auth-signin-btn" id="btnOpenSignInModal" onclick="if(window.AuthSync){window.AuthSync.currentTab='signin';window.AuthSync.openAuthModal();}">🔑 <span class="auth-btn-text">Sign In</span></button>
+                <button type="button" class="auth-signup-btn" id="btnOpenSignUpModal" onclick="if(window.AuthSync){window.AuthSync.currentTab='signup';window.AuthSync.openAuthModal();}">✨ <span class="auth-btn-text">Sign Up</span></button>
               </div>
             </div>
-            <button id="themeToggleBtn" type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark / Light Theme">🌙 Dark</button>
+            <button id="themeToggleBtn" type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark / Light Theme">🌙 <span class="theme-btn-text">Dark</span></button>
           </div>
         </div>
 

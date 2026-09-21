@@ -2407,6 +2407,72 @@ body.page2-body:not(.theme-light) .opstra-chart-tooltip {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
+/* ==========================================================================
+   📱 PAGE 2 MOBILE RESPONSIVENESS
+   ========================================================================== */
+html, body.page2-body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  width: 100% !important;
+}
 
+@media (max-width: 860px) {
+  .page2-nav-bar {
+    height: auto !important;
+    padding: 8px 12px !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
 
+  .page2-nav-left {
+    flex-direction: column !important;
+    gap: 6px !important;
+    align-items: stretch !important;
+  }
 
+  .page2-suite-tabs {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+  }
+  .page2-suite-tabs::-webkit-scrollbar { display: none; }
+
+  .page2-suite-btn {
+    padding: 5px 10px !important;
+    font-size: 10px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .page2-nav-right {
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .page2-main {
+    padding: 10px !important;
+  }
+
+  /* Grid & toolbars */
+  .p2-filter-bar, .opstra-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+  }
+
+  .opstra-zoom-group {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    width: 100% !important;
+  }
+
+  .opstra-pane-price {
+    height: 190px !important;
+  }
+
+  .opstra-pane-pcr {
+    height: 150px !important;
+  }
+}
