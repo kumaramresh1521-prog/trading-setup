@@ -2538,8 +2538,26 @@ def build_calendar_spread(payload: dict) -> dict:
 
         ladder.append({
             "strike": strike,
+            "strike1": strike,
+            "strike2": strike,
             "isAtm": is_atm,
             "ce": {
+                "far_bid": ce1["bid"],
+                "near_ask": ce2["ask"],
+                "far_ltp": ce1["ltp"],
+                "near_ltp": ce2["ltp"],
+                "spread_ltp": ce_ltp_spread,
+                "far_vol": ce1["vol"],
+                "near_vol": ce2["vol"],
+                "delta_spread": ce_net_delta,
+                "vol_spread": ce_vol_diff,
+                "far_delta": ce_delta1,
+                "near_delta": ce_delta2,
+                "far_iv": ce_vol1,
+                "near_iv": ce_vol2,
+                "far_vega": ce_vega1,
+                "near_vega": ce_vega2,
+                "vega_spread": round(ce_vega1 - ce_vega2, 2),
                 "leg1_ltp": ce1["ltp"],
                 "leg2_ltp": ce2["ltp"],
                 "ltp_spread": ce_ltp_spread,
@@ -2564,6 +2582,22 @@ def build_calendar_spread(payload: dict) -> dict:
                 "oi2": ce2["oi"],
             },
             "pe": {
+                "far_bid": pe1["bid"],
+                "near_ask": pe2["ask"],
+                "far_ltp": pe1["ltp"],
+                "near_ltp": pe2["ltp"],
+                "spread_ltp": pe_ltp_spread,
+                "far_vol": pe1["vol"],
+                "near_vol": pe2["vol"],
+                "delta_spread": pe_net_delta,
+                "vol_spread": pe_vol_diff,
+                "far_delta": pe_delta1,
+                "near_delta": pe_delta2,
+                "far_iv": pe_vol1,
+                "near_iv": pe_vol2,
+                "far_vega": pe_vega1,
+                "near_vega": pe_vega2,
+                "vega_spread": round(pe_vega1 - pe_vega2, 2),
                 "leg1_ltp": pe1["ltp"],
                 "leg2_ltp": pe2["ltp"],
                 "ltp_spread": pe_ltp_spread,
@@ -7782,6 +7816,11 @@ class RequestHandler(BaseHTTPRequestHandler):
                 "isConfigured": cfg["isConfigured"]
             })
 
+        if path == "/api/calendar/feedback":
+            fb_file = CACHE_DIR / "calendar_user_feedback.json"
+            fb_data = read_json(fb_file, {})
+            return self.send_json(200, {"ok": True, "data": fb_data})
+
         if path == "/api/supabase/get-workspace":
             query = urllib.parse.parse_qs(parsed.query)
             user_id = query.get("userId", [None])[0]
@@ -7937,6 +7976,9 @@ class RequestHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         try:
+            if parsed.path in ("/api/calendar", "/api/calendar-spread"):
+                payload = self.read_body()
+                return self.send_json(200, build_calendar_spread(payload))
             if parsed.path == "/api/breadth":
                 payload = self.read_body()
                 return self.send_json(200, build_breadth(payload))
@@ -7986,6 +8028,13 @@ class RequestHandler(BaseHTTPRequestHandler):
                         "feedToken": bool(getattr(client, "feed_token", False)),
                     },
                 )
+            if parsed.path == "/api/calendar/feedback":
+                payload = self.read_body()
+                fb_file = CACHE_DIR / "calendar_user_feedback.json"
+                payload["saved_at"] = datetime.now().isoformat()
+                write_json(fb_file, payload)
+                return self.send_json(200, {"ok": True, "saved_at": payload["saved_at"], "message": "Calendar prototype feedback saved successfully!"})
+
             if parsed.path == "/api/tools/trap-detector":
                 payload = self.read_body()
                 idx_key = payload.get("index") or payload.get("symbol") or "nifty50"

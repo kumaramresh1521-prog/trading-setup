@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Options Calendar Spread Matrix | Breadth Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-root: #030712;
+      --bg-panel: #070d1a;
+      --bg-card: #0b1329;
+      --bg-header: #0d1730;
+      --bg-hover: #122042;
+      --border-subtle: #152238;
+      --border-highlight: #0ea5e9;
+      --accent-cyan: #06b6d4;
+      --accent-sky: #38bdf8;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --accent-purple: #a855f7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Inter', system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-root);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-root); }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    /* Header Bar */
+    .top-bar {
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, #0284c7, #06b6d4);
+      color: #fff;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    .btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      font-family: var(--font-sans);
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #0284c7);
+      color: white;
+      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
+    }
+    .btn-primary:hover { background: #0369a1; }
+
+    .btn-secondary {
+      background: #1e293b;
+      color: #cbd5e1;
+      border-color: #334155;
+    }
+    .btn-secondary:hover { background: #334155; color: white; }
+
+    /* Main Container */
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+    }
+
+    /* Top Controls Strip: Underlying -> Far Expiry -> Near Expiry */
+    .setup-strip {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .control-box {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 220px;
+      flex: 1;
+    }
+
+    .control-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .control-select, .control-input {
+      background: #0b1329;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: var(--font-mono);
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .control-select:focus, .control-input:focus {
+      border-color: var(--border-highlight);
+    }
+
+    /* Option Type Tabs: CE vs PE ONLY */
+    .type-tabs-container {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid var(--border-subtle);
+      padding-bottom: 2px;
+    }
+
+    .type-tab {
+      padding: 8px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid transparent;
+      border-bottom: none;
+      user-select: none;
+    }
+
+    .type-tab.active-ce {
+      color: #10b981;
+      background: #07171e;
+      border-color: #10b981;
+      box-shadow: 0 -2px 10px rgba(16, 185, 129, 0.2);
+    }
+
+    .type-tab.active-pe {
+      color: #f43f5e;
+      background: #1f0c14;
+      border-color: #f43f5e;
+      box-shadow: 0 -2px 10px rgba(244, 63, 94, 0.2);
+    }
+
+    .type-tab:hover:not(.active-ce):not(.active-pe) {
+      color: #f8fafc;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Spreadsheet Table Card */
+    .sheet-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sheet-header-actions {
+      padding: 10px 16px;
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      max-height: 540px;
+    }
+
+    table.calendar-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      text-align: right;
+    }
+
+    table.calendar-table th {
+      background: #091224;
+      color: #94a3b8;
+      padding: 10px 10px;
+      border-bottom: 2px solid var(--border-subtle);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      font-weight: 700;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    table.calendar-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      border-right: 1px solid rgba(255, 255, 255, 0.04);
+      white-space: nowrap;
+      transition: background 0.1s ease;
+    }
+
+    table.calendar-table td[contenteditable="true"] {
+      outline: none;
+      cursor: text;
+    }
+
+    table.calendar-table td[contenteditable="true"]:hover {
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    table.calendar-table td[contenteditable="true"]:focus {
+      background: #0f2240;
+      color: #38bdf8;
+      box-shadow: inset 0 0 0 1px #0284c7;
+    }
+
+    .col-strike {
+      text-align: center;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.03);
+    }
+
+    .col-spread {
+      font-weight: 800;
+      font-size: 12px;
+      color: #10b981;
+    }
+
+    .col-delta-spread {
+      font-weight: 700;
+      color: #a855f7;
+    }
+
+    .col-vol-spread {
+      font-weight: 700;
+      color: #38bdf8;
+    }
+
+    .col-vega-spread {
+      font-weight: 700;
+      color: #f59e0b;
+    }
+
+    .row-atm {
+      background: rgba(2, 132, 199, 0.12) !important;
+      font-weight: 700;
+    }
+
+    .val-pos { color: #10b981; }
+    .val-neg { color: #ef4444; }
+
+    /* Footer / Real-time Discussion */
+    .discussion-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .notes-textarea {
+      width: 100%;
+      min-height: 90px;
+      background: #070d19;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: #f1f5f9;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 12px;
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.15s ease;
+    }
+    .notes-textarea:focus { border-color: var(--border-highlight); }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #10b981;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="brand-area">
+      <span class="brand-badge">CALENDAR DESK</span>
+      <h1 class="brand-title">⚡ Options Calendar Spread Matrix</h1>
+      <span class="status-chip">
+        <span class="status-dot"></span>
+        <span id="syncLabel">Editable &amp; Auto-Calculating</span>
+      </span>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button class="btn btn-secondary" onclick="fetchLiveMarketData()">📡 Fetch Live Market Data</button>
+      <button class="btn btn-secondary" onclick="addNewStrikeRow()">➕ Add Strike Row</button>
+      <button class="btn btn-primary" onclick="saveAndSend()">💾 Save &amp; Send to AI</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- 1. Top Controls: Underlying -> Far Expiry -> Near Expiry -->
+    <section class="setup-strip">
+      <!-- Underlying -->
+      <div class="control-box">
+        <label class="control-label">📍 1. Underlying</label>
+        <select id="cfgUnderlying" class="control-select" onchange="onUnderlyingChange()">
+          <option value="NIFTY">NIFTY 50 (Spot: 23,446.80)</option>
+          <option value="BANKNIFTY">BANK NIFTY (Spot: 56,548.90)</option>
+          <option value="FINNIFTY">FIN NIFTY (Spot: 25,564.85)</option>
+          <option value="MIDCPNIFTY">MIDCAP NIFTY (Spot: 14,572.25)</option>
+          <option value="SENSEX">SENSEX (Spot: 74,828.25)</option>
+        </select>
+      </div>
+
+      <!-- Far Expiry (First as requested) -->
+      <div class="control-box">
+        <label class="control-label" style="color: #38bdf8;">📅 2. Far Expiry (Buy Leg)</label>
+        <input type="text" id="cfgFarExpiry" class="control-input" value="03-Oct-2026 (Next Week)" onchange="onExpiryChange()" />
+      </div>
+
+      <!-- Near Expiry (Second as requested) -->
+      <div class="control-box">
+        <label class="control-label" style="color: #f59e0b;">⏳ 3. Near Expiry (Sell Leg)</label>
+        <input type="text" id="cfgNearExpiry" class="control-input" value="26-Sep-2026 (Weekly)" onchange="onExpiryChange()" />
+      </div>
+    </section>
+
+    <!-- 2. Type Tabs: CE and PE ONLY (Directly Below Expiry) -->
+    <section class="type-tabs-container">
+      <div id="tabCe" class="type-tab active-ce" onclick="switchOptionType('CE')">
+        🟢 CALLS (CE) CALENDAR SPREAD
+      </div>
+      <div id="tabPe" class="type-tab" onclick="switchOptionType('PE')">
+        🔴 PUTS (PE) CALENDAR SPREAD
+      </div>
+    </section>
+
+    <!-- 3. Exact 16-Column Spread Table -->
+    <section class="sheet-card">
+      <div class="sheet-header-actions">
+        <div style="font-size: 13px; font-weight: 700; color: #f8fafc; display:flex; align-items:center; gap:8px;">
+          <span id="tableTitleBadge" style="background:#10b981; color:#fff; font-size:11px; padding:2px 6px; border-radius:4px;">CE</span>
+          <span id="tableTitleText">Call Calendar Spread Matrix (Far Exp vs Near Exp)</span>
+        </div>
+        <div style="font-size: 11px; color: #94a3b8; font-family: var(--font-mono);">
+          *All cells editable (`contenteditable`). Spread LTP, Delta Spread, Vol Spread &amp; Vega Spread recalculate automatically!
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="calendar-table" id="calendarGrid">
+          <thead>
+            <tr>
+              <th class="col-strike" style="width: 75px;">Strike 1</th>
+              <th class="col-strike" style="width: 75px;">Strike 2</th>
+              <th style="color: #38bdf8;">Bid (Far Exp)</th>
+              <th style="color: #f59e0b;">Ask (Near Exp)</th>
+              <th class="col-spread" style="color: #10b981;">LTP (Spread: Far-Near)</th>
+              <th>Far Exp Volume</th>
+              <th>Near Exp Volume</th>
+              <th class="col-delta-spread">Delta (Spread)</th>
+              <th class="col-vol-spread">Volatility Spread</th>
+              <th>Far Exp Delta</th>
+              <th>Near Exp Delta</th>
+              <th>Vol Far Exp</th>
+              <th>Vol Near Exp</th>
+              <th>Far Exp Vega</th>
+              <th>Near Exp Vega</th>
+              <th class="col-vega-spread">Vega Spread</th>
+              <th style="width: 40px; text-align: center;">✕</th>
+            </tr>
+          </thead>
+          <tbody id="gridBody">
+            <!-- Populated dynamically via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. Real-time Notes & Discussion Panel -->
+    <section class="discussion-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span style="font-size: 13px; font-weight: 700; color: #f8fafc;">
+          💬 Real-Time Feedback &amp; Custom Rules:
+        </span>
+        <span id="savedAtTag" style="font-size: 11px; color: #94a3b8; font-family: var(--font-mono);">
+          Not saved yet
+        </span>
+      </div>
+      <textarea id="liveNotes" class="notes-textarea" placeholder="Yahan aap real-time me jo bhi bolna ya puchna chahein likhein... Example:
+- Bid (Far Exp) aur Ask (Near Exp) ka difference slippage me consider ho.
+- Strike 1 aur Strike 2 alag ho sakein agar diagonal calendar dekhna ho.
+- Likhne ke baad 'Save & Send to AI' dabayein!"></textarea>
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="saveAndSend()">💾 Save &amp; Send to AI</button>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="toast">✅ Saved and Synced with Assistant!</div>
+
+  <script>
+    let currentType = 'CE'; // CE or PE only
+    let currentUnderlying = 'NIFTY';
+
+    // Sample institutional matrix dataset matching user's exact 16 columns
+    const DATASETS = {
+      NIFTY: {
+        CE: [
+          { s1: "23350", s2: "23350", farBid: "263.50", nearAsk: "185.50", spread: "78.00", farVol: "14200", nearVol: "38900", deltaSpread: "+0.042", volSpread: "-1.4%", farDelta: "0.582", nearDelta: "0.540", farVolIv: "12.8%", nearVolIv: "14.2%", farVega: "18.5", nearVega: "11.2", vegaSpread: "+7.3", isAtm: false },
+          { s1: "23400", s2: "23400", farBid: "227.00", nearAsk: "149.00", spread: "78.00", farVol: "19800", nearVol: "54200", deltaSpread: "+0.048", volSpread: "-1.4%", farDelta: "0.542", nearDelta: "0.494", farVolIv: "12.5%", nearVolIv: "13.9%", farVega: "19.2", nearVega: "11.8", vegaSpread: "+7.4", isAtm: false },
+          { s1: "23450", s2: "23450", farBid: "192.50", nearAsk: "115.50", spread: "77.00", farVol: "28500", nearVol: "84600", deltaSpread: "+0.052", volSpread: "-1.5%", farDelta: "0.501", nearDelta: "0.449", farVolIv: "12.1%", nearVolIv: "13.6%", farVega: "19.8", nearVega: "12.4", vegaSpread: "+7.4", isAtm: true },
+          { s1: "23500", s2: "23500", farBid: "161.00", nearAsk: "86.50", spread: "74.50", farVol: "22400", nearVol: "61200", deltaSpread: "+0.046", volSpread: "-1.4%", farDelta: "0.458", nearDelta: "0.412", farVolIv: "12.0%", nearVolIv: "13.4%", farVega: "19.1", nearVega: "11.6", vegaSpread: "+7.5", isAtm: false },
+          { s1: "23550", s2: "23550", farBid: "132.00", nearAsk: "62.00", spread: "70.00", farVol: "15300", nearVol: "42100", deltaSpread: "+0.038", volSpread: "-1.3%", farDelta: "0.412", nearDelta: "0.374", farVolIv: "11.9%", nearVolIv: "13.2%", farVega: "18.4", nearVega: "10.9", vegaSpread: "+7.5", isAtm: false },
+        ],
+        PE: [
+          { s1: "23350", s2: "23350", farBid: "135.00", nearAsk: "64.00", spread: "71.00", farVol: "14800", nearVol: "41200", deltaSpread: "-0.039", volSpread: "-1.3%", farDelta: "-0.418", nearDelta: "-0.379", farVolIv: "12.9%", nearVolIv: "14.2%", farVega: "18.3", nearVega: "10.8", vegaSpread: "+7.5", isAtm: false },
+          { s1: "23400", s2: "23400", farBid: "163.50", nearAsk: "88.00", spread: "75.50", farVol: "21200", nearVol: "59800", deltaSpread: "-0.047", volSpread: "-1.4%", farDelta: "-0.460", nearDelta: "-0.413", farVolIv: "12.6%", nearVolIv: "14.0%", farVega: "19.1", nearVega: "11.7", vegaSpread: "+7.4", isAtm: false },
+          { s1: "23450", s2: "23450", farBid: "195.00", nearAsk: "117.00", spread: "78.00", farVol: "27800", nearVol: "81200", deltaSpread: "-0.051", volSpread: "-1.5%", farDelta: "-0.499", nearDelta: "-0.448", farVolIv: "12.2%", nearVolIv: "13.7%", farVega: "19.8", nearVega: "12.3", vegaSpread: "+7.5", isAtm: true },
+          { s1: "23500", s2: "23500", farBid: "230.00", nearAsk: "151.00", spread: "79.00", farVol: "18900", nearVol: "51400", deltaSpread: "-0.046", volSpread: "-1.4%", farDelta: "-0.540", nearDelta: "-0.494", farVolIv: "12.4%", nearVolIv: "13.8%", farVega: "19.2", nearVega: "11.6", vegaSpread: "+7.6", isAtm: false },
+          { s1: "23550", s2: "23550", farBid: "268.00", nearAsk: "188.00", spread: "80.00", farVol: "13100", nearVol: "36500", deltaSpread: "-0.041", volSpread: "-1.3%", farDelta: "-0.585", nearDelta: "-0.544", farVolIv: "12.7%", nearVolIv: "14.0%", farVega: "18.4", nearVega: "11.1", vegaSpread: "+7.3", isAtm: false },
+        ]
+      },
+      BANKNIFTY: {
+        CE: [
+          { s1: "56300", s2: "56300", farBid: "608.00", nearAsk: "422.00", spread: "186.00", farVol: "8400", nearVol: "24500", deltaSpread: "+0.065", volSpread: "-1.7%", farDelta: "0.575", nearDelta: "0.510", farVolIv: "15.1%", nearVolIv: "16.8%", farVega: "38.5", nearVega: "22.4", vegaSpread: "+16.1", isAtm: false },
+          { s1: "56400", s2: "56400", farBid: "538.00", nearAsk: "357.00", spread: "181.00", farVol: "11200", nearVol: "31800", deltaSpread: "+0.070", volSpread: "-1.6%", farDelta: "0.538", nearDelta: "0.468", farVolIv: "14.8%", nearVolIv: "16.4%", farVega: "39.8", nearVega: "23.6", vegaSpread: "+16.2", isAtm: false },
+          { s1: "56500", s2: "56500", farBid: "473.00", nearAsk: "297.00", spread: "176.00", farVol: "18500", nearVol: "52400", deltaSpread: "+0.075", volSpread: "-1.6%", farDelta: "0.502", nearDelta: "0.427", farVolIv: "14.5%", nearVolIv: "16.1%", farVega: "40.5", nearVega: "24.5", vegaSpread: "+16.0", isAtm: true },
+          { s1: "56600", s2: "56600", farBid: "412.00", nearAsk: "242.00", spread: "170.00", farVol: "13400", nearVol: "38200", deltaSpread: "+0.068", volSpread: "-1.5%", farDelta: "0.462", nearDelta: "0.394", farVolIv: "14.4%", nearVolIv: "15.9%", farVega: "39.4", nearVega: "23.1", vegaSpread: "+16.3", isAtm: false },
+          { s1: "56700", s2: "56700", farBid: "358.00", nearAsk: "194.00", spread: "164.00", farVol: "9200", nearVol: "26400", deltaSpread: "+0.060", volSpread: "-1.5%", farDelta: "0.421", nearDelta: "0.361", farVolIv: "14.2%", nearVolIv: "15.7%", farVega: "38.2", nearVega: "21.9", vegaSpread: "+16.3", isAtm: false },
+        ],
+        PE: [
+          { s1: "56300", s2: "56300", farBid: "365.00", nearAsk: "198.00", spread: "167.00", farVol: "8900", nearVol: "25400", deltaSpread: "-0.059", volSpread: "-1.5%", farDelta: "-0.425", nearDelta: "-0.366", farVolIv: "15.3%", nearVolIv: "16.8%", farVega: "38.1", nearVega: "21.8", vegaSpread: "+16.3", isAtm: false },
+          { s1: "56400", s2: "56400", farBid: "418.00", nearAsk: "246.00", spread: "172.00", farVol: "12500", nearVol: "36800", deltaSpread: "-0.067", volSpread: "-1.5%", farDelta: "-0.465", nearDelta: "-0.398", farVolIv: "14.9%", nearVolIv: "16.4%", farVega: "39.2", nearVega: "23.2", vegaSpread: "+16.0", isAtm: false },
+          { s1: "56500", s2: "56500", farBid: "478.00", nearAsk: "302.00", spread: "176.00", farVol: "19200", nearVol: "54200", deltaSpread: "-0.074", volSpread: "-1.6%", farDelta: "-0.501", nearDelta: "-0.427", farVolIv: "14.6%", nearVolIv: "16.2%", farVega: "40.4", nearVega: "24.6", vegaSpread: "+15.8", isAtm: true },
+          { s1: "56600", s2: "56600", farBid: "542.00", nearAsk: "362.00", spread: "180.00", farVol: "11800", nearVol: "33400", deltaSpread: "-0.069", volSpread: "-1.6%", farDelta: "-0.539", nearDelta: "-0.470", farVolIv: "14.8%", nearVolIv: "16.4%", farVega: "39.6", nearVega: "23.4", vegaSpread: "+16.2", isAtm: false },
+          { s1: "56700", s2: "56700", farBid: "612.00", nearAsk: "428.00", spread: "184.00", farVol: "7900", nearVol: "22800", deltaSpread: "-0.062", volSpread: "-1.7%", farDelta: "-0.578", nearDelta: "-0.516", farVolIv: "15.2%", nearVolIv: "16.9%", farVega: "38.6", nearVega: "22.1", vegaSpread: "+16.5", isAtm: false },
+        ]
+      }
+    };
+
+    function renderGrid(rows) {
+      const tbody = document.getElementById('gridBody');
+      tbody.innerHTML = '';
+      rows.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        if (r.isAtm) tr.className = 'row-atm';
+        tr.innerHTML = `
+          <td class="col-strike" contenteditable="true" oninput="triggerAutoRecalc(this)">${r.s1}</td>
+          <td class="col-strike" contenteditable="true" oninput="triggerAutoRecalc(this)">${r.s2}</td>
+          <td contenteditable="true" oninput="calcRow(this)">${r.farBid}</td>
+          <td contenteditable="true" oninput="calcRow(this)">${r.nearAsk}</td>
+          <td class="col-spread" contenteditable="true">${r.spread}</td>
+          <td contenteditable="true">${r.farVol}</td>
+          <td contenteditable="true">${r.nearVol}</td>
+          <td class="col-delta-spread" contenteditable="true">${r.deltaSpread}</td>
+          <td class="col-vol-spread" contenteditable="true">${r.volSpread}</td>
+          <td contenteditable="true" oninput="calcGreeks(this)">${r.farDelta}</td>
+          <td contenteditable="true" oninput="calcGreeks(this)">${r.nearDelta}</td>
+          <td contenteditable="true" oninput="calcVol(this)">${r.farVolIv}</td>
+          <td contenteditable="true" oninput="calcVol(this)">${r.nearVolIv}</td>
+          <td contenteditable="true" oninput="calcVega(this)">${r.farVega}</td>
+          <td contenteditable="true" oninput="calcVega(this)">${r.nearVega}</td>
+          <td class="col-vega-spread" contenteditable="true">${r.vegaSpread}</td>
+          <td style="text-align: center;"><span style="color:#ef4444; cursor:pointer;" onclick="deleteRow(this)">✕</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Auto recalculate row values when user types in any cell
+    function calcRow(el) {
+      const tr = el.closest('tr');
+      const cells = tr.querySelectorAll('td');
+      const farBid = parseFloat(cells[2].textContent.replace(/[^0-9.-]/g, '')) || 0;
+      const nearAsk = parseFloat(cells[3].textContent.replace(/[^0-9.-]/g, '')) || 0;
+      if (farBid > 0 && nearAsk > 0) {
+        cells[4].textContent = (farBid - nearAsk).toFixed(2);
+      }
+      triggerSaveDebounced();
+    }
+
+    function calcGreeks(el) {
+      const tr = el.closest('tr');
+      const cells = tr.querySelectorAll('td');
+      const fDelta = parseFloat(cells[9].textContent.replace(/[^0-9.-]/g, '')) || 0;
+      const nDelta = parseFloat(cells[10].textContent.replace(/[^0-9.-]/g, '')) || 0;
+      const diff = (fDelta - nDelta).toFixed(3);
+      cells[7].textContent = (diff >= 0 ? '+' : '') + diff;
+      triggerSaveDebounced();
+    }
+
+    function calcVol(el) {
+      const tr = el.closest('tr');
+      const cells = tr.querySelectorAll('td');
+      const fIv = parseFloat(cells[11].textContent.replace(/[^0-9.-]/g, '')) || 0;
+      const nIv = parseFloat(cells[12].textContent.replace(/[^0-9.-]/g, '')) || 0;
+      const diff = (fIv - nIv).toFixed(1);
+      cells[8].textContent = (diff >= 0 ? '+' : '') + diff + '%';
+      triggerSaveDebounced();
+    }
+
+    function calcVega(el) {
+      const tr = el.closest('tr');
+      const cells = tr.querySelectorAll('td');
+      const fVega = parseFloat(cells[13].textContent.replace(/[^0-9.-]/g, '')) || 0;
+      const nVega = parseFloat(cells[14].textContent.replace(/[^0-9.-]/g, '')) || 0;
+      const diff = (fVega - nVega).toFixed(1);
+      cells[15].textContent = (diff >= 0 ? '+' : '') + diff;
+      triggerSaveDebounced();
+    }
+
+    function triggerAutoRecalc(el) {
+      triggerSaveDebounced();
+    }
+
+    function switchOptionType(type) {
+      currentType = type;
+      document.getElementById('tabCe').className = 'type-tab ' + (type === 'CE' ? 'active-ce' : '');
+      document.getElementById('tabPe').className = 'type-tab ' + (type === 'PE' ? 'active-pe' : '');
+
+      const badge = document.getElementById('tableTitleBadge');
+      badge.textContent = type;
+      badge.style.background = type === 'CE' ? '#10b981' : '#f43f5e';
+      document.getElementById('tableTitleText').textContent = (type === 'CE' ? 'Call' : 'Put') + ' Calendar Spread Matrix (Far Exp vs Near Exp)';
+
+      loadCurrentDataset();
+    }
+
+    function onUnderlyingChange() {
+      currentUnderlying = document.getElementById('cfgUnderlying').value;
+      loadCurrentDataset();
+    }
+
+    function onExpiryChange() {
+      triggerSaveDebounced();
+    }
+
+    function loadCurrentDataset() {
+      const dataForSym = DATASETS[currentUnderlying] || DATASETS['NIFTY'];
+      const rows = dataForSym[currentType] || dataForSym['CE'];
+      renderGrid(rows);
+    }
+
+    function addNewStrikeRow() {
+      const tbody = document.getElementById('gridBody');
+      const tr = document.createElement('tr');
+      const lastRow = tbody.lastElementChild;
+      let nextS = 23600;
+      if (lastRow) {
+        const prevS = parseInt(lastRow.children[0].textContent.replace(/[^0-9]/g, '')) || 23550;
+        nextS = prevS + (currentUnderlying === 'BANKNIFTY' ? 100 : 50);
+      }
+      tr.innerHTML = `
+        <td class="col-strike" contenteditable="true">${nextS}</td>
+        <td class="col-strike" contenteditable="true">${nextS}</td>
+        <td contenteditable="true" oninput="calcRow(this)">110.00</td>
+        <td contenteditable="true" oninput="calcRow(this)">45.00</td>
+        <td class="col-spread" contenteditable="true">65.00</td>
+        <td contenteditable="true">11000</td>
+        <td contenteditable="true">32000</td>
+        <td class="col-delta-spread" contenteditable="true">+0.035</td>
+        <td class="col-vol-spread" contenteditable="true">-1.2%</td>
+        <td contenteditable="true" oninput="calcGreeks(this)">0.380</td>
+        <td contenteditable="true" oninput="calcGreeks(this)">0.345</td>
+        <td contenteditable="true" oninput="calcVol(this)">11.8%</td>
+        <td contenteditable="true" oninput="calcVol(this)">13.0%</td>
+        <td contenteditable="true" oninput="calcVega(this)">17.5</td>
+        <td contenteditable="true" oninput="calcVega(this)">10.2</td>
+        <td class="col-vega-spread" contenteditable="true">+7.3</td>
+        <td style="text-align: center;"><span style="color:#ef4444; cursor:pointer;" onclick="deleteRow(this)">✕</span></td>
+      `;
+      tbody.appendChild(tr);
+      triggerSaveDebounced();
+    }
+
+    function deleteRow(btn) {
+      btn.closest('tr').remove();
+      triggerSaveDebounced();
+    }
+
+    async function fetchLiveMarketData() {
+      document.getElementById('syncLabel').textContent = "Fetching Live Exchange Chain...";
+      try {
+        const res = await fetch('/api/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            symbol: currentUnderlying,
+            nearExpiry: "AUTO",
+            farExpiry: "AUTO",
+            strikeRange: 5
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.rows && data.rows.length > 0) {
+            const mapped = data.rows.map(r => {
+              const leg = currentType === 'CE' ? r.ce : r.pe;
+              return {
+                s1: r.strike1 || r.strike,
+                s2: r.strike2 || r.strike,
+                farBid: (leg.far_bid || (leg.far_ltp ? leg.far_ltp - 0.5 : 0)).toFixed(2),
+                nearAsk: (leg.near_ask || (leg.near_ltp ? leg.near_ltp + 0.5 : 0)).toFixed(2),
+                spread: (leg.spread_ltp || (leg.far_ltp - leg.near_ltp) || 0).toFixed(2),
+                farVol: leg.far_vol || leg.vol1_trades || 1000,
+                nearVol: leg.near_vol || leg.vol2_trades || 3000,
+                deltaSpread: (leg.delta_spread >= 0 ? '+' : '') + (leg.delta_spread || 0).toFixed(3),
+                volSpread: (leg.vol_spread >= 0 ? '+' : '') + (leg.vol_spread || 0).toFixed(1) + '%',
+                farDelta: (leg.far_delta || 0).toFixed(3),
+                nearDelta: (leg.near_delta || 0).toFixed(3),
+                farVolIv: (leg.far_iv || 12.5).toFixed(1) + '%',
+                nearVolIv: (leg.near_iv || 14.0).toFixed(1) + '%',
+                farVega: (leg.far_vega || 18.0).toFixed(1),
+                nearVega: (leg.near_vega || 11.0).toFixed(1),
+                vegaSpread: (leg.vega_spread >= 0 ? '+' : '') + (leg.vega_spread || 7.0).toFixed(1),
+                isAtm: r.isAtm || false
+              };
+            });
+            renderGrid(mapped);
+            document.getElementById('syncLabel').textContent = "🟢 Live Exchange Data Loaded";
+            showToast("✅ Loaded Real-Time Exchange Quotes!");
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Live calendar fetch fallback:", e);
+      }
+      document.getElementById('syncLabel').textContent = "Editable Matrix Ready";
+      loadCurrentDataset();
+    }
+
+    let saveTimer = null;
+    function triggerSaveDebounced() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        savePayload(true);
+      }, 1500);
+    }
+
+    function getFullPayload() {
+      const rows = [];
+      document.querySelectorAll('#gridBody tr').forEach(tr => {
+        const tds = tr.querySelectorAll('td');
+        rows.push({
+          strike1: tds[0]?.textContent.trim(),
+          strike2: tds[1]?.textContent.trim(),
+          farBid: tds[2]?.textContent.trim(),
+          nearAsk: tds[3]?.textContent.trim(),
+          spreadLtp: tds[4]?.textContent.trim(),
+          farVol: tds[5]?.textContent.trim(),
+          nearVol: tds[6]?.textContent.trim(),
+          deltaSpread: tds[7]?.textContent.trim(),
+          volSpread: tds[8]?.textContent.trim(),
+          farDelta: tds[9]?.textContent.trim(),
+          nearDelta: tds[10]?.textContent.trim(),
+          farIv: tds[11]?.textContent.trim(),
+          nearIv: tds[12]?.textContent.trim(),
+          farVega: tds[13]?.textContent.trim(),
+          nearVega: tds[14]?.textContent.trim(),
+          vegaSpread: tds[15]?.textContent.trim()
+        });
+      });
+
+      return {
+        underlying: document.getElementById('cfgUnderlying').value,
+        farExpiry: document.getElementById('cfgFarExpiry').value,
+        nearExpiry: document.getElementById('cfgNearExpiry').value,
+        optionType: currentType,
+        columns: [
+          "Strike 1", "Strike 2", "Bid (Far Exp)", "Ask (Near Exp)", "LTP (Spread Far-Near)",
+          "Far Exp Volume", "Near Exp Volume", "Delta (Spread)", "Volatility Spread",
+          "Far Exp Delta", "Near Exp Delta", "Vol Far Exp", "Vol Near Exp",
+          "Far Exp Vega", "Near Exp Vega", "Vega Spread"
+        ],
+        rows: rows,
+        userNotes: document.getElementById('liveNotes').value.trim(),
+        timestamp: new Date().toLocaleTimeString()
+      };
+    }
+
+    async function savePayload(isAuto = false) {
+      const payload = getFullPayload();
+      localStorage.setItem('calendar_matrix_spec', JSON.stringify(payload));
+      try {
+        const res = await fetch('/api/calendar/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const t = new Date().toLocaleTimeString();
+          document.getElementById('savedAtTag').textContent = `Saved at: ${t}`;
+          if (!isAuto) showToast("✅ Saved and Synced with Assistant!");
+        }
+      } catch (e) {
+        document.getElementById('savedAtTag').textContent = `Local Saved (${new Date().toLocaleTimeString()})`;
+      }
+    }
+
+    function saveAndSend() {
+      savePayload(false);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.display = 'flex';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadCurrentDataset();
+    });
+  </script>
+</body>
+</html>
