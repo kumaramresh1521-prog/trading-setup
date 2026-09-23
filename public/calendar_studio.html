@@ -660,7 +660,13 @@
       <div class="control-box">
         <label class="control-label" style="color: #38bdf8;">📅 2. Far Expiry (Buy Leg)</label>
         <select id="cfgFarExpiry" class="control-select" onchange="handleSelectExpiryChange('far')">
-          <option value="AUTO">AUTO (Next Weekly)</option>
+          <option value="06 Oct 2026" selected>06 Oct 2026 (Next Weekly Expiry)</option>
+          <option value="29 Sep 2026">29 Sep 2026 (Near / Current Expiry)</option>
+          <option value="13 Oct 2026">13 Oct 2026 (Far Weekly Expiry)</option>
+          <option value="19 Oct 2026">19 Oct 2026 (Far Weekly Expiry)</option>
+          <option value="27 Oct 2026">27 Oct 2026 (Monthly Expiry)</option>
+          <option value="23 Nov 2026">23 Nov 2026 (Monthly Expiry)</option>
+          <option value="29 Dec 2026">29 Dec 2026 (Quarterly Expiry)</option>
           <option value="__ADD_CUSTOM__" style="color:#38bdf8; font-weight:700;">➕ Add Custom Date...</option>
         </select>
       </div>
@@ -669,7 +675,13 @@
       <div class="control-box">
         <label class="control-label" style="color: #f59e0b;">⏳ 3. Near Expiry (Sell Leg)</label>
         <select id="cfgNearExpiry" class="control-select" onchange="handleSelectExpiryChange('near')">
-          <option value="AUTO">AUTO (Current Weekly)</option>
+          <option value="29 Sep 2026" selected>29 Sep 2026 (Near / Current Expiry)</option>
+          <option value="06 Oct 2026">06 Oct 2026 (Next Weekly Expiry)</option>
+          <option value="13 Oct 2026">13 Oct 2026 (Far Weekly Expiry)</option>
+          <option value="19 Oct 2026">19 Oct 2026 (Far Weekly Expiry)</option>
+          <option value="27 Oct 2026">27 Oct 2026 (Monthly Expiry)</option>
+          <option value="23 Nov 2026">23 Nov 2026 (Monthly Expiry)</option>
+          <option value="29 Dec 2026">29 Dec 2026 (Quarterly Expiry)</option>
           <option value="__ADD_CUSTOM__" style="color:#f59e0b; font-weight:700;">➕ Add Custom Date...</option>
         </select>
       </div>
@@ -821,6 +833,35 @@
     </div>
   </div>
 
+  <!-- Save Combination Tab Modal -->
+  <div class="modal-overlay" id="saveTabModal">
+    <div style="background:#0b1329; border:1px solid #6366f1; border-radius:12px; padding:22px; max-width:480px; width:90%; display:flex; flex-direction:column; gap:16px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.6);">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="color:#f8fafc; font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
+          <span>💾 Save Combination as Tab</span>
+        </h3>
+        <span style="cursor:pointer; color:#94a3b8; font-size:18px;" onclick="closeSaveTabModal()">✕</span>
+      </div>
+      <p style="font-size:12px; color:#94a3b8; line-height:1.5; margin:0;">
+        Is real expiry combination aur custom strikes ko apne custom tab me save karein taaki aap jab chahein 1-click me switch kar sakein:
+      </p>
+      <div style="background:#131c38; border:1px solid #1e293b; border-radius:8px; padding:12px; font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div><span style="color:#64748b;">Underlying:</span> <strong id="modalUnderlyingLabel" style="color:#f8fafc;">NIFTY</strong></div>
+        <div><span style="color:#64748b;">Leg Type:</span> <strong id="modalTypeLabel" style="color:#10b981;">CE</strong></div>
+        <div><span style="color:#64748b;">Far Expiry:</span> <strong id="modalFarLabel" style="color:#38bdf8;">--</strong></div>
+        <div><span style="color:#64748b;">Near Expiry:</span> <strong id="modalNearLabel" style="color:#f59e0b;">--</strong></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <label style="font-size:11px; font-weight:700; color:#cbd5e1;">TAB NAME (Aap apne hisaab se customize kar sakte hain):</label>
+        <input type="text" id="tabNameInput" class="control-input" style="width:100%; font-size:13px;" onkeydown="if(event.key==='Enter') confirmSaveTabModal(); else if(event.key==='Escape') closeSaveTabModal();" />
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:4px;">
+        <button class="btn btn-secondary" onclick="closeSaveTabModal()">Cancel</button>
+        <button class="btn btn-indigo" onclick="confirmSaveTabModal()">💾 Save Tab</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast">✅ Saved and Synced with Assistant!</div>
 
   <script>
@@ -843,11 +884,17 @@
       return `${u}_${f}_${n}_${currentType}`;
     }
 
-    function updateActivePairLabel() {
+    function updateActivePairLabel(farDte, nearDte) {
       const f = document.getElementById('cfgFarExpiry').value;
       const n = document.getElementById('cfgNearExpiry').value;
       const el = document.getElementById('activePairDisplay');
-      if (el) el.textContent = `${f} / ${n}`;
+      if (el) {
+        let fDteStr = '';
+        let nDteStr = '';
+        if (farDte !== undefined && farDte !== null) fDteStr = ` <span style="color:#38bdf8; font-size:10px;">(${farDte}d DTE)</span>`;
+        if (nearDte !== undefined && nearDte !== null) nDteStr = ` <span style="color:#f59e0b; font-size:10px;">(${nearDte}d DTE)</span>`;
+        el.innerHTML = `${f}${fDteStr} <span style="color:#64748b;">/</span> ${n}${nDteStr}`;
+      }
     }
 
     // Dropdown Expiry Selection & Add Option
@@ -900,7 +947,7 @@
         if (!exists) {
           const opt = document.createElement('option');
           opt.value = val;
-          opt.textContent = `${val} (Custom)`;
+          opt.textContent = `${val} (Custom Expiry)`;
           // Insert right before the last '__ADD_CUSTOM__' option
           const customOptIndex = sel.options.length - 1;
           sel.insertBefore(opt, sel.options[customOptIndex] || null);
@@ -925,14 +972,40 @@
       const n = document.getElementById('cfgNearExpiry').value;
       const t = currentType;
 
-      const defaultName = `${u} (${f} / ${n}) ${t}`;
-      const name = prompt("Is Expiry Combination Tab ka naam dalein:", defaultName);
-      if (!name || !name.trim()) return;
+      document.getElementById('modalUnderlyingLabel').textContent = u;
+      document.getElementById('modalTypeLabel').textContent = t;
+      document.getElementById('modalTypeLabel').style.color = t === 'CE' ? '#10b981' : '#f43f5e';
+      document.getElementById('modalFarLabel').textContent = f;
+      document.getElementById('modalNearLabel').textContent = n;
 
+      const fShort = f.split(' ')[0] + ' ' + (f.split(' ')[1] || '');
+      const nShort = n.split(' ')[0] + ' ' + (n.split(' ')[1] || '');
+      const defaultName = `${u} (${fShort} / ${nShort}) ${t}`;
+      const inp = document.getElementById('tabNameInput');
+      inp.value = defaultName;
+
+      document.getElementById('saveTabModal').style.display = 'flex';
+      setTimeout(() => { inp.focus(); inp.select(); }, 50);
+    }
+
+    function closeSaveTabModal() {
+      document.getElementById('saveTabModal').style.display = 'none';
+    }
+
+    function confirmSaveTabModal() {
+      const inp = document.getElementById('tabNameInput');
+      const name = inp.value.trim();
+      if (!name) return;
+
+      const u = document.getElementById('cfgUnderlying').value;
+      const f = document.getElementById('cfgFarExpiry').value;
+      const n = document.getElementById('cfgNearExpiry').value;
+      const t = currentType;
       const currentRows = readCurrentRowsFromDom();
+
       const newTab = {
         id: 'tab_' + Date.now(),
-        name: name.trim(),
+        name: name,
         underlying: u,
         farExpiry: f,
         nearExpiry: n,
@@ -942,6 +1015,7 @@
 
       savedTabsStore.push(newTab);
       activeTabId = newTab.id;
+      closeSaveTabModal();
       renderTabsBar();
       savePayload(true);
       showToast(`✅ Tab "${newTab.name}" save ho gaya!`);
@@ -1072,9 +1146,20 @@
       fetchLiveMarketData(true);
     }
 
-    function onUnderlyingChange() {
+    async function onUnderlyingChange() {
       saveCurrentToStore();
       currentUnderlying = document.getElementById('cfgUnderlying').value;
+      try {
+        const r = await fetch(`/api/calendar/expiries?symbol=${encodeURIComponent(currentUnderlying)}`);
+        if (r.ok) {
+          const d = await r.json();
+          if (d && d.ok && d.expiries && d.expiries.length > 0) {
+            populateAvailableExpiries(d.expiries, true);
+          }
+        }
+      } catch (e) {
+        console.warn("Underlying expiries fetch notice:", e);
+      }
       fetchLiveMarketData(true, true);
     }
 
@@ -1181,6 +1266,7 @@
           if (data && data.ok) {
             updateEngineHeader(data);
             populateAvailableExpiries(data.availableExpiries, isUnderlyingChange);
+            updateActivePairLabel(data.farDte, data.nearDte);
 
             const pairKey = getPairKey();
             const existingRows = customMatrixStore[pairKey];
@@ -1223,46 +1309,39 @@
       if (!expList || expList.length === 0) return;
       ['cfgFarExpiry', 'cfgNearExpiry'].forEach((id) => {
         const sel = document.getElementById(id);
-        const currentVal = isUnderlyingChange ? 'AUTO' : sel.value;
+        const currentVal = isUnderlyingChange ? null : sel.value;
 
-        if (isUnderlyingChange) {
-          sel.innerHTML = '<option value="__ADD_CUSTOM__" style="color:#38bdf8; font-weight:700;">➕ Add Custom Expiry Date...</option>';
-        }
+        // Clear select to rebuild cleanly with zero mock / zero AUTO
+        sel.innerHTML = '';
 
-        // Ensure all real market expiries are populated
         expList.forEach((eStr, i) => {
-          let exists = false;
-          for (let opt of sel.options) {
-            if (opt.value === eStr) { exists = true; break; }
-          }
-          if (!exists) {
-            const opt = document.createElement('option');
-            opt.value = eStr;
-            const tag = i === 0 ? ' (Near / Current)' : (i === 1 ? ' (Far / Next)' : (i === expList.length - 1 ? ' (Far Monthly)' : ''));
-            opt.textContent = `${eStr}${tag}`;
-            const lastIdx = Math.max(0, sel.options.length - 1);
-            sel.insertBefore(opt, sel.options[lastIdx] || null);
-          }
+          const opt = document.createElement('option');
+          opt.value = eStr;
+          const tag = i === 0 ? ' (Near / Current Expiry)' : (i === 1 ? ' (Next Weekly Expiry)' : (i === 2 ? ' (Far Weekly Expiry)' : (eStr.includes('Dec') || eStr.includes('Mar') || eStr.includes('Jun') || eStr.includes('Sep') ? ' (Quarterly Expiry)' : ' (Monthly Expiry)')));
+          opt.textContent = `${eStr}${tag}`;
+          sel.appendChild(opt);
         });
 
-        // Ensure __ADD_CUSTOM__ is always at the bottom
-        let hasCustomOpt = false;
-        for (let opt of sel.options) {
-          if (opt.value === '__ADD_CUSTOM__') { hasCustomOpt = true; break; }
-        }
-        if (!hasCustomOpt) {
-          const optCustom = document.createElement('option');
-          optCustom.value = '__ADD_CUSTOM__';
-          optCustom.textContent = '➕ Add Custom Expiry Date...';
-          optCustom.style.color = '#38bdf8';
-          optCustom.style.fontWeight = '700';
-          sel.appendChild(optCustom);
-        }
+        const optCustom = document.createElement('option');
+        optCustom.value = '__ADD_CUSTOM__';
+        optCustom.textContent = '➕ Add Custom Expiry Date...';
+        optCustom.style.color = '#38bdf8';
+        optCustom.style.fontWeight = '700';
+        sel.appendChild(optCustom);
 
         if (currentVal && currentVal !== 'AUTO' && currentVal !== '__ADD_CUSTOM__') {
-          sel.value = currentVal;
+          let found = false;
+          for (let opt of sel.options) {
+            if (opt.value === currentVal) { found = true; break; }
+          }
+          if (found) {
+            sel.value = currentVal;
+          } else {
+            if (id === 'cfgFarExpiry') sel.value = expList.length > 1 ? expList[1] : expList[0];
+            if (id === 'cfgNearExpiry') sel.value = expList[0];
+          }
         } else {
-          if (id === 'cfgFarExpiry' && expList.length > 1) sel.value = expList[1];
+          if (id === 'cfgFarExpiry') sel.value = expList.length > 1 ? expList[1] : expList[0];
           if (id === 'cfgNearExpiry') sel.value = expList[0];
         }
       });

@@ -37,6 +37,8 @@ def time_to_expiry_years(expiry_date_str: str, now_dt: Optional[datetime] = None
     
     expiry_dt = None
     formats = [
+        "%d %b %Y",
+        "%d %B %Y",
         "%Y-%m-%d",
         "%d-%b-%Y",
         "%d-%B-%Y",

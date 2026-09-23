@@ -7823,6 +7823,12 @@ class RequestHandler(BaseHTTPRequestHandler):
             fb_data = read_json(fb_file, {})
             return self.send_json(200, {"ok": True, "data": fb_data})
 
+        if path == "/api/calendar/expiries":
+            query = urllib.parse.parse_qs(parsed.query)
+            sym = query.get("symbol", ["NIFTY"])[0]
+            exp_list = calendar_engine.get_available_expiries_for_symbol(sym)
+            return self.send_json(200, {"ok": True, "symbol": sym, "expiries": exp_list})
+
         if path == "/api/calendar":
             query = urllib.parse.parse_qs(parsed.query)
             sym = query.get("symbol", ["NIFTY"])[0]

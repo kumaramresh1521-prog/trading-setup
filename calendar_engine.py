@@ -44,6 +44,50 @@ INDEX_KEY_MAP = {
 }
 
 
+def get_available_expiries_for_symbol(symbol: str = "NIFTY") -> List[str]:
+    """
+    Returns verified list of official real exchange expiries for an underlying.
+    """
+    sym = (symbol or "NIFTY").upper().strip()
+    inst_key = INDEX_KEY_MAP.get(sym, "NSE_INDEX|Nifty 50")
+    upstox_tok = os.getenv("UPSTOX_ACCESS_TOKEN", "").strip()
+    is_upstox_live = bool(upstox_tok and len(upstox_tok) > 20)
+
+    expiries = []
+    if is_upstox_live:
+        try:
+            expiries = upstox_engine.get_available_expiries(inst_key)
+        except Exception:
+            pass
+
+    if not expiries:
+        try:
+            import server
+            today_str = datetime.now(IST).strftime("%Y-%m-%d")
+            real_items = server.available_index_expiries(sym, today_str)
+            if real_items:
+                expiries = [item["label"] for item in real_items]
+        except Exception:
+            pass
+
+    if not expiries:
+        now_dt = datetime.now(IST)
+        days_ahead = (3 - now_dt.weekday()) % 7
+        if days_ahead == 0 and now_dt.hour >= 16:
+            days_ahead = 7
+        e1 = now_dt + timedelta(days=days_ahead)
+        e2 = e1 + timedelta(days=7)
+        e3 = e1 + timedelta(days=14)
+        e4 = e1 + timedelta(days=28)
+        expiries = [
+            e1.strftime("%d-%b-%Y"),
+            e2.strftime("%d-%b-%Y"),
+            e3.strftime("%d-%b-%Y"),
+            e4.strftime("%d-%b-%Y"),
+        ]
+    return expiries
+
+
 def get_calendar_matrix(
     symbol: str = "NIFTY",
     far_expiry: str = "AUTO",
@@ -71,48 +115,16 @@ def get_calendar_matrix(
     is_upstox_live = bool(upstox_tok and len(upstox_tok) > 20)
 
     # 1. Resolve Real Available Exchange Expiries (NSE / Upstox / Angel Scrip Master)
-    expiries = []
-    if is_upstox_live:
-        try:
-            expiries = upstox_engine.get_available_expiries(inst_key)
-        except Exception:
-            pass
-
-    if not expiries:
-        try:
-            import server
-            today_str = datetime.now(IST).strftime("%Y-%m-%d")
-            real_items = server.available_index_expiries(sym, today_str)
-            if real_items:
-                expiries = [item["label"] for item in real_items]
-        except Exception:
-            pass
-
-    if not expiries:
-        # Fallback upcoming Thursday expiries
-        now_dt = datetime.now(IST)
-        days_ahead = (3 - now_dt.weekday()) % 7
-        if days_ahead == 0 and now_dt.hour >= 16:
-            days_ahead = 7
-        e1 = now_dt + timedelta(days=days_ahead)
-        e2 = e1 + timedelta(days=7)
-        e3 = e1 + timedelta(days=14)
-        e4 = e1 + timedelta(days=28)
-        expiries = [
-            e1.strftime("%d-%b-%Y"),
-            e2.strftime("%d-%b-%Y"),
-            e3.strftime("%d-%b-%Y"),
-            e4.strftime("%d-%b-%Y"),
-        ]
+    expiries = get_available_expiries_for_symbol(sym)
 
     # Resolve Near and Far Expiry
     if near_expiry in ("AUTO", "", None):
-        target_near = expiries[0] if expiries else "26-Sep-2026"
+        target_near = expiries[0] if expiries else "29-Sep-2026"
     else:
         target_near = near_expiry.split("(")[0].strip()
 
     if far_expiry in ("AUTO", "", None):
-        target_far = expiries[1] if len(expiries) > 1 else (expiries[0] if expiries else "03-Oct-2026")
+        target_far = expiries[1] if len(expiries) > 1 else (expiries[0] if expiries else "06-Oct-2026")
     else:
         target_far = far_expiry.split("(")[0].strip()
 
@@ -261,6 +273,8 @@ def get_calendar_matrix(
         "atmStrike": atm_strike,
         "farExpiry": target_far,
         "nearExpiry": target_near,
+        "farDte": max(0, round(t_far * 365.0)),
+        "nearDte": max(0, round(t_near * 365.0)),
         "optionType": opt_type,
         "availableExpiries": expiries,
         "upstoxConfigured": is_upstox_live,
