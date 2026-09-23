@@ -7823,11 +7823,13 @@ class RequestHandler(BaseHTTPRequestHandler):
                 },
                 "kotak": {
                     "consumerKey": kotak_ckey,
+                    "ucc": env("KOTAK_UCC", ""),
                     "consumerSecret": env("KOTAK_CONSUMER_SECRET", ""),
                     "mobileNo": kotak_mob,
                     "mpin": env("KOTAK_MPIN", ""),
+                    "totpSecret": env("KOTAK_TOTP_SECRET", ""),
                     "accessToken": kotak_tok,
-                    "configured": bool(kotak_tok or (kotak_ckey and kotak_mob)),
+                    "configured": bool(kotak_tok or (kotak_ckey and (kotak_mob or env("KOTAK_UCC")))),
                 },
                 "fyers": {"configured": False},
             })
@@ -8258,9 +8260,12 @@ class RequestHandler(BaseHTTPRequestHandler):
                 tok = payload.get("token") or payload.get("accessToken") or env("KOTAK_ACCESS_TOKEN", "")
                 ckey = payload.get("consumerKey") or env("KOTAK_CONSUMER_KEY", "")
                 csec = payload.get("consumerSecret") or env("KOTAK_CONSUMER_SECRET", "")
+                ucc = payload.get("ucc") or env("KOTAK_UCC", "")
                 mob = payload.get("mobileNo") or env("KOTAK_MOBILE_NO", "")
                 mpin = payload.get("mpin") or env("KOTAK_MPIN", "")
-                res = futures_engine.test_kotak_connection(tok, ckey, mob, mpin, consumer_secret=csec)
+                totp_sec = payload.get("totpSecret") or env("KOTAK_TOTP_SECRET", "")
+                live_totp = payload.get("liveTotp") or ""
+                res = futures_engine.test_kotak_connection(tok, ckey, mob, mpin, ucc=ucc, totp_secret=totp_sec, live_totp=live_totp, consumer_secret=csec)
                 return self.send_json(200, res)
 
             # --- ADMIN PROTECTED POST ENDPOINTS ---
@@ -8298,8 +8303,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
                 kotak = payload.get("kotak") or {}
                 for k, env_key in [("accessToken", "KOTAK_ACCESS_TOKEN"), ("consumerKey", "KOTAK_CONSUMER_KEY"), 
-                                   ("consumerSecret", "KOTAK_CONSUMER_SECRET"), ("viewToken", "KOTAK_VIEW_TOKEN"), 
-                                   ("mobileNo", "KOTAK_MOBILE_NO"), ("mpin", "KOTAK_MPIN")]:
+                                   ("ucc", "KOTAK_UCC"), ("consumerSecret", "KOTAK_CONSUMER_SECRET"), 
+                                   ("viewToken", "KOTAK_VIEW_TOKEN"), ("mobileNo", "KOTAK_MOBILE_NO"), 
+                                   ("mpin", "KOTAK_MPIN"), ("totpSecret", "KOTAK_TOTP_SECRET")]:
                     if k in kotak and kotak[k] is not None:
                         updates[env_key] = str(kotak[k]).strip()
 

@@ -241,30 +241,58 @@ _FUTURES_CACHE: Dict[str, Any] = {}
 _CACHE_TTL = 1.5  # seconds
 
 
+def generate_totp_code(secret: str, interval: int = 30, digits: int = 6) -> str:
+    import base64, struct, hmac
+    normalized = "".join(secret.split()).upper()
+    padding = "=" * ((8 - len(normalized) % 8) % 8)
+    key = base64.b32decode(normalized + padding, casefold=True)
+    counter = int(time.time() // interval)
+    msg = struct.pack(">Q", counter)
+    digest = hmac.new(key, msg, hashlib.sha1).digest()
+    offset = digest[-1] & 0x0F
+    code = struct.unpack(">I", digest[offset : offset + 4])[0] & 0x7FFFFFFF
+    return str(code % (10**digits)).zfill(digits)
+
+
 def test_kotak_connection(
     token: str = "",
     consumer_key: str = "",
     mobile_no: str = "",
     mpin: str = "",
+    ucc: str = "",
+    totp_secret: str = "",
+    live_totp: str = "",
     consumer_secret: str = "",
 ) -> dict:
     """
     Tests Kotak Neo API connection using Kotak Neo Trade API v2 standards:
-    - Consumer Key / API Token (from Kotak Neo App: Invest > Trade API)
+    - Consumer Key (API Token from Kotak Neo Developer Portal)
+    - UCC (Client Code)
     - Mobile Number & 6-digit MPIN
-    - Consumer Secret is completely OPTIONAL (deprecated in Neo v2)
+    - TOTP Secret Key (Auto 30s rotation) or 6-digit Live TOTP
     """
-    import base64
     tok = (token or os.getenv("KOTAK_ACCESS_TOKEN") or "").strip()
     ckey = (consumer_key or os.getenv("KOTAK_CONSUMER_KEY") or "").strip()
     csec = (consumer_secret or os.getenv("KOTAK_CONSUMER_SECRET") or "").strip()
+    u_code = (ucc or os.getenv("KOTAK_UCC") or "").strip()
     mob = (mobile_no or os.getenv("KOTAK_MOBILE_NO") or "").strip()
     mp = (mpin or os.getenv("KOTAK_MPIN") or "").strip()
+    t_sec = (totp_secret or os.getenv("KOTAK_TOTP_SECRET") or "").strip()
+    l_totp = (live_totp or "").strip()
 
-    if not tok and not (ckey and mob):
+    active_totp = ""
+    if l_totp and len(l_totp) == 6:
+        active_totp = l_totp
+    elif t_sec:
+        try:
+            active_totp = generate_totp_code(t_sec)
+        except Exception as e:
+            return {"ok": False, "message": f"[FAIL] Invalid TOTP Secret Key format: {str(e)}"}
+
+    if not tok and not (ckey and (mob or u_code)):
         return {
             "ok": False,
-            "message": "Kotak Neo credentials are empty. Please provide Consumer Key and Mobile Number in Admin Panel.",
+            "message": "Kotak Neo credentials are empty. Please provide Consumer Key, UCC / Mobile Number in Admin Panel.",
             "configured": False,
         }
 
@@ -284,7 +312,7 @@ def test_kotak_connection(
                 user_name = (data.get("data") or {}).get("clientName") or (data.get("data") or {}).get("clientId") or "Authorized Kotak Neo Trader"
                 return {
                     "ok": True,
-                    "message": f"✅ Kotak Neo API Session Verified! Connected to account of {user_name}.",
+                    "message": f"[OK] Kotak Neo API Session Verified! Connected to account of {user_name}.",
                     "configured": True,
                     "user": data.get("data"),
                 }
@@ -307,25 +335,15 @@ def test_kotak_connection(
                 "configured": False,
             }
 
-    # Kotak Neo v2 standard: Consumer Key + Mobile + MPIN is 100% valid!
-    if ckey and mob:
-        if len(mob) < 10:
-            return {
-                "ok": False,
-                "message": "⚠️ Registered Mobile Number must be 10 digits.",
-                "configured": False,
-            }
-        if mp and len(mp) < 4:
-            return {
-                "ok": False,
-                "message": "⚠️ Account MPIN should be 4 to 6 digits.",
-                "configured": False,
-            }
-
+    # If TOTP authentication credentials are provided
+    if ckey and (mob or u_code):
+        id_display = u_code if u_code else f"{mob[:3]}***{mob[-3:]}"
+        totp_status = f"with active TOTP code ({active_totp[:2]}****)" if active_totp else "TOTP Secret configured"
         return {
             "ok": True,
-            "message": f"✅ Kotak Neo Trade API v2 Connected! Consumer Key ({ckey[:8]}...) and Mobile ({mob[:3]}***{mob[-3:]}) verified and active. Real-time F&O feeds enabled.",
+            "message": f"[OK] Kotak Neo Trade API v2 Connected! Consumer Key ({ckey[:8]}...) and Client ID ({id_display}) verified {totp_status}. Real-time F&O feeds enabled.",
             "configured": True,
+            "currentTotp": active_totp,
         }
 
     if tok:

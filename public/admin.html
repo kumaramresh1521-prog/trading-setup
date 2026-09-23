@@ -765,38 +765,51 @@
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
               <div class="adm-form-group">
-                <label>Kotak Neo API Consumer Key / Token</label>
+                <label>Kotak Neo Consumer Key (API Token)</label>
                 <input type="text" id="admKotakConsumerKey" class="adm-input" placeholder="e.g. c722e2b7-a7d4-467a-921e-..." />
-                <small style="color:var(--adm-muted); font-size:11px;">From Kotak Neo App: Invest &gt; Trade API &gt; API Dashboard</small>
+                <small style="color:var(--adm-muted); font-size:11px;">From Kotak Neo: Invest &gt; Trade API &gt; API Dashboard</small>
               </div>
               <div class="adm-form-group">
-                <label>Consumer Secret <span style="color:#94a3b8; font-weight:normal;">(Optional - Not needed in Neo v2)</span></label>
-                <input type="password" id="admKotakConsumerSecret" class="adm-input" placeholder="Leave blank if not provided in Neo v2" />
-                <small style="color:var(--adm-muted); font-size:11px;">Optional for Kotak Neo v2 users.</small>
+                <label>Kotak UCC (Client Code / User ID) <span style="color:#ef4444;">*Required</span></label>
+                <input type="text" id="admKotakUcc" class="adm-input" placeholder="e.g. 9905665704 or Kotak User ID" />
+                <small style="color:var(--adm-muted); font-size:11px;">From Kotak Neo App: Profile &gt; Client Code / UCC</small>
               </div>
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
               <div class="adm-form-group">
                 <label>Registered Mobile Number</label>
-                <input type="text" id="admKotakMobileNo" class="adm-input" placeholder="e.g. 9876543210" />
+                <input type="text" id="admKotakMobileNo" class="adm-input" placeholder="e.g. 9905665704" />
               </div>
               <div class="adm-form-group">
                 <label>Account MPIN (6-Digit)</label>
-                <input type="password" id="admKotakMpin" class="adm-input" placeholder="e.g. 123456" maxlength="6" />
+                <input type="password" id="admKotakMpin" class="adm-input" placeholder="e.g. 977189" maxlength="6" />
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:16px;">
+              <div class="adm-form-group">
+                <label>🔐 Kotak TOTP Secret Key <span style="color:#34d399; font-weight:normal;">(For 100% Hands-Free Daily Auto-Login)</span></label>
+                <input type="password" id="admKotakTotpSecret" class="adm-input" placeholder="Base32 TOTP secret from authenticator QR code setup" />
+                <small style="color:var(--adm-muted); font-size:11px;">Provided by Kotak when registering Authenticator (Google / MS Auth)</small>
+              </div>
+              <div class="adm-form-group">
+                <label>Live 6-Digit TOTP Code <span style="color:#94a3b8; font-weight:normal;">(Quick Test)</span></label>
+                <input type="text" id="admKotakLiveTotp" class="adm-input" placeholder="e.g. 481920" maxlength="6" />
+                <small style="color:var(--adm-muted); font-size:11px;">Enter active code to test immediate login</small>
               </div>
             </div>
 
             <div class="adm-form-group">
-              <label>Daily Kotak Neo Access Token / Session Token (Bearer Token)</label>
-              <textarea id="admKotakToken" class="adm-textarea" style="min-height:70px; font-family:'JetBrains Mono',monospace; font-size:12px;" placeholder="Paste your active Kotak Neo Bearer / Access token here"></textarea>
+              <label>Daily Kotak Neo Access Token / Session Token <span style="color:#94a3b8; font-weight:normal;">(Optional if TOTP is configured)</span></label>
+              <textarea id="admKotakToken" class="adm-textarea" style="min-height:55px; font-family:'JetBrains Mono',monospace; font-size:12px;" placeholder="Paste Kotak Neo Bearer token (optional if TOTP is configured)"></textarea>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; flex-wrap:wrap; gap:10px;">
                 <small style="color:var(--adm-muted); font-size:11px;">
                   Manage credentials on <a href="https://neo.kotaksecurities.com/" target="_blank" style="color:#60a5fa; text-decoration:none;">Kotak Neo Developer Portal ↗</a>
                 </small>
                 <div style="display:flex; gap:10px;">
-                  <button type="button" class="btn-adm-primary" onclick="testKotakConnection()" style="background:#ef4444; padding:8px 16px; font-size:12px;">🧪 Test Kotak Neo Connection</button>
-                  <button type="button" class="btn-adm-primary" onclick="saveMasterBrokers()" style="padding:8px 16px; font-size:12px;">💾 Save Keys</button>
+                  <button type="button" class="btn-adm-primary" onclick="testKotakConnection()" style="background:#ef4444; padding:8px 16px; font-size:12px;">🧪 Test Kotak Neo (TOTP) Connection</button>
+                  <button type="button" class="btn-adm-primary" onclick="saveMasterBrokers()" style="padding:8px 16px; font-size:12px;">💾 Save Kotak Keys</button>
                 </div>
               </div>
             </div>
@@ -1137,14 +1150,17 @@
             if (document.getElementById('admKotakConsumerKey')) {
               document.getElementById('admKotakConsumerKey').value = data.kotak.consumerKey || '';
             }
-            if (document.getElementById('admKotakConsumerSecret')) {
-              document.getElementById('admKotakConsumerSecret').value = data.kotak.consumerSecret || '';
+            if (document.getElementById('admKotakUcc')) {
+              document.getElementById('admKotakUcc').value = data.kotak.ucc || '';
             }
             if (document.getElementById('admKotakMobileNo')) {
               document.getElementById('admKotakMobileNo').value = data.kotak.mobileNo || '';
             }
             if (document.getElementById('admKotakMpin')) {
               document.getElementById('admKotakMpin').value = data.kotak.mpin || '';
+            }
+            if (document.getElementById('admKotakTotpSecret')) {
+              document.getElementById('admKotakTotpSecret').value = data.kotak.totpSecret || '';
             }
             if (document.getElementById('admKotakToken')) {
               document.getElementById('admKotakToken').value = data.kotak.accessToken || '';
@@ -1182,9 +1198,11 @@
           },
           kotak: {
             consumerKey: (document.getElementById('admKotakConsumerKey')?.value || '').trim(),
-            consumerSecret: (document.getElementById('admKotakConsumerSecret')?.value || '').trim(),
+            ucc: (document.getElementById('admKotakUcc')?.value || '').trim(),
             mobileNo: (document.getElementById('admKotakMobileNo')?.value || '').trim(),
             mpin: (document.getElementById('admKotakMpin')?.value || '').trim(),
+            totpSecret: (document.getElementById('admKotakTotpSecret')?.value || '').trim(),
+            liveTotp: (document.getElementById('admKotakLiveTotp')?.value || '').trim(),
             accessToken: (document.getElementById('admKotakToken')?.value || '').trim()
           }
         };
@@ -1309,9 +1327,11 @@
       async function testKotakConnection() {
         const token = (document.getElementById('admKotakToken')?.value || '').trim();
         const consumerKey = (document.getElementById('admKotakConsumerKey')?.value || '').trim();
-        const consumerSecret = (document.getElementById('admKotakConsumerSecret')?.value || '').trim();
+        const ucc = (document.getElementById('admKotakUcc')?.value || '').trim();
         const mobileNo = (document.getElementById('admKotakMobileNo')?.value || '').trim();
         const mpin = (document.getElementById('admKotakMpin')?.value || '').trim();
+        const totpSecret = (document.getElementById('admKotakTotpSecret')?.value || '').trim();
+        const liveTotp = (document.getElementById('admKotakLiveTotp')?.value || '').trim();
         const resBox = document.getElementById('kotakTestResultBox');
         const badge = document.getElementById('admKotakBadge');
 
@@ -1320,14 +1340,14 @@
           resBox.style.background = 'rgba(59, 130, 246, 0.15)';
           resBox.style.color = '#60a5fa';
           resBox.style.border = '1px solid rgba(59, 130, 246, 0.3)';
-          resBox.textContent = '⏳ Testing Kotak Neo API connection...';
+          resBox.textContent = '⏳ Testing Kotak Neo TOTP authentication...';
         }
 
         try {
           const res = await fetch('/api/kotak/test-connection', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, consumerKey, consumerSecret, mobileNo, mpin })
+            body: JSON.stringify({ token, consumerKey, ucc, mobileNo, mpin, totpSecret, liveTotp })
           });
           const data = await res.json();
           if (data.ok) {
