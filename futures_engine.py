@@ -337,14 +337,114 @@ def test_kotak_connection(
 
     # If TOTP authentication credentials are provided
     if ckey and (mob or u_code):
-        id_display = u_code if u_code else f"{mob[:3]}***{mob[-3:]}"
-        totp_status = f"with active TOTP code ({active_totp[:2]}****)" if active_totp else "TOTP Secret configured"
-        return {
-            "ok": True,
-            "message": f"[OK] Kotak Neo Trade API v2 Connected! Consumer Key ({ckey[:8]}...) and Client ID ({id_display}) verified {totp_status}. Real-time F&O feeds enabled.",
-            "configured": True,
-            "currentTotp": active_totp,
+        mob_clean = mob.replace("+", "").replace("-", "").strip()
+        mob_formatted = f"+91{mob_clean[-10:]}" if len(mob_clean) >= 10 else mob
+        id_display = u_code if u_code else mob_formatted
+
+        if not active_totp:
+            return {
+                "ok": False,
+                "message": f"[WARN] Kotak TOTP Code or TOTP Secret Key missing for UCC {id_display}. Enter 6-digit TOTP from your authenticator app.",
+                "configured": False,
+            }
+
+        login_url = "https://mis.kotaksecurities.com/login/1.0/tradeApiLogin"
+        login_headers = {
+            "Authorization": ckey,
+            "neo-fin-key": "neotradeapi",
+            "Content-Type": "application/json",
+            "User-Agent": "neo-api-client/2.0.0",
         }
+        login_body = {
+            "mobileNumber": mob_formatted,
+            "ucc": u_code or mob_clean,
+            "totp": active_totp,
+        }
+
+        try:
+            req = urllib.request.Request(
+                login_url,
+                data=json.dumps(login_body).encode("utf-8"),
+                headers=login_headers,
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                l_data = json.loads(resp.read().decode("utf-8"))
+                tok_data = l_data.get("data") or {}
+                view_token = tok_data.get("token")
+                sid = tok_data.get("sid")
+
+                if view_token and mp:
+                    # Step 2: Validate MPIN
+                    val_url = "https://mis.kotaksecurities.com/login/1.0/tradeApiValidate"
+                    val_headers = {
+                        "Authorization": ckey,
+                        "neo-fin-key": "neotradeapi",
+                        "sid": sid,
+                        "Auth": view_token,
+                        "Content-Type": "application/json",
+                        "User-Agent": "neo-api-client/2.0.0",
+                    }
+                    val_body = {"mpin": mp}
+                    val_req = urllib.request.Request(
+                        val_url,
+                        data=json.dumps(val_body).encode("utf-8"),
+                        headers=val_headers,
+                        method="POST",
+                    )
+                    with urllib.request.urlopen(val_req, timeout=10) as v_resp:
+                        v_data = json.loads(v_resp.read().decode("utf-8"))
+                        t_data = v_data.get("data") or {}
+                        trade_tok = t_data.get("token")
+                        base_url = t_data.get("baseUrl")
+                        if trade_tok:
+                            # Save active token to cache & environment
+                            os.environ["KOTAK_ACCESS_TOKEN"] = trade_tok
+                            _FUTURES_CACHE["kotak_token"] = trade_tok
+                            _FUTURES_CACHE["kotak_base_url"] = base_url
+                            return {
+                                "ok": True,
+                                "message": f"[OK] Kotak Neo Session Active! Connected to {id_display}. Real-time F&O feeds operational.",
+                                "configured": True,
+                                "currentTotp": active_totp,
+                                "tradingToken": trade_tok[:10] + "...",
+                            }
+
+                return {
+                    "ok": True,
+                    "message": f"[OK] Kotak Neo TOTP Verified! Step 1 complete for {id_display}.",
+                    "configured": True,
+                    "currentTotp": active_totp,
+                }
+        except urllib.error.HTTPError as e:
+            try:
+                body = e.read().decode("utf-8")
+                err_j = json.loads(body)
+                err_list = err_j.get("error") or []
+                if isinstance(err_list, list) and len(err_list) > 0:
+                    err_msg = err_list[0].get("message") or str(err_list[0])
+                else:
+                    err_msg = err_j.get("message") or str(err_j)
+            except Exception:
+                err_msg = f"HTTP {e.code}: {e.reason}"
+
+            if "10508" in str(err_msg) or "not registered" in str(err_msg).lower():
+                return {
+                    "ok": False,
+                    "message": f"[WARN] Kotak Error: TOTP is not yet registered for UCC '{u_code}' in Kotak Neo Trade API. Please open Kotak Neo: Invest > Trade API and click 'Register TOTP' first.",
+                    "configured": False,
+                }
+            return {
+                "ok": False,
+                "message": f"[ERROR] Kotak Neo Login Failed ({e.code}): {err_msg}",
+                "configured": False,
+            }
+        except Exception as exc:
+            return {
+                "ok": False,
+                "message": f"Kotak connection error: {str(exc)}",
+                "configured": False,
+            }
 
     if tok:
         headers = {
