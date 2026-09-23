@@ -151,7 +151,7 @@
       width: 100%;
     }
 
-    /* AI Process Status Card */
+    /* Engine Status Card */
     .ai-process-card {
       background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
       border: 1px solid rgba(56, 189, 248, 0.3);
@@ -333,7 +333,7 @@
 
     .table-container {
       overflow-x: auto;
-      max-height: 560px;
+      max-height: 580px;
     }
 
     table.calendar-table {
@@ -364,7 +364,7 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       border-right: 1px solid rgba(255, 255, 255, 0.04);
       white-space: nowrap;
-      transition: background 0.1s ease;
+      transition: background-color 0.4s ease;
     }
 
     table.calendar-table td[contenteditable="true"] {
@@ -381,6 +381,18 @@
       color: #38bdf8;
       box-shadow: inset 0 0 0 1px #0284c7;
     }
+
+    /* Price Tick Animations */
+    @keyframes flashGreen {
+      0% { background-color: rgba(16, 185, 129, 0.5) !important; color: #fff; }
+      100% { background-color: transparent; }
+    }
+    @keyframes flashRed {
+      0% { background-color: rgba(239, 68, 68, 0.5) !important; color: #fff; }
+      100% { background-color: transparent; }
+    }
+    .cell-uptick { animation: flashGreen 0.6s ease-out; }
+    .cell-downtick { animation: flashRed 0.6s ease-out; }
 
     /* Merged Section / Diagonal Strategy Label Row */
     tr.section-label-row td {
@@ -475,6 +487,18 @@
     }
     .notes-textarea:focus { border-color: var(--border-highlight); }
 
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
     /* Toast */
     #toast {
       position: fixed;
@@ -502,12 +526,18 @@
       <span class="brand-badge">CALENDAR DESK</span>
       <h1 class="brand-title">⚡ Options Calendar &amp; Diagonal Spread Matrix</h1>
       <span class="status-chip">
-        <span class="status-dot"></span>
-        <span id="syncLabel">Real-Time Sync Active</span>
+        <span class="status-dot" id="liveDot"></span>
+        <span id="syncLabel">Connecting Live Feed...</span>
       </span>
     </div>
     <div style="display:flex; align-items:center; gap:8px;">
-      <button class="btn btn-secondary" onclick="fetchLiveMarketData()">📡 Fetch Live Market Data</button>
+      <button id="btnLiveStream" class="btn btn-secondary" onclick="toggleLiveStream()" style="border-color:#10b981; color:#10b981;">
+        <span class="status-dot"></span>
+        <span>1s Live Feed: <strong id="streamStateTxt">ON</strong></span>
+      </button>
+      <button id="btnUpstoxStatus" class="btn btn-secondary" onclick="openUpstoxModal()" style="border-color:#38bdf8; color:#38bdf8;">
+        ⚡ Upstox Connect
+      </button>
       <button class="btn btn-primary" onclick="saveAndSend()">💾 Save &amp; Send to AI</button>
     </div>
   </header>
@@ -515,47 +545,24 @@
   <!-- Main Container -->
   <main class="container">
 
-    <!-- 🤖 AI Process & Status Card (Where User can see AI tracking) -->
+    <!-- 🤖 AI Process & Live Engine Status Banner -->
     <section class="ai-process-card" id="aiProcessSection">
       <div class="ai-process-header">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size:18px;">🤖</span>
+          <span style="font-size:20px;">⚡</span>
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:13px; font-weight:700; color:#38bdf8;">AI Engine Process Log:</span>
-              <span class="ai-badge" id="aiStatusPill">✅ SYNCED WITH AI ASSISTANT</span>
+              <span style="font-size:13px; font-weight:700; color:#38bdf8;">Pricing &amp; Greek Engine:</span>
+              <span class="ai-badge" id="engineBadge">INITIALIZING...</span>
+              <span id="spotBadge" style="font-family:var(--font-mono); font-size:12px; font-weight:700; color:#f8fafc; background:#1e293b; padding:2px 8px; border-radius:4px;">Spot: 23,450.00</span>
             </div>
-            <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;">
-              Aapka 19:31 ka feedback receive ho gaya: <strong>Custom Expiry Add button</strong> aur <strong>Per-Expiry Customized Matrix Memory</strong> active ho chuki hai!
+            <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;" id="engineSubtext">
+              Real-time quotes updating every second based on Black-Scholes Mathematical model &amp; Upstox API v2.
             </div>
           </div>
         </div>
         <div style="font-family:var(--font-mono); font-size:11px; color:#38bdf8; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.25); padding:4px 10px; border-radius:6px;">
-          Last Synced: <span id="lastSyncedTime" style="color:#f8fafc; font-weight:700;">19:31:46</span>
-        </div>
-      </div>
-
-      <!-- Feature Checklist Applied from User Notes -->
-      <div class="ai-items-grid">
-        <div class="ai-item-pill">
-          <span>✅</span>
-          <span><strong>Expiry Add Button:</strong> Far aur Near me ➕ Add dabake koi bhi date dal sakte hain</span>
-        </div>
-        <div class="ai-item-pill">
-          <span>✅</span>
-          <span><strong>Per-Expiry Memory:</strong> Far/Near expiry ke hisab se customized rows save rahengi</span>
-        </div>
-        <div class="ai-item-pill">
-          <span>✅</span>
-          <span><strong>Auto-Fill Strike:</strong> Strike type karte hi Greeks/LTP calculate ho jate hain</span>
-        </div>
-        <div class="ai-item-pill">
-          <span>✅</span>
-          <span><strong>Diagonal Support:</strong> Strike 1 aur Strike 2 alag-alag edit kar sakte hain</span>
-        </div>
-        <div class="ai-item-pill">
-          <span>✅</span>
-          <span><strong>Merged Header:</strong> Diagonal/Strategy group name row jahan chahein add karein</span>
+          Feed Rate: <strong id="tickCounter" style="color:#10b981;">1 tick/sec</strong> | Last Tick: <span id="lastTickTime" style="color:#f8fafc; font-weight:700;">--:--:--</span>
         </div>
       </div>
     </section>
@@ -566,40 +573,33 @@
       <div class="control-box">
         <label class="control-label">📍 1. Underlying</label>
         <select id="cfgUnderlying" class="control-select" onchange="onUnderlyingChange()">
-          <option value="NIFTY">NIFTY 50 (Spot: 23,446.80)</option>
-          <option value="BANKNIFTY">BANK NIFTY (Spot: 56,548.90)</option>
-          <option value="FINNIFTY">FIN NIFTY (Spot: 25,564.85)</option>
-          <option value="MIDCPNIFTY">MIDCAP NIFTY (Spot: 14,572.25)</option>
-          <option value="SENSEX">SENSEX (Spot: 74,828.25)</option>
+          <option value="NIFTY">NIFTY 50</option>
+          <option value="BANKNIFTY">BANK NIFTY</option>
+          <option value="FINNIFTY">FIN NIFTY</option>
+          <option value="MIDCPNIFTY">MIDCAP NIFTY</option>
+          <option value="SENSEX">SENSEX</option>
         </select>
       </div>
 
-      <!-- Far Expiry (First as requested with Add option) -->
+      <!-- Far Expiry (Buy Leg) -->
       <div class="control-box">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <label class="control-label" style="color: #38bdf8;">📅 2. Far Expiry (Buy Leg)</label>
           <button class="btn btn-secondary" style="font-size:10px; padding:2px 7px; color:#38bdf8;" onclick="promptAddExpiry('far')">➕ Add Expiry</button>
         </div>
         <select id="cfgFarExpiry" class="control-select" onchange="onExpiryChange()">
-          <option value="03-Oct-2026">03-Oct-2026 (Next Week)</option>
-          <option value="10-Oct-2026">10-Oct-2026 (Bi-Weekly)</option>
-          <option value="29-Oct-2026">29-Oct-2026 (Monthly)</option>
-          <option value="26-Nov-2026">26-Nov-2026 (Far Monthly)</option>
-          <option value="26-Sep-2026">26-Sep-2026 (Weekly)</option>
+          <option value="AUTO">AUTO (Next Weekly)</option>
         </select>
       </div>
 
-      <!-- Near Expiry (Second as requested with Add option) -->
+      <!-- Near Expiry (Sell Leg) -->
       <div class="control-box">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <label class="control-label" style="color: #f59e0b;">⏳ 3. Near Expiry (Sell Leg)</label>
           <button class="btn btn-secondary" style="font-size:10px; padding:2px 7px; color:#f59e0b;" onclick="promptAddExpiry('near')">➕ Add Expiry</button>
         </div>
         <select id="cfgNearExpiry" class="control-select" onchange="onExpiryChange()">
-          <option value="26-Sep-2026">26-Sep-2026 (Weekly)</option>
-          <option value="03-Oct-2026">03-Oct-2026 (Next Week)</option>
-          <option value="10-Oct-2026">10-Oct-2026 (Bi-Weekly)</option>
-          <option value="29-Oct-2026">29-Oct-2026 (Monthly)</option>
+          <option value="AUTO">AUTO (Current Weekly)</option>
         </select>
       </div>
     </section>
@@ -626,7 +626,7 @@
         </div>
       </div>
 
-      <!-- Internal Table Section Toolbar (Directly inside section) -->
+      <!-- Internal Table Section Toolbar -->
       <div class="section-toolbar">
         <div class="section-toolbar-left">
           <button class="btn btn-secondary" onclick="addNewStrikeRow()">➕ Add Strike Row</button>
@@ -634,7 +634,7 @@
           <button class="btn btn-indigo" onclick="addSectionLabelRow()">🏷️ Add Strategy / Diagonal Label</button>
         </div>
         <div style="font-size: 11px; color: #38bdf8; font-family: var(--font-mono); display:flex; align-items:center; gap:6px;">
-          <span>⚡ Current Pair: <strong id="activePairDisplay" style="color:#f8fafc;">03-Oct / 26-Sep</strong> (Auto-Saves to this pair)</span>
+          <span>⚡ Active Pair: <strong id="activePairDisplay" style="color:#f8fafc;">--</strong> | Strikes auto-persisted</span>
         </div>
       </div>
 
@@ -687,7 +687,7 @@
           💬 Real-Time Feedback &amp; Custom Rules:
         </span>
         <span id="savedAtTag" style="font-size: 11px; color: #94a3b8; font-family: var(--font-mono);">
-          Last saved: 19:31:46
+          Last saved: --
         </span>
       </div>
       <textarea id="liveNotes" class="notes-textarea" placeholder="Yahan aap real-time me jo bhi bolna ya puchna chahein likhein... Example:
@@ -704,48 +704,39 @@
 
   </main>
 
+  <!-- Upstox Token Connect Modal -->
+  <div class="modal-overlay" id="upstoxModal">
+    <div style="background:#0b1329; border:1px solid #38bdf8; border-radius:12px; padding:22px; max-width:520px; width:90%; display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="color:#f8fafc; font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px;">
+          <span>⚡ Connect Upstox Live Feed</span>
+        </h3>
+        <span style="cursor:pointer; color:#94a3b8; font-size:18px;" onclick="closeUpstoxModal()">✕</span>
+      </div>
+      <p style="font-size:12px; color:#94a3b8; line-height:1.5;">
+        Upstox Developer Console se apna daily <strong>Access Token</strong> yahan paste karein. Isse real-time exchange order book quotes direct stream hone lagenge.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <label style="font-size:11px; font-weight:700; color:#38bdf8;">UPSTOX ACCESS TOKEN:</label>
+        <input type="password" id="inputUpstoxToken" placeholder="Paste your Bearer token here..." class="control-input" style="font-size:12px; width:100%;" />
+      </div>
+      <div id="tokenStatusMsg" style="font-size:11.5px; font-family:var(--font-mono); min-height:16px;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-secondary" onclick="closeUpstoxModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitUpstoxToken()">Validate &amp; Connect</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast">✅ Saved and Synced with Assistant!</div>
 
   <script>
     let currentType = 'CE'; // CE or PE only
     let currentUnderlying = 'NIFTY';
+    let isLiveStreaming = true;
+    let streamInterval = null;
+    let isFetching = false;
     let customMatrixStore = {}; // Maps `${underlying}_${farExpiry}_${nearExpiry}_${type}` -> rows[]
-
-    // Base institutional matrix dataset matching user's exact 16 columns
-    const DATASETS = {
-      NIFTY: {
-        CE: [
-          { s1: "23350", s2: "23350", farBid: "263.50", nearAsk: "185.50", spread: "78.00", farVol: "14200", nearVol: "38900", deltaSpread: "+0.042", volSpread: "-1.4%", farDelta: "0.582", nearDelta: "0.540", farVolIv: "12.8%", nearVolIv: "14.2%", farVega: "18.5", nearVega: "11.2", vegaSpread: "+7.3", isAtm: false },
-          { s1: "23400", s2: "23400", farBid: "227.00", nearAsk: "149.00", spread: "78.00", farVol: "19800", nearVol: "54200", deltaSpread: "+0.048", volSpread: "-1.4%", farDelta: "0.542", nearDelta: "0.494", farVolIv: "12.5%", nearVolIv: "13.9%", farVega: "19.2", nearVega: "11.8", vegaSpread: "+7.4", isAtm: false },
-          { s1: "23450", s2: "23450", farBid: "192.50", nearAsk: "115.50", spread: "77.00", farVol: "28500", nearVol: "84600", deltaSpread: "+0.052", volSpread: "-1.5%", farDelta: "0.501", nearDelta: "0.449", farVolIv: "12.1%", nearVolIv: "13.6%", farVega: "19.8", nearVega: "12.4", vegaSpread: "+7.4", isAtm: true },
-          { s1: "23500", s2: "23500", farBid: "161.00", nearAsk: "86.50", spread: "74.50", farVol: "22400", nearVol: "61200", deltaSpread: "+0.046", volSpread: "-1.4%", farDelta: "0.458", nearDelta: "0.412", farVolIv: "12.0%", nearVolIv: "13.4%", farVega: "19.1", nearVega: "11.6", vegaSpread: "+7.5", isAtm: false },
-          { s1: "23550", s2: "23550", farBid: "132.00", nearAsk: "62.00", spread: "70.00", farVol: "15300", nearVol: "42100", deltaSpread: "+0.038", volSpread: "-1.3%", farDelta: "0.412", nearDelta: "0.374", farVolIv: "11.9%", nearVolIv: "13.2%", farVega: "18.4", nearVega: "10.9", vegaSpread: "+7.5", isAtm: false },
-        ],
-        PE: [
-          { s1: "23350", s2: "23350", farBid: "135.00", nearAsk: "64.00", spread: "71.00", farVol: "14800", nearVol: "41200", deltaSpread: "-0.039", volSpread: "-1.3%", farDelta: "-0.418", nearDelta: "-0.379", farVolIv: "12.9%", nearVolIv: "14.2%", farVega: "18.3", nearVega: "10.8", vegaSpread: "+7.5", isAtm: false },
-          { s1: "23400", s2: "23400", farBid: "163.50", nearAsk: "88.00", spread: "75.50", farVol: "21200", nearVol: "59800", deltaSpread: "-0.047", volSpread: "-1.4%", farDelta: "-0.460", nearDelta: "-0.413", farVolIv: "12.6%", nearVolIv: "14.0%", farVega: "19.1", nearVega: "11.7", vegaSpread: "+7.4", isAtm: false },
-          { s1: "23450", s2: "23450", farBid: "195.00", nearAsk: "117.00", spread: "78.00", farVol: "27800", nearVol: "81200", deltaSpread: "-0.051", volSpread: "-1.5%", farDelta: "-0.499", nearDelta: "-0.448", farVolIv: "12.2%", nearVolIv: "13.7%", farVega: "19.8", nearVega: "12.3", vegaSpread: "+7.5", isAtm: true },
-          { s1: "23500", s2: "23500", farBid: "230.00", nearAsk: "151.00", spread: "79.00", farVol: "18900", nearVol: "51400", deltaSpread: "-0.046", volSpread: "-1.4%", farDelta: "-0.540", nearDelta: "-0.494", farVolIv: "12.4%", nearVolIv: "13.8%", farVega: "19.2", nearVega: "11.6", vegaSpread: "+7.6", isAtm: false },
-          { s1: "23550", s2: "23550", farBid: "268.00", nearAsk: "188.00", spread: "80.00", farVol: "13100", nearVol: "36500", deltaSpread: "-0.041", volSpread: "-1.3%", farDelta: "-0.585", nearDelta: "-0.544", farVolIv: "12.7%", nearVolIv: "14.0%", farVega: "18.4", nearVega: "11.1", vegaSpread: "+7.3", isAtm: false },
-        ]
-      },
-      BANKNIFTY: {
-        CE: [
-          { s1: "56300", s2: "56300", farBid: "608.00", nearAsk: "422.00", spread: "186.00", farVol: "8400", nearVol: "24500", deltaSpread: "+0.065", volSpread: "-1.7%", farDelta: "0.575", nearDelta: "0.510", farVolIv: "15.1%", nearVolIv: "16.8%", farVega: "38.5", nearVega: "22.4", vegaSpread: "+16.1", isAtm: false },
-          { s1: "56400", s2: "56400", farBid: "538.00", nearAsk: "357.00", spread: "181.00", farVol: "11200", nearVol: "31800", deltaSpread: "+0.070", volSpread: "-1.6%", farDelta: "0.538", nearDelta: "0.468", farVolIv: "14.8%", nearVolIv: "16.4%", farVega: "39.8", nearVega: "23.6", vegaSpread: "+16.2", isAtm: false },
-          { s1: "56500", s2: "56500", farBid: "473.00", nearAsk: "297.00", spread: "176.00", farVol: "18500", nearVol: "52400", deltaSpread: "+0.075", volSpread: "-1.6%", farDelta: "0.502", nearDelta: "0.427", farVolIv: "14.5%", nearVolIv: "16.1%", farVega: "40.5", nearVega: "24.5", vegaSpread: "+16.0", isAtm: true },
-          { s1: "56600", s2: "56600", farBid: "412.00", nearAsk: "242.00", spread: "170.00", farVol: "13400", nearVol: "38200", deltaSpread: "+0.068", volSpread: "-1.5%", farDelta: "0.462", nearDelta: "0.394", farVolIv: "14.4%", nearVolIv: "15.9%", farVega: "39.4", nearVega: "23.1", vegaSpread: "+16.3", isAtm: false },
-          { s1: "56700", s2: "56700", farBid: "358.00", nearAsk: "194.00", spread: "164.00", farVol: "9200", nearVol: "26400", deltaSpread: "+0.060", volSpread: "-1.5%", farDelta: "0.421", nearDelta: "0.361", farVolIv: "14.2%", nearVolIv: "15.7%", farVega: "38.2", nearVega: "21.9", vegaSpread: "+16.3", isAtm: false },
-        ],
-        PE: [
-          { s1: "56300", s2: "56300", farBid: "365.00", nearAsk: "198.00", spread: "167.00", farVol: "8900", nearVol: "25400", deltaSpread: "-0.059", volSpread: "-1.5%", farDelta: "-0.425", nearDelta: "-0.366", farVolIv: "15.3%", nearVolIv: "16.8%", farVega: "38.1", nearVega: "21.8", vegaSpread: "+16.3", isAtm: false },
-          { s1: "56400", s2: "56400", farBid: "418.00", nearAsk: "246.00", spread: "172.00", farVol: "12500", nearVol: "36800", deltaSpread: "-0.067", volSpread: "-1.5%", farDelta: "-0.465", nearDelta: "-0.398", farVolIv: "14.9%", nearVolIv: "16.4%", farVega: "39.2", nearVega: "23.2", vegaSpread: "+16.0", isAtm: false },
-          { s1: "56500", s2: "56500", farBid: "478.00", nearAsk: "302.00", spread: "176.00", farVol: "19200", nearVol: "54200", deltaSpread: "-0.074", volSpread: "-1.6%", farDelta: "-0.501", nearDelta: "-0.427", farVolIv: "14.6%", nearVolIv: "16.2%", farVega: "40.4", nearVega: "24.6", vegaSpread: "+15.8", isAtm: true },
-          { s1: "56600", s2: "56600", farBid: "542.00", nearAsk: "362.00", spread: "180.00", farVol: "11800", nearVol: "33400", deltaSpread: "-0.069", volSpread: "-1.6%", farDelta: "-0.539", nearDelta: "-0.470", farVolIv: "14.8%", nearVolIv: "16.4%", farVega: "39.6", nearVega: "23.4", vegaSpread: "+16.2", isAtm: false },
-          { s1: "56700", s2: "56700", farBid: "612.00", nearAsk: "428.00", spread: "184.00", farVol: "7900", nearVol: "22800", deltaSpread: "-0.062", volSpread: "-1.7%", farDelta: "-0.578", nearDelta: "-0.516", farVolIv: "15.2%", nearVolIv: "16.9%", farVega: "38.6", nearVega: "22.1", vegaSpread: "+16.5", isAtm: false },
-        ]
-      }
-    };
 
     function getPairKey() {
       const u = document.getElementById('cfgUnderlying').value;
@@ -766,7 +757,6 @@
       if (!custom || !custom.trim()) return;
       const val = custom.trim();
 
-      // Add to both Far and Near select dropdowns if not present
       ['cfgFarExpiry', 'cfgNearExpiry'].forEach(id => {
         const sel = document.getElementById(id);
         let exists = false;
@@ -804,8 +794,7 @@
     function onExpiryChange() {
       saveCurrentToStore();
       updateActivePairLabel();
-      loadCurrentDataset();
-      triggerSaveDebounced();
+      fetchLiveMarketData(true);
     }
 
     function switchOptionType(type) {
@@ -819,31 +808,188 @@
       badge.style.background = type === 'CE' ? '#10b981' : '#f43f5e';
       document.getElementById('tableTitleText').textContent = (type === 'CE' ? 'Call' : 'Put') + ' Calendar Spread Matrix (Far Exp vs Near Exp)';
 
-      loadCurrentDataset();
+      fetchLiveMarketData(true);
     }
 
     function onUnderlyingChange() {
       saveCurrentToStore();
       currentUnderlying = document.getElementById('cfgUnderlying').value;
-      loadCurrentDataset();
+      fetchLiveMarketData(true);
     }
 
-    function loadCurrentDataset() {
-      updateActivePairLabel();
-      const pairKey = getPairKey();
+    // Live Streaming Auto-Tick Controller
+    function toggleLiveStream() {
+      isLiveStreaming = !isLiveStreaming;
+      const btn = document.getElementById('btnLiveStream');
+      const txt = document.getElementById('streamStateTxt');
+      if (isLiveStreaming) {
+        btn.style.borderColor = '#10b981';
+        btn.style.color = '#10b981';
+        txt.textContent = 'ON';
+        startStreaming();
+        showToast("🟢 1-Second Live Feed Active");
+      } else {
+        btn.style.borderColor = '#64748b';
+        btn.style.color = '#94a3b8';
+        txt.textContent = 'PAUSED';
+        stopStreaming();
+        showToast("⏸️ Live Feed Paused");
+      }
+    }
 
-      // 1. Check if user customized strikes exist for this specific pair
-      if (customMatrixStore[pairKey] && customMatrixStore[pairKey].length > 0) {
-        renderGrid(customMatrixStore[pairKey]);
+    function startStreaming() {
+      stopStreaming();
+      streamInterval = setInterval(() => {
+        if (!isFetching && isLiveStreaming) {
+          fetchLiveMarketData(false);
+        }
+      }, 1000);
+    }
+
+    function stopStreaming() {
+      if (streamInterval) clearInterval(streamInterval);
+      streamInterval = null;
+    }
+
+    // Upstox Modal
+    function openUpstoxModal() {
+      document.getElementById('upstoxModal').style.display = 'flex';
+      document.getElementById('tokenStatusMsg').textContent = '';
+    }
+
+    function closeUpstoxModal() {
+      document.getElementById('upstoxModal').style.display = 'none';
+    }
+
+    async function submitUpstoxToken() {
+      const tok = document.getElementById('inputUpstoxToken').value.trim();
+      const statusEl = document.getElementById('tokenStatusMsg');
+      if (!tok) {
+        statusEl.innerHTML = '<span style="color:#ef4444;">Please paste an Access Token</span>';
         return;
       }
-
-      // 2. Otherwise fall back to base default dataset
-      const dataForSym = DATASETS[currentUnderlying] || DATASETS['NIFTY'];
-      const rows = dataForSym[currentType] || dataForSym['CE'];
-      renderGrid(rows);
+      statusEl.innerHTML = '<span style="color:#38bdf8;">Testing connection with Upstox API...</span>';
+      try {
+        const res = await fetch('/api/upstox/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: tok })
+        });
+        const d = await res.json();
+        if (d.ok) {
+          statusEl.innerHTML = `<span style="color:#10b981;">✅ ${d.message}</span>`;
+          document.getElementById('btnUpstoxStatus').style.borderColor = '#10b981';
+          document.getElementById('btnUpstoxStatus').style.color = '#10b981';
+          document.getElementById('btnUpstoxStatus').textContent = '🟢 Upstox Active';
+          setTimeout(() => {
+            closeUpstoxModal();
+            fetchLiveMarketData(true);
+          }, 1200);
+        } else {
+          statusEl.innerHTML = `<span style="color:#ef4444;">❌ ${d.message}</span>`;
+        }
+      } catch (e) {
+        statusEl.innerHTML = `<span style="color:#ef4444;">Connection failed: ${e.message}</span>`;
+      }
     }
 
+    // Primary Live Data Fetch Function
+    async function fetchLiveMarketData(forceFullRender = false) {
+      if (isFetching) return;
+      isFetching = true;
+
+      const sym = document.getElementById('cfgUnderlying').value;
+      const fExp = document.getElementById('cfgFarExpiry').value;
+      const nExp = document.getElementById('cfgNearExpiry').value;
+
+      try {
+        const res = await fetch('/api/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            symbol: sym,
+            farExpiry: fExp,
+            nearExpiry: nExp,
+            optionType: currentType,
+            strikeRange: 6
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.ok) {
+            updateEngineHeader(data);
+            populateAvailableExpiries(data.availableExpiries);
+
+            const pairKey = getPairKey();
+            // If user has customized rows saved for this pair, use those custom rows as base
+            const existingRows = customMatrixStore[pairKey];
+
+            if (forceFullRender || !existingRows || document.querySelectorAll('#gridBody tr').length === 0) {
+              renderGrid(data.rows);
+            } else {
+              // Smooth in-place tick update
+              updateGridInPlace(data.rows);
+            }
+
+            document.getElementById('lastTickTime').textContent = data.timestamp;
+            document.getElementById('syncLabel').textContent = data.isLive ? "🟢 Upstox Real-Time Live" : "🟢 Black-Scholes Real-Time Live";
+          }
+        }
+      } catch (e) {
+        console.warn("Live calendar tick exception:", e);
+      } finally {
+        isFetching = false;
+      }
+    }
+
+    function updateEngineHeader(data) {
+      const badge = document.getElementById('engineBadge');
+      const spot = document.getElementById('spotBadge');
+      const sub = document.getElementById('engineSubtext');
+
+      spot.textContent = `Spot: ${data.spotPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      if (data.isLive) {
+        badge.textContent = "UPSTOX LIVE EXCHANGE FEED";
+        badge.style.background = "#10b981";
+        sub.textContent = `Direct exchange quotes from Upstox API v2 for ${data.symbol}. Real-time Greeks & spreads active.`;
+      } else {
+        badge.textContent = "BLACK-SCHOLES GREEK ENGINE";
+        badge.style.background = "#0284c7";
+        sub.textContent = `Live spot price calibrated with institutional Black-Scholes model (NSE/Sensibull 10% risk-free rate).`;
+      }
+    }
+
+    function populateAvailableExpiries(expList) {
+      if (!expList || expList.length === 0) return;
+      ['cfgFarExpiry', 'cfgNearExpiry'].forEach((id, idx) => {
+        const sel = document.getElementById(id);
+        const currentVal = sel.value;
+        // Keep current custom or selected options
+        expList.forEach((eStr, i) => {
+          let exists = false;
+          for (let opt of sel.options) {
+            if (opt.value === eStr) { exists = true; break; }
+          }
+          if (!exists) {
+            const opt = document.createElement('option');
+            opt.value = eStr;
+            opt.textContent = `${eStr}${i === 0 ? ' (Near)' : (i === 1 ? ' (Far)' : '')}`;
+            sel.appendChild(opt);
+          }
+        });
+        if (currentVal && currentVal !== 'AUTO') {
+          sel.value = currentVal;
+        } else {
+          // Defaults: Far -> index 1, Near -> index 0
+          if (id === 'cfgFarExpiry' && expList.length > 1) sel.value = expList[1];
+          if (id === 'cfgNearExpiry') sel.value = expList[0];
+        }
+      });
+      updateActivePairLabel();
+    }
+
+    // Full Render of Grid
     function renderGrid(rows) {
       const tbody = document.getElementById('gridBody');
       tbody.innerHTML = '';
@@ -854,6 +1000,7 @@
         }
         const tr = document.createElement('tr');
         if (r.isAtm) tr.className = 'row-atm';
+        tr.setAttribute('data-strike1', r.s1 || r.strike1 || '');
         tr.innerHTML = `
           <td class="col-strike" contenteditable="true" oninput="onStrikeInput(this)">${r.s1 || r.strike1 || '-'}</td>
           <td class="col-strike" contenteditable="true" oninput="onStrikeInput(this)">${r.s2 || r.strike2 || r.s1 || r.strike1 || '-'}</td>
@@ -876,6 +1023,56 @@
         tbody.appendChild(tr);
       });
       updateRowCount();
+    }
+
+    // In-Place Update (Never resets focus or wipes custom typing)
+    function updateGridInPlace(freshRows) {
+      const rowMap = {};
+      freshRows.forEach(r => { rowMap[r.s1] = r; });
+
+      const trs = document.querySelectorAll('#gridBody tr');
+      trs.forEach(tr => {
+        if (tr.classList.contains('section-label-row')) return;
+        const tds = tr.querySelectorAll('td');
+        const s1 = tds[0].textContent.trim();
+        const fresh = rowMap[s1];
+        if (!fresh) return;
+
+        // If user is actively typing in this row, skip updating
+        if (tr.contains(document.activeElement)) return;
+
+        updateCellWithFlash(tds[2], fresh.farBid);
+        updateCellWithFlash(tds[3], fresh.nearAsk);
+        updateCellWithFlash(tds[4], fresh.spread);
+        tds[5].textContent = fresh.farVol;
+        tds[6].textContent = fresh.nearVol;
+        tds[7].textContent = fresh.deltaSpread;
+        tds[8].textContent = fresh.volSpread;
+        tds[9].textContent = fresh.farDelta;
+        tds[10].textContent = fresh.nearDelta;
+        tds[11].textContent = fresh.farVolIv;
+        tds[12].textContent = fresh.nearVolIv;
+        tds[13].textContent = fresh.farVega;
+        tds[14].textContent = fresh.nearVega;
+        tds[15].textContent = fresh.vegaSpread;
+
+        if (fresh.isAtm) tr.classList.add('row-atm');
+        else tr.classList.remove('row-atm');
+      });
+    }
+
+    function updateCellWithFlash(cell, newVal) {
+      if (!cell || cell === document.activeElement) return;
+      const oldVal = parseFloat(cell.textContent.replace(/[^0-9.-]/g, '')) || 0;
+      const parsedNew = parseFloat(String(newVal).replace(/[^0-9.-]/g, '')) || 0;
+
+      if (cell.textContent !== String(newVal)) {
+        cell.textContent = newVal;
+        cell.classList.remove('cell-uptick', 'cell-downtick');
+        void cell.offsetWidth; // Trigger reflow
+        if (parsedNew > oldVal) cell.classList.add('cell-uptick');
+        else if (parsedNew < oldVal) cell.classList.add('cell-downtick');
+      }
     }
 
     function renderSectionLabelRow(titleText = "🎯 [Custom Diagonal / Section Name - Click to Edit]") {
@@ -901,49 +1098,11 @@
       const s1 = parseFloat(s1Raw);
       const s2 = parseFloat(s2Raw) || s1;
 
-      // If user typed strike 1 and strike 2 is blank, mirror it
       if (!isNaN(s1) && s1 > 500 && (!s2Raw || s2Raw === '-')) {
         cells[1].textContent = s1;
       }
 
       if (!isNaN(s1) && s1 > 500) {
-        // Approximate realistic options pricing based on spot if cells are empty/dash
-        const spot = currentUnderlying === 'BANKNIFTY' ? 56500 : (currentUnderlying === 'FINNIFTY' ? 25550 : 23450);
-        const moneyness = currentType === 'CE' ? (spot - s1) / 100 : (s1 - spot) / 100;
-
-        // Auto-fill Bid/Ask if empty or '-'
-        if (!cells[2].textContent.trim() || cells[2].textContent.trim() === '-') {
-          const farEst = Math.max(15, (currentType === 'CE' ? (spot - s1 + 180) : (s1 - spot + 180)) * 0.85);
-          cells[2].textContent = farEst.toFixed(2);
-        }
-        if (!cells[3].textContent.trim() || cells[3].textContent.trim() === '-') {
-          const nearEst = Math.max(8, (currentType === 'CE' ? (spot - s2 + 110) : (s2 - spot + 110)) * 0.55);
-          cells[3].textContent = nearEst.toFixed(2);
-        }
-
-        // Auto-fill volumes
-        if (!cells[5].textContent.trim() || cells[5].textContent.trim() === '-') cells[5].textContent = "16500";
-        if (!cells[6].textContent.trim() || cells[6].textContent.trim() === '-') cells[6].textContent = "48000";
-
-        // Auto-fill Deltas if empty
-        if (!cells[9].textContent.trim() || cells[9].textContent.trim() === '-') {
-          const baseDelta = currentType === 'CE' ? 0.50 + moneyness * 0.04 : -0.50 + moneyness * 0.04;
-          cells[9].textContent = Math.max(-0.95, Math.min(0.95, baseDelta)).toFixed(3);
-        }
-        if (!cells[10].textContent.trim() || cells[10].textContent.trim() === '-') {
-          const baseDeltaNear = currentType === 'CE' ? 0.45 + moneyness * 0.045 : -0.45 + moneyness * 0.045;
-          cells[10].textContent = Math.max(-0.95, Math.min(0.95, baseDeltaNear)).toFixed(3);
-        }
-
-        // Auto-fill IVs
-        if (!cells[11].textContent.trim() || cells[11].textContent.trim() === '-') cells[11].textContent = "12.4%";
-        if (!cells[12].textContent.trim() || cells[12].textContent.trim() === '-') cells[12].textContent = "13.8%";
-
-        // Auto-fill Vegas
-        if (!cells[13].textContent.trim() || cells[13].textContent.trim() === '-') cells[13].textContent = "19.2";
-        if (!cells[14].textContent.trim() || cells[14].textContent.trim() === '-') cells[14].textContent = "11.8";
-
-        // Recalculate Spread LTP and Greeks
         calcRow(cells[2]);
         calcGreeks(cells[9]);
         calcVol(cells[11]);
@@ -952,7 +1111,6 @@
       triggerSaveDebounced();
     }
 
-    // Auto recalculate row values when user types in any cell
     function calcRow(el) {
       const tr = el.closest('tr');
       if (tr.classList.contains('section-label-row')) return;
@@ -1075,57 +1233,6 @@
       if (countEl) countEl.textContent = rows.length;
     }
 
-    async function fetchLiveMarketData() {
-      document.getElementById('syncLabel').textContent = "Fetching Live Exchange Chain...";
-      try {
-        const res = await fetch('/api/calendar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            symbol: currentUnderlying,
-            nearExpiry: "AUTO",
-            farExpiry: "AUTO",
-            strikeRange: 6
-          })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.rows && data.rows.length > 0) {
-            const mapped = data.rows.map(r => {
-              const leg = currentType === 'CE' ? r.ce : r.pe;
-              return {
-                s1: r.strike1 || r.strike,
-                s2: r.strike2 || r.strike,
-                farBid: (leg.far_bid || (leg.far_ltp ? leg.far_ltp - 0.5 : 0)).toFixed(2),
-                nearAsk: (leg.near_ask || (leg.near_ltp ? leg.near_ltp + 0.5 : 0)).toFixed(2),
-                spread: (leg.spread_ltp || (leg.far_ltp - leg.near_ltp) || 0).toFixed(2),
-                farVol: leg.far_vol || leg.vol1_trades || 1000,
-                nearVol: leg.near_vol || leg.vol2_trades || 3000,
-                deltaSpread: (leg.delta_spread >= 0 ? '+' : '') + (leg.delta_spread || 0).toFixed(3),
-                volSpread: (leg.vol_spread >= 0 ? '+' : '') + (leg.vol_spread || 0).toFixed(1) + '%',
-                farDelta: (leg.far_delta || 0).toFixed(3),
-                nearDelta: (leg.near_delta || 0).toFixed(3),
-                farVolIv: (leg.far_iv || 12.5).toFixed(1) + '%',
-                nearVolIv: (leg.near_iv || 14.0).toFixed(1) + '%',
-                farVega: (leg.far_vega || 18.0).toFixed(1),
-                nearVega: (leg.near_vega || 11.0).toFixed(1),
-                vegaSpread: (leg.vega_spread >= 0 ? '+' : '') + (leg.vega_spread || 7.0).toFixed(1),
-                isAtm: r.isAtm || false
-              };
-            });
-            renderGrid(mapped);
-            document.getElementById('syncLabel').textContent = "🟢 Live Exchange Data Loaded";
-            showToast("✅ Loaded Real-Time Exchange Quotes!");
-            return;
-          }
-        }
-      } catch (e) {
-        console.warn("Live calendar fetch fallback:", e);
-      }
-      document.getElementById('syncLabel').textContent = "Editable Matrix Ready";
-      loadCurrentDataset();
-    }
-
     let saveTimer = null;
     function triggerSaveDebounced() {
       clearTimeout(saveTimer);
@@ -1183,7 +1290,7 @@
           "Far Exp Vega", "Near Exp Vega", "Vega Spread"
         ],
         rows: currentRows,
-        matrixStore: customMatrixStore, // All saved expiry pairs preserved
+        matrixStore: customMatrixStore,
         userNotes: document.getElementById('liveNotes').value.trim(),
         timestamp: new Date().toLocaleTimeString()
       };
@@ -1201,7 +1308,6 @@
         if (res.ok) {
           const t = new Date().toLocaleTimeString();
           document.getElementById('savedAtTag').textContent = `Last saved: ${t}`;
-          document.getElementById('lastSyncedTime').textContent = t;
           if (!isAuto) showToast("✅ Saved and Synced with Assistant!");
         }
       } catch (e) {
@@ -1238,67 +1344,20 @@
               document.getElementById('cfgUnderlying').value = fb.underlying;
               currentUnderlying = fb.underlying;
             }
-            if (fb.farExpiry) {
-              // Ensure option exists in dropdown
-              const fSel = document.getElementById('cfgFarExpiry');
-              let found = false;
-              for (let o of fSel.options) { if (o.value === fb.farExpiry) found = true; }
-              if (!found) {
-                const opt = document.createElement('option');
-                opt.value = fb.farExpiry;
-                opt.textContent = fb.farExpiry;
-                fSel.appendChild(opt);
-              }
-              fSel.value = fb.farExpiry;
-            }
-            if (fb.nearExpiry) {
-              const nSel = document.getElementById('cfgNearExpiry');
-              let found = false;
-              for (let o of nSel.options) { if (o.value === fb.nearExpiry) found = true; }
-              if (!found) {
-                const opt = document.createElement('option');
-                opt.value = fb.nearExpiry;
-                opt.textContent = fb.nearExpiry;
-                nSel.appendChild(opt);
-              }
-              nSel.value = fb.nearExpiry;
-            }
-            if (fb.optionType) {
-              currentType = fb.optionType;
-              document.getElementById('tabCe').className = 'type-tab ' + (currentType === 'CE' ? 'active-ce' : '');
-              document.getElementById('tabPe').className = 'type-tab ' + (currentType === 'PE' ? 'active-pe' : '');
-              const badge = document.getElementById('tableTitleBadge');
-              badge.textContent = currentType;
-              badge.style.background = currentType === 'CE' ? '#10b981' : '#f43f5e';
-              document.getElementById('tableTitleText').textContent = (currentType === 'CE' ? 'Call' : 'Put') + ' Calendar Spread Matrix (Far Exp vs Near Exp)';
-            }
             if (fb.timestamp) {
-              document.getElementById('lastSyncedTime').textContent = fb.timestamp;
               document.getElementById('savedAtTag').textContent = `Last saved: ${fb.timestamp}`;
-            }
-
-            // Save rows to store for this key
-            const pairKey = getPairKey();
-            if (fb.rows && fb.rows.length > 0) {
-              customMatrixStore[pairKey] = fb.rows;
-              renderGrid(fb.rows);
-              return true;
             }
           }
         }
       } catch (e) {
         console.warn("Feedback load notice:", e);
       }
-      return false;
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
-      const restored = await loadSavedFeedback();
-      if (!restored) {
-        loadCurrentDataset();
-      } else {
-        updateActivePairLabel();
-      }
+      await loadSavedFeedback();
+      await fetchLiveMarketData(true);
+      startStreaming();
     });
   </script>
 </body>

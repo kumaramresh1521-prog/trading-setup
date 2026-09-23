@@ -42,6 +42,8 @@ import global_markets_engine
 import fii_dii_engine
 import upstox_engine
 import futures_engine
+import calendar_engine
+import options_math
 
 
 
@@ -7821,6 +7823,19 @@ class RequestHandler(BaseHTTPRequestHandler):
             fb_data = read_json(fb_file, {})
             return self.send_json(200, {"ok": True, "data": fb_data})
 
+        if path == "/api/calendar":
+            query = urllib.parse.parse_qs(parsed.query)
+            sym = query.get("symbol", ["NIFTY"])[0]
+            far_exp = query.get("farExpiry", query.get("far_expiry", ["AUTO"]))[0]
+            near_exp = query.get("nearExpiry", query.get("near_expiry", ["AUTO"]))[0]
+            opt_type = query.get("optionType", query.get("type", ["CE"]))[0]
+            try:
+                s_range = int(query.get("strikeRange", [6])[0])
+            except Exception:
+                s_range = 6
+            matrix_data = calendar_engine.get_calendar_matrix(sym, far_exp, near_exp, opt_type, s_range)
+            return self.send_json(200, matrix_data)
+
         if path == "/api/supabase/get-workspace":
             query = urllib.parse.parse_qs(parsed.query)
             user_id = query.get("userId", [None])[0]
@@ -8034,6 +8049,33 @@ class RequestHandler(BaseHTTPRequestHandler):
                 payload["saved_at"] = datetime.now().isoformat()
                 write_json(fb_file, payload)
                 return self.send_json(200, {"ok": True, "saved_at": payload["saved_at"], "message": "Calendar prototype feedback saved successfully!"})
+
+            if parsed.path == "/api/calendar":
+                payload = self.read_body()
+                sym = payload.get("symbol", "NIFTY")
+                far_exp = payload.get("farExpiry", payload.get("far_expiry", "AUTO"))
+                near_exp = payload.get("nearExpiry", payload.get("near_expiry", "AUTO"))
+                opt_type = payload.get("optionType", payload.get("type", "CE"))
+                try:
+                    s_range = int(payload.get("strikeRange", 6))
+                except Exception:
+                    s_range = 6
+                custom_strikes = payload.get("customStrikes") or []
+                matrix_data = calendar_engine.get_calendar_matrix(sym, far_exp, near_exp, opt_type, s_range, custom_strikes=custom_strikes)
+                return self.send_json(200, matrix_data)
+
+            if parsed.path == "/api/upstox/token":
+                payload = self.read_body()
+                tok = (payload.get("token") or payload.get("accessToken") or "").strip()
+                if tok:
+                    os.environ["UPSTOX_ACCESS_TOKEN"] = tok
+                    save_dotenv({"UPSTOX_ACCESS_TOKEN": tok})
+                    k = env("UPSTOX_API_KEY", "")
+                    s = env("UPSTOX_API_SECRET", "")
+                    res = upstox_engine.test_connection(tok, k, s)
+                    return self.send_json(200, res)
+                else:
+                    return self.send_json(400, {"ok": False, "message": "Token cannot be empty"})
 
             if parsed.path == "/api/tools/trap-detector":
                 payload = self.read_body()
