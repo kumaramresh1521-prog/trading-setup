@@ -58,7 +58,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css?v=20260921_v6">
+    <link rel="stylesheet" href="/styles.css?v=20260921_v7">
+
 
     <!-- Supabase JS Client for Cloud Google OAuth & State Sync -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -121,15 +122,16 @@
             </button>
             <div class="inst-dropdown">
               <div class="inst-dropdown-col">
-                <span class="inst-dropdown-header">Breadth Analytics</span>
-                <button class="inst-dd-item" onclick="instNav('futures'); return false;">📊 Market Breadth (PnF)</button>
-                <button class="inst-dd-item" onclick="instNav('futures'); return false;">📉 Advance / Decline</button>
-                <button class="inst-dd-item" onclick="instNav('futures'); return false;">🔥 Nifty 50 AD Tracker</button>
+                <span class="inst-dropdown-header">Futures Intelligence</span>
+                <button class="inst-dd-item" onclick="instNav('futures', 'dashboard'); return false;">📊 Futures Dashboard</button>
+                <button class="inst-dd-item" onclick="instNav('futures', 'screener'); return false;">📋 Future Open Interest</button>
+                <button class="inst-dd-item" onclick="instNav('futures', 'buildup'); return false;">⚡ Future Buildup Quadrant</button>
               </div>
               <div class="inst-dropdown-col">
-                <span class="inst-dropdown-header">Smart Money</span>
-                <button class="inst-dd-item" onclick="instNav('smartmoney'); return false;">🏛️ FII/DII EOD Tracker</button>
-                <button class="inst-dd-item" onclick="instNav('smartmoney'); return false;">💰 Cash vs Derivatives</button>
+                <span class="inst-dropdown-header">Institutional Analytics</span>
+                <button class="inst-dd-item" onclick="instNav('futures', 'heatmap'); return false;">🗺️ F&amp;O Heatmap</button>
+                <button class="inst-dd-item" onclick="instNav('futures', 'mwpl'); return false;">🚫 MWPL &amp; Ban Tracker</button>
+                <button class="inst-dd-item" onclick="instNav('breadth'); return false;">📊 Market Breadth (PnF)</button>
               </div>
             </div>
           </div>
@@ -143,6 +145,7 @@
             <div class="inst-dropdown">
               <div class="inst-dropdown-col">
                 <span class="inst-dropdown-header">Options Desk</span>
+                <button class="inst-dd-item" onclick="instNav('upstoxChain'); return false;" style="color:#34d399; font-weight:700;">⚡ Upstox Chain Pro (Direct API)</button>
                 <button class="inst-dd-item" onclick="instNav('options'); return false;">📋 Option Chain Live</button>
                 <button class="inst-dd-item" onclick="instNav('options'); return false;">🎯 Max Pain Calculator</button>
                 <button class="inst-dd-item" onclick="instNav('options'); return false;">⚡ wPCR &amp; PCR Charts</button>
@@ -155,6 +158,15 @@
               </div>
             </div>
           </div>
+
+          <!-- UPSTOX OPTION CHAIN PRO -->
+          <div class="inst-nav-item">
+            <button class="inst-nav-btn" id="navUpstoxChain" type="button" onclick="instNav('upstoxChain')" style="border: 1px solid rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.08);">
+              <span class="inst-nav-icon">⚡</span> Upstox Chain Pro
+              <span class="p2-badge p2-badge-teal" style="font-size:9.5px; padding:2px 6px; margin-left:4px; background:#10b981; color:#040814; font-weight:800; border-radius:4px;">UPSTOX API</span>
+            </button>
+          </div>
+
 
           <!-- ANALYTICS -->
           <div class="inst-nav-item has-dropdown">
@@ -354,6 +366,22 @@
               <span class="inst-dm-go">Open Options →</span>
             </div>
           </div>
+
+          <!-- Upstox Option Chain Pro Desk -->
+          <div class="inst-dash-module" onclick="instNav('upstoxChain')" style="border-color:rgba(16,185,129,0.3); background:linear-gradient(180deg, rgba(16,185,129,0.06) 0%, rgba(11,19,41,0.9) 100%);">
+            <div class="inst-dm-header">
+              <span class="inst-dm-icon">⚡</span>
+              <span class="inst-dm-title">Upstox Chain Pro</span>
+              <span class="inst-dm-badge" style="background:#10b981; color:#040814; font-weight:800;">UPSTOX API</span>
+            </div>
+            <div class="inst-dm-body">
+              <p>Dedicated Upstox v2 Option Chain, Live Greeks (Δ, Γ, θ, ν), ATM Straddle decay &amp; Multi-expiry depth.</p>
+            </div>
+            <div class="inst-dm-footer">
+              <span class="inst-dm-go" style="color:#34d399;">Launch Upstox Desk →</span>
+            </div>
+          </div>
+
 
           <!-- FII/DII -->
           <div class="inst-dash-module" onclick="instNav('smartmoney')">
@@ -725,6 +753,489 @@
             </div>
           </section>
         </section>
+      </div>
+
+      <!-- ================================================================
+           ⚡ Institutional Futures Intelligence Desk (Kotak Neo Derivatives Engine)
+           ================================================================ -->
+      <div id="panelFutures" class="tab-panel" style="display:none;">
+        <div class="futures-desk">
+
+          <!-- Hero Banner -->
+          <div class="fut-hero-banner">
+            <div class="fut-hero-left">
+              <span class="fut-hero-icon">📈</span>
+              <div>
+                <h2 class="fut-hero-title">
+                  <span>Institutional Futures Desk</span>
+                  <span class="p2-badge p2-badge-teal" style="font-size:10px; background:#ef4444; color:#ffffff; font-weight:800; padding:2px 8px; border-radius:4px;">KOTAK NEO DERIVATIVES</span>
+                  <span id="futAsOfBadge" style="font-size:11px; color:#94a3b8; font-weight:600; margin-left:8px;">Ready</span>
+                </h2>
+                <p class="fut-hero-desc">Institutional open interest matrix, 4-quadrant buildup screener, market treemap heatmap &amp; MWPL ban/exit monitors for all 80+ F&amp;O stocks and indices.</p>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <select id="futSectorFilter" class="p2-select" style="min-width:140px; padding:7px 12px; font-size:12px; background:#0c1322; border:1px solid #1e293d; color:#f8fafc; border-radius:6px;">
+                <option value="ALL">All Sectors (80+)</option>
+                <option value="INDICES">Index Futures Only</option>
+                <option value="BANKING">Banking &amp; Financials</option>
+                <option value="IT">Information Technology</option>
+                <option value="AUTO">Automobiles</option>
+                <option value="ENERGY">Oil, Gas &amp; Energy</option>
+                <option value="METALS">Metals &amp; Mining</option>
+                <option value="PHARMA">Pharma &amp; Healthcare</option>
+                <option value="FMCG">FMCG &amp; Retail</option>
+              </select>
+
+              <input type="text" id="futSearchInput" placeholder="🔍 Search F&amp;O symbol..." style="padding:7px 12px; font-size:12px; background:#0c1322; border:1px solid #1e293d; color:#f8fafc; border-radius:6px; min-width:160px; font-family:'JetBrains Mono',monospace;" />
+
+              <select id="futAutoRefreshSelect" class="p2-select" style="padding:7px 10px; font-size:12px; background:#0c1322; border:1px solid #1e293d; color:#f8fafc; border-radius:6px;">
+                <option value="0">Auto: OFF</option>
+                <option value="10">Auto: 10s</option>
+                <option value="30">Auto: 30s</option>
+                <option value="60">Auto: 60s</option>
+              </select>
+
+              <button type="button" id="futBtnRefresh" class="btn-adm-primary" style="background:#ef4444; padding:7px 14px; font-size:12px; border-radius:6px; font-weight:700;">🔄 Refresh</button>
+            </div>
+          </div>
+
+          <!-- Subtabs Bar -->
+          <div class="fut-subtabs-bar">
+            <button type="button" class="fut-subtab-btn active" data-tab="dashboard">📊 Futures Dashboard</button>
+            <button type="button" class="fut-subtab-btn" data-tab="screener">📋 Future Open Interest</button>
+            <button type="button" class="fut-subtab-btn" data-tab="buildup">⚡ Future Buildup Quadrant</button>
+            <button type="button" class="fut-subtab-btn" data-tab="heatmap">🗺️ F&amp;O Heatmap</button>
+            <button type="button" class="fut-subtab-btn" data-tab="mwpl">🚫 MWPL &amp; Ban Tracker</button>
+          </div>
+
+          <!-- SUBTAB 1: FUTURES DASHBOARD -->
+          <div id="futView_dashboard" class="fut-view-panel">
+            <!-- Row 1: Macro KPIs -->
+            <div class="fut-kpi-grid">
+              <div class="fut-kpi-card">
+                <span class="fut-kpi-label">Total F&amp;O Turnover</span>
+                <span class="fut-kpi-val" id="futKpiTurnover" style="color:#60a5fa;">--</span>
+                <span class="fut-kpi-sub">Total traded futures notional</span>
+              </div>
+              <div class="fut-kpi-card">
+                <span class="fut-kpi-label">Market Open Interest</span>
+                <span class="fut-kpi-val" id="futKpiOi" style="color:#f8fafc;">--</span>
+                <span class="fut-kpi-sub">Cumulative outstanding positions</span>
+              </div>
+              <div class="fut-kpi-card">
+                <span class="fut-kpi-label">Institutional Buildup Ratio</span>
+                <div id="futBuildupRatioBar" style="display:flex; height:8px; border-radius:4px; overflow:hidden; margin:8px 0 4px 0; background:#1e293b;"></div>
+                <div id="futBuildupCountText" style="font-size:11px;"></div>
+              </div>
+              <div class="fut-kpi-card">
+                <span class="fut-kpi-label">Active F&amp;O Universe</span>
+                <span class="fut-kpi-val" id="futKpiUniverse" style="color:#34d399;">80+ Contracts</span>
+                <span class="fut-kpi-sub">Kotak Neo Derivatives stream</span>
+              </div>
+            </div>
+
+            <!-- Row 2: Major Index Futures Strip -->
+            <div style="margin-top:14px;">
+              <h4 style="margin:0 0 10px 0; font-size:13px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">⚡ Benchmark Index Futures (Current Expiry)</h4>
+              <div class="fut-index-grid" id="futIndexCardsGrid">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Row 3: Institutional Screeners (4 Columns: Top Gainers, Losers, OI Additions, OI Shedding) -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; margin-top:14px;">
+              <!-- Top Gainers -->
+              <div class="adm-card" style="margin:0; padding:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #1a2336; padding-bottom:6px;">
+                  <strong style="color:#10b981; font-size:12.5px;">🟢 Top Futures Gainers</strong>
+                  <span style="font-size:10px; color:#64748b;">PRICE GAIN %</span>
+                </div>
+                <div id="futTopGainersList"></div>
+              </div>
+
+              <!-- Top Losers -->
+              <div class="adm-card" style="margin:0; padding:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #1a2336; padding-bottom:6px;">
+                  <strong style="color:#ef4444; font-size:12.5px;">🔴 Top Futures Losers</strong>
+                  <span style="font-size:10px; color:#64748b;">PRICE DROP %</span>
+                </div>
+                <div id="futTopLosersList"></div>
+              </div>
+
+              <!-- Top OI Additions -->
+              <div class="adm-card" style="margin:0; padding:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #1a2336; padding-bottom:6px;">
+                  <strong style="color:#38bdf8; font-size:12.5px;">📈 Top OI Additions</strong>
+                  <span style="font-size:10px; color:#64748b;">FRESH POSITIONS</span>
+                </div>
+                <div id="futTopOiAddList"></div>
+              </div>
+
+              <!-- Top OI Shedding -->
+              <div class="adm-card" style="margin:0; padding:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #1a2336; padding-bottom:6px;">
+                  <strong style="color:#f59e0b; font-size:12.5px;">📉 Top OI Shedding</strong>
+                  <span style="font-size:10px; color:#64748b;">POSITION UNWINDING</span>
+                </div>
+                <div id="futTopOiShedList"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBTAB 2: FUTURE OPEN INTEREST SCREENER -->
+          <div id="futView_screener" class="fut-view-panel" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h4 style="margin:0; font-size:14px; font-weight:800; color:#f8fafc;">📋 Security-Wise F&amp;O Open Interest &amp; Spread Matrix</h4>
+                <small style="color:#94a3b8;">Detailed institutional positioning with Basis / Cost of Carry and dynamic Buildup identification.</small>
+              </div>
+              <span id="futScreenerCountBadge" class="badge" style="background:#1e293b; color:#94a3b8; padding:4px 8px; border-radius:4px; font-weight:700;">0 Contracts</span>
+            </div>
+
+            <div class="fut-table-wrap">
+              <table class="fut-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Symbol</th>
+                    <th>Sector</th>
+                    <th>Expiry</th>
+                    <th style="text-align:right;">LTP (₹)</th>
+                    <th style="text-align:right;">Chg %</th>
+                    <th style="text-align:right;">Open Interest</th>
+                    <th style="text-align:right;">OI Chg %</th>
+                    <th style="text-align:right;">OI Value (₹ Cr)</th>
+                    <th style="text-align:right;">Basis (Spread)</th>
+                    <th style="text-align:right;">Turnover (₹ Cr)</th>
+                    <th style="text-align:center;">Institutional Buildup</th>
+                  </tr>
+                </thead>
+                <tbody id="futScreenerTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUBTAB 3: FUTURE BUILDUP QUADRANTS -->
+          <div id="futView_buildup" class="fut-view-panel" style="display:none;">
+            <div style="margin-bottom:12px;">
+              <h4 style="margin:0; font-size:14px; font-weight:800; color:#f8fafc;">⚡ Institutional 4-Quadrant Buildup Screener</h4>
+              <small style="color:#94a3b8;">Classifies every F&amp;O stock into actionable institutional flow: Long Buildup, Short Buildup, Short Covering, and Long Unwinding.</small>
+            </div>
+
+            <div class="fut-quad-grid">
+              <!-- QUADRANT 1: LONG BUILDUP -->
+              <div class="fut-quad-card lb">
+                <div class="fut-quad-header">
+                  <div>
+                    <h5 class="fut-quad-title" style="color:#34d399;">🟢 Long Buildup (Bullish Aggression)</h5>
+                    <p class="fut-quad-sub">Price Up ▲ + Open Interest Up ▲ (Fresh Buyers Entering)</p>
+                  </div>
+                  <div style="text-align:right;">
+                    <span id="futQuadLbCount" style="font-size:12px; font-weight:800; color:#34d399; font-family:'JetBrains Mono',monospace;">--</span>
+                    <div id="futQuadLbOi" style="font-size:10.5px; color:#64748b;">--</div>
+                  </div>
+                </div>
+                <div class="fut-quad-list" id="futQuadLbList"></div>
+              </div>
+
+              <!-- QUADRANT 2: SHORT BUILDUP -->
+              <div class="fut-quad-card sb">
+                <div class="fut-quad-header">
+                  <div>
+                    <h5 class="fut-quad-title" style="color:#f87171;">🔴 Short Buildup (Bearish Pressure)</h5>
+                    <p class="fut-quad-sub">Price Down ▼ + Open Interest Up ▲ (Fresh Sellers Entering)</p>
+                  </div>
+                  <div style="text-align:right;">
+                    <span id="futQuadSbCount" style="font-size:12px; font-weight:800; color:#f87171; font-family:'JetBrains Mono',monospace;">--</span>
+                    <div id="futQuadSbOi" style="font-size:10.5px; color:#64748b;">--</div>
+                  </div>
+                </div>
+                <div class="fut-quad-list" id="futQuadSbList"></div>
+              </div>
+
+              <!-- QUADRANT 3: SHORT COVERING -->
+              <div class="fut-quad-card sc">
+                <div class="fut-quad-header">
+                  <div>
+                    <h5 class="fut-quad-title" style="color:#60a5fa;">🔵 Short Covering (Bear Squeeze)</h5>
+                    <p class="fut-quad-sub">Price Up ▲ + Open Interest Down ▼ (Sellers Booking / Trapped)</p>
+                  </div>
+                  <div style="text-align:right;">
+                    <span id="futQuadScCount" style="font-size:12px; font-weight:800; color:#60a5fa; font-family:'JetBrains Mono',monospace;">--</span>
+                    <div id="futQuadScOi" style="font-size:10.5px; color:#64748b;">--</div>
+                  </div>
+                </div>
+                <div class="fut-quad-list" id="futQuadScList"></div>
+              </div>
+
+              <!-- QUADRANT 4: LONG UNWINDING -->
+              <div class="fut-quad-card lu">
+                <div class="fut-quad-header">
+                  <div>
+                    <h5 class="fut-quad-title" style="color:#fbbf24;">🟡 Long Unwinding (Profit Booking)</h5>
+                    <p class="fut-quad-sub">Price Down ▼ + Open Interest Down ▼ (Buyers Exiting)</p>
+                  </div>
+                  <div style="text-align:right;">
+                    <span id="futQuadLuCount" style="font-size:12px; font-weight:800; color:#fbbf24; font-family:'JetBrains Mono',monospace;">--</span>
+                    <div id="futQuadLuOi" style="font-size:10.5px; color:#64748b;">--</div>
+                  </div>
+                </div>
+                <div class="fut-quad-list" id="futQuadLuList"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBTAB 4: F&O HEATMAP -->
+          <div id="futView_heatmap" class="fut-view-panel" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h4 style="margin:0; font-size:14px; font-weight:800; color:#f8fafc;">🗺️ F&amp;O Open Interest &amp; Performance Heatmap</h4>
+                <small style="color:#94a3b8;">Tile size represents Open Interest volume; color depth represents Price Change %.</small>
+              </div>
+              <div style="display:flex; gap:12px; align-items:center; font-size:11px; color:#94a3b8;">
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#10b981; border-radius:2px;"></span> &gt; +1.5%</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#334155; border-radius:2px;"></span> Flat (-0.5% to +0.5%)</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#ef4444; border-radius:2px;"></span> &lt; -1.5%</span>
+              </div>
+            </div>
+
+            <div class="fut-heatmap-grid" id="futHeatmapGrid">
+              <!-- Heatmap tiles dynamically injected -->
+            </div>
+          </div>
+
+          <!-- SUBTAB 5: MWPL & BAN TRACKER -->
+          <div id="futView_mwpl" class="fut-view-panel" style="display:none;">
+            <!-- Active Ban Period Alert -->
+            <div id="futMwplBanBanner" style="margin-bottom:14px;"></div>
+
+            <!-- Danger Zone (80% - 95%) -->
+            <div style="margin-bottom:14px;">
+              <h4 style="margin:0 0 8px 0; font-size:13px; font-weight:800; color:#fbbf24; text-transform:uppercase; letter-spacing:0.5px;">⚠️ Alert Warning Zone (80% - 95% MWPL Limit)</h4>
+              <div id="futMwplAlertList" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px;"></div>
+            </div>
+
+            <!-- Full MWPL Matrix Table -->
+            <div style="margin-top:14px;">
+              <h4 style="margin:0 0 8px 0; font-size:13px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">📋 Market-Wide Position Limit (MWPL) Monitoring Table</h4>
+              <div class="fut-table-wrap">
+                <table class="fut-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Symbol</th>
+                      <th>Sector</th>
+                      <th style="text-align:right;">LTP (₹)</th>
+                      <th style="text-align:right;">Current OI</th>
+                      <th style="text-align:right;">MWPL Limit</th>
+                      <th style="text-align:right;">MWPL %</th>
+                      <th style="min-width:140px;">Position Limit Progress</th>
+                      <th style="text-align:center;">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="futMwplTableBody">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================================================================
+           ⚡ Upstox Option Chain Pro Desk (Independent Upstox v2 Engine)
+           ================================================================ -->
+      <div id="panelUpstoxChain" class="tab-panel" style="display:none;">
+        <div class="upstox-chain-desk">
+          
+          <!-- Hero Banner -->
+          <div class="upstox-hero-banner">
+            <div class="upstox-hero-left">
+              <span class="upstox-hero-icon">⚡</span>
+              <div>
+                <h2 class="upstox-hero-title">
+                  <span>Upstox Option Chain Pro</span>
+                  <span class="p2-badge p2-badge-teal" style="font-size:10px; background:#10b981; color:#040814; font-weight:800; padding:2px 8px; border-radius:4px;">NATIVE UPSTOX API v2</span>
+                </h2>
+                <p class="upstox-hero-desc">Direct exchange streaming from Upstox • Live Option Greeks (Delta, Gamma, Theta, Vega, IV), ATM Straddles &amp; Dynamic Expiries.</p>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <div id="upstoxLiveStatus" style="font-size:12px; font-weight:600; padding:5px 12px; border-radius:20px; background:#040814; border:1px solid #1e293b;">
+                ⏳ Initializing Upstox stream...
+              </div>
+              <div style="font-size:11px; color:#94a3b8; font-family:'JetBrains Mono',monospace;">
+                Tick: <span id="upstoxLastUpdated" style="color:#f8fafc;">--:--:--</span>
+              </div>
+              <button type="button" id="upstoxBtnRefresh" class="btn-adm-primary" style="background:#10b981; padding:7px 14px; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+                🔄 Refresh Stream
+              </button>
+            </div>
+          </div>
+
+          <!-- Controls Bar -->
+          <div class="upstox-ctrl-bar">
+            <div class="upstox-ctrl-group">
+              <div class="upstox-ctrl-item">
+                <label>Underlying Index</label>
+                <select id="upstoxIndexSelect" class="upstox-select">
+                  <option value="NSE_INDEX|Nifty 50" selected>NIFTY 50 (NSE)</option>
+                  <option value="NSE_INDEX|Nifty Bank">BANK NIFTY (NSE)</option>
+                  <option value="NSE_INDEX|Nifty Fin Service">FIN NIFTY (NSE)</option>
+                  <option value="NSE_INDEX|NIFTY MID SELECT">MIDCAP SELECT (NSE)</option>
+                  <option value="BSE_INDEX|SENSEX">SENSEX (BSE)</option>
+                </select>
+              </div>
+
+              <div class="upstox-ctrl-item">
+                <label>📅 Expiry Date</label>
+                <select id="upstoxExpirySelect" class="upstox-select" style="border-color:#10b981; color:#34d399;">
+                  <option value="">Loading Expiries...</option>
+                </select>
+              </div>
+
+              <div class="upstox-ctrl-item">
+                <label>Strikes Range</label>
+                <select id="upstoxStrikeRangeSelect" class="upstox-select">
+                  <option value="5">ATM ± 5 Strikes</option>
+                  <option value="10" selected>ATM ± 10 Strikes</option>
+                  <option value="15">ATM ± 15 Strikes</option>
+                  <option value="20">ATM ± 20 Strikes</option>
+                  <option value="0">All Strikes (Full Chain)</option>
+                </select>
+              </div>
+
+              <div class="upstox-ctrl-item">
+                <label>Display View</label>
+                <select id="upstoxViewModeSelect" class="upstox-select">
+                  <option value="greeks" selected>📐 Greeks Pro View (Δ, Γ, θ, ν, IV)</option>
+                  <option value="standard">📊 Standard View (LTP, Vol, OI)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="upstox-ctrl-group">
+              <div class="upstox-ctrl-item">
+                <label>Auto-Refresh</label>
+                <select id="upstoxAutoRefreshSelect" class="upstox-select">
+                  <option value="0" selected>Manual Refresh</option>
+                  <option value="5">Every 5 Seconds</option>
+                  <option value="10">Every 10 Seconds</option>
+                  <option value="30">Every 30 Seconds</option>
+                </select>
+              </div>
+              <div class="upstox-ctrl-item">
+                <label>API Settings</label>
+                <a href="/admin.html" target="_blank" class="upstox-select" style="text-decoration:none; display:inline-flex; align-items:center; gap:4px; color:#60a5fa; border-color:#2563eb;">
+                  ⚙️ Admin Setup ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Institutional KPI Metric Strip -->
+          <div class="upstox-kpi-grid">
+            <div class="upstox-kpi-card">
+              <div class="upstox-kpi-label">Underlying Spot</div>
+              <div class="upstox-kpi-val" id="upstoxSpotVal" style="color:#60a5fa;">--</div>
+              <div class="upstox-kpi-sub" style="color:#94a3b8;">Real-time index quote</div>
+            </div>
+
+            <div class="upstox-kpi-card">
+              <div class="upstox-kpi-label">Put-Call Ratio (PCR)</div>
+              <div class="upstox-kpi-val" id="upstoxPcrVal" style="color:#34d399;">--</div>
+              <div class="upstox-kpi-sub" id="upstoxPcrTag" style="color:#34d399; font-weight:700;">--</div>
+            </div>
+
+            <div class="upstox-kpi-card">
+              <div class="upstox-kpi-label">ATM Strike</div>
+              <div class="upstox-kpi-val" id="upstoxAtmStrikeVal" style="color:#fbbf24;">--</div>
+              <div class="upstox-kpi-sub" style="color:#94a3b8;">At-the-money anchor</div>
+            </div>
+
+            <div class="upstox-kpi-card">
+              <div class="upstox-kpi-label">ATM Straddle</div>
+              <div class="upstox-kpi-val" id="upstoxStraddleVal" style="color:#f472b6;">--</div>
+              <div class="upstox-kpi-sub" style="color:#94a3b8;">Combined CE+PE cost</div>
+            </div>
+
+            <div class="upstox-kpi-card">
+              <div class="upstox-kpi-label">Max Pain Strike</div>
+              <div class="upstox-kpi-val" id="upstoxMaxPainVal" style="color:#a78bfa;">--</div>
+              <div class="upstox-kpi-sub" style="color:#94a3b8;">Minimal writer loss</div>
+            </div>
+
+            <div class="upstox-kpi-card">
+              <div class="upstox-kpi-label">Expected Move (±1σ)</div>
+              <div class="upstox-kpi-val" id="upstoxExpectedMoveVal" style="color:#38bdf8;">--</div>
+              <div class="upstox-kpi-sub" style="color:#94a3b8;">Expiry cone width</div>
+            </div>
+
+            <div class="upstox-kpi-card">
+              <div class="upstox-kpi-label">Total CE OI</div>
+              <div class="upstox-kpi-val" id="upstoxTotalCeOi" style="color:#10b981;">--</div>
+              <div class="upstox-kpi-sub" style="color:#94a3b8;">Resistance pool</div>
+            </div>
+
+            <div class="upstox-kpi-card">
+              <div class="upstox-kpi-label">Total PE OI</div>
+              <div class="upstox-kpi-val" id="upstoxTotalPeOi" style="color:#ef4444;">--</div>
+              <div class="upstox-kpi-sub" style="color:#94a3b8;">Support cushion</div>
+            </div>
+          </div>
+
+          <!-- Dual Upstox Option Chain Table -->
+          <div class="upstox-table-wrapper">
+            <table class="upstox-table" id="upstoxChainTable">
+              <thead>
+                <tr class="head-group">
+                  <th colspan="9" class="th-calls">CALL OPTIONS (CE)</th>
+                  <th class="th-strike">STRIKE</th>
+                  <th colspan="9" class="th-puts">PUT OPTIONS (PE)</th>
+                </tr>
+                <tr class="head-sub">
+                  <!-- Calls -->
+                  <th style="text-align:right;">OI (Depth)</th>
+                  <th style="text-align:right;">Volume</th>
+                  <th class="upstox-greek-col" style="text-align:right;">IV %</th>
+                  <th class="upstox-greek-col" style="text-align:right;">Delta (&Delta;)</th>
+                  <th class="upstox-greek-col" style="text-align:right;">Theta (&theta;)</th>
+                  <th class="upstox-greek-col" style="text-align:right;">Vega (&nu;)</th>
+                  <th class="upstox-greek-col" style="text-align:right;">Gamma (&Gamma;)</th>
+                  <th style="text-align:right;">LTP (₹)</th>
+                  <th style="text-align:right;">Chg</th>
+
+                  <!-- Center Strike -->
+                  <th class="th-strike">Strike</th>
+
+                  <!-- Puts -->
+                  <th style="text-align:right;">Chg</th>
+                  <th style="text-align:right;">LTP (₹)</th>
+                  <th class="upstox-greek-col" style="text-align:right;">Delta (&Delta;)</th>
+                  <th class="upstox-greek-col" style="text-align:right;">Theta (&theta;)</th>
+                  <th class="upstox-greek-col" style="text-align:right;">Vega (&nu;)</th>
+                  <th class="upstox-greek-col" style="text-align:right;">Gamma (&Gamma;)</th>
+                  <th class="upstox-greek-col" style="text-align:right;">IV %</th>
+                  <th style="text-align:right;">Volume</th>
+                  <th style="text-align:right;">OI (Depth)</th>
+                </tr>
+              </thead>
+              <tbody id="upstoxChainTableBody">
+                <tr>
+                  <td colspan="19" style="text-align:center; padding:32px; color:#94a3b8;">
+                    ⏳ Loading live Upstox Option Chain...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
       </div>
 
       <!-- ================================================================
@@ -1785,8 +2296,9 @@
             <label>
               <span>Trading Session</span>
               <select id="smSessionSelect" class="ctrl-select" style="font-weight:700; min-width:160px;">
-                <option value="2026-08-31" selected>31 Aug 2026 (Latest)</option>
+                <option value="" disabled selected>⏳ Loading sessions...</option>
               </select>
+
             </label>
             <label>
               <span>Custom Date</span>
@@ -1815,257 +2327,271 @@
           <button type="button" id="smJumpToIndicesBtn" class="sm-index-link-btn">Open Index Report ➜</button>
         </div>
 
-        <!-- Row 1: Top 3 Institutional KPI Cards -->
-        <div class="sm-kpi-grid">
+        <!-- Row 1: Top 4 Institutional KPI Cards -->
+        <div class="sm-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 16px;">
           
-          <!-- Card 1: FII Future Long/Short Ratio Gauge -->
-          <div class="sm-card sm-fii-gauge-card">
-            <div class="sm-card-header">
-              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <span class="sm-card-title">🦅 FII Index Futures Long/Short Stance</span>
-                <span class="stats-badge" id="smFiiZoneBadge">BALANCED (50%)</span>
+          <!-- Card 1: Total Institutional Net Flow (FII + DII) -->
+          <div class="sm-card" style="background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+            <div class="sm-card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; margin-bottom: 10px;">
+              <span class="sm-card-title" style="font-size: 12.5px; font-weight: 800; color: var(--text-primary);">🏛️ TOTAL INSTITUTIONAL NET</span>
+              <span class="stats-badge bullish" id="p1FiiBadgeTotal">INFLOW</span>
+            </div>
+            <div style="padding: 4px 0;">
+              <div id="p1FiiValTotal" style="font-size: 22px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--green);">+₹2,221.07 Cr</div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">Combined Cash Flow: <strong style="color: var(--text-secondary);">FII + DII Net</strong></div>
+            </div>
+          </div>
+
+          <!-- Card 2: FII / FPI Cash Flow -->
+          <div class="sm-card" style="background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+            <div class="sm-card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; margin-bottom: 10px;">
+              <span class="sm-card-title" style="font-size: 12.5px; font-weight: 800; color: var(--text-primary);">🦅 FII / FPI CASH FLOW</span>
+              <span class="stats-badge bearish" id="p1FiiBadgeFii">SELLERS</span>
+            </div>
+            <div style="padding: 4px 0;">
+              <div id="p1FiiValFii" style="font-size: 22px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--red);">-₹576.20 Cr</div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
+                Buy: <strong id="p1FiiBuyVal" style="color: var(--text-secondary);">₹10,637 Cr</strong> | Sell: <strong id="p1FiiSellVal" style="color: var(--text-secondary);">₹11,213 Cr</strong>
               </div>
             </div>
-            
+          </div>
+
+          <!-- Card 3: DII Domestic Cash Flow -->
+          <div class="sm-card" style="background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+            <div class="sm-card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; margin-bottom: 10px;">
+              <span class="sm-card-title" style="font-size: 12.5px; font-weight: 800; color: var(--text-primary);">🏦 DII DOMESTIC CASH FLOW</span>
+              <span class="stats-badge bullish" id="p1FiiBadgeDii">BUYERS</span>
+            </div>
+            <div style="padding: 4px 0;">
+              <div id="p1FiiValDii" style="font-size: 22px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--green);">+₹2,797.27 Cr</div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
+                Buy: <strong id="p1DiiBuyVal" style="color: var(--text-secondary);">₹14,098 Cr</strong> | Sell: <strong id="p1DiiSellVal" style="color: var(--text-secondary);">₹11,301 Cr</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: FII Futures Stance -->
+          <div class="sm-card sm-fii-gauge-card" style="background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+            <div class="sm-card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; margin-bottom: 10px;">
+              <span class="sm-card-title" style="font-size: 12.5px; font-weight: 800; color: var(--text-primary);">📊 FII INDEX FUTURES STANCE</span>
+              <span class="stats-badge" id="smFiiZoneBadge">BALANCED</span>
+            </div>
             <div class="sm-gauge-body">
-              <div class="sm-gauge-ratio-numbers">
+              <div class="sm-gauge-ratio-numbers" style="display:flex; justify-content:space-between; margin-bottom:6px;">
                 <div>
-                  <span class="ratio-label" style="color:#16a34a;">LONG</span>
-                  <strong class="ratio-val" id="smFiiLongPct">--%</strong>
+                  <span class="ratio-label" style="font-size:11px; font-weight:700; color:var(--green);">LONG</span>
+                  <strong class="ratio-val" id="smFiiLongPct" style="font-family:'JetBrains Mono'; font-size:16px;">50.0%</strong>
                 </div>
                 <div style="text-align:right;">
-                  <span class="ratio-label" style="color:#dc2626;">SHORT</span>
-                  <strong class="ratio-val" id="smFiiShortPct">--%</strong>
+                  <span class="ratio-label" style="font-size:11px; font-weight:700; color:var(--red);">SHORT</span>
+                  <strong class="ratio-val" id="smFiiShortPct" style="font-family:'JetBrains Mono'; font-size:16px;">50.0%</strong>
                 </div>
               </div>
+              <div class="sm-split-bar-wrap" style="height: 6px; border-radius: 4px; overflow: hidden; background: rgba(128,128,128,0.2); display: flex; margin-bottom:6px;">
+                <div class="sm-split-bar-long" id="smFiiBarLong" style="width: 50%; background: var(--green); height: 100%;"></div>
+                <div class="sm-split-bar-short" id="smFiiBarShort" style="width: 50%; background: var(--red); height: 100%;"></div>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between;">
+                <span>Net: <strong id="smFiiNetFut" style="color:var(--primary); font-family:'JetBrains Mono';">-- contracts</strong></span>
+                <span>Val: <strong id="smFiiNetValCr" style="color:var(--text-secondary); font-family:'JetBrains Mono';">₹-- Cr</strong></span>
+              </div>
+              <div id="smFiiZoneDesc" style="font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;"></div>
 
-              <!-- Visual Split Ratio Bar -->
-              <div class="sm-split-bar-wrap">
-                <div class="sm-split-bar-long" id="smFiiBarLong" style="width: 50%;"></div>
-                <div class="sm-split-bar-short" id="smFiiBarShort" style="width: 50%;"></div>
-              </div>
-
-              <div class="sm-metric-subrow">
-                <span>Net Index Futures:</span>
-                <strong id="smFiiNetFut" style="color:#2563eb;">-- contracts</strong>
-                <span style="color:var(--text-muted);">|</span>
-                <span>Value:</span>
-                <strong id="smFiiNetValCr">₹-- Cr</strong>
-              </div>
-
-              <div class="sm-zone-desc" id="smFiiZoneDesc">
-                FII long/short exposure is in equilibrium.
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 2: Smart Money vs Retail Trap Radar -->
-          <div class="sm-card sm-trap-card">
-            <div class="sm-card-header">
-              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <span class="sm-card-title">🪤 Smart Money vs Retail Trap Radar</span>
-                <span class="stats-badge" id="smTrapBadge">BALANCED</span>
-              </div>
-            </div>
-            
-            <div class="sm-trap-body">
-              <h4 class="sm-trap-title" id="smTrapTitle">Institutional Positioning Stance</h4>
-              <p class="sm-trap-desc" id="smTrapDesc">Analyzing open interest positions across smart money and retail clients.</p>
-
-              <!-- Clash Mini Grid -->
-              <div class="sm-clash-grid">
-                <div class="sm-clash-box">
-                  <span class="clash-label">Retail (Client) Calls:</span>
-                  <strong id="smClientCalls">--</strong>
-                </div>
-                <div class="sm-clash-box">
-                  <span class="clash-label">Smart Money Calls:</span>
-                  <strong id="smSmartCalls">--</strong>
-                </div>
-                <div class="sm-clash-box">
-                  <span class="clash-label">Retail (Client) Puts:</span>
-                  <strong id="smClientPuts">--</strong>
-                </div>
-                <div class="sm-clash-box">
-                  <span class="clash-label">Smart Money Puts:</span>
-                  <strong id="smSmartPuts">--</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 3: Tomorrow's Institutional Gameplan -->
-          <div class="sm-card sm-gameplan-card">
-            <div class="sm-card-header">
-              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <span class="sm-card-title">🎯 Tomorrow's Desk Gameplan</span>
-                <span class="stats-badge" id="smGameplanBias">BULLISH BIAS</span>
-              </div>
-            </div>
-            
-            <div class="sm-gameplan-body">
-              <div class="sm-gameplan-rule">
-                <strong>🏛️ FII Trading Stance:</strong>
-                <p id="smGameplanSummary">FIIs carrying net long positions. Dips towards support are likely to be defended.</p>
-              </div>
-
-              <div class="sm-gameplan-bullets">
-                <div class="gp-bullet"><span>💡 <strong>Call Buying Advice:</strong> Never buy calls when Retail is &gt; 2.5L long calls and FII is net short calls.</span></div>
-                <div class="gp-bullet"><span>⚡ <strong>Short Squeeze Zone:</strong> If FII Long % drops below 18%, aggressive put writing / buying call spreads yields highest risk-reward.</span></div>
-              </div>
             </div>
           </div>
 
         </div>
 
-        <!-- Row: Intraday Trade Shift & Action Highlights across Participants -->
-        <div style="margin: 20px 0 16px 0;">
-          <h4 style="margin: 0 0 10px 0; font-size: 15px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
-            <span>⚡ Intraday Trades &amp; Net Position Shifts (Din Bhar me Participant Trades)</span>
-          </h4>
-          
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
-            
-            <!-- FII Intraday Action Card -->
-            <div class="sm-card" style="padding: 16px; background: #0c121e; border: 1px solid #1e293d; border-radius: 10px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-weight: 800; font-size: 13px; color: #38bdf8;">🦅 FII (Foreign Institutional)</span>
+        <!-- FII / DII Desk Sub-Navigation Tabs -->
+        <div class="fii-dii-subtabs" style="display:flex; gap:10px; margin-bottom:14px; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; flex-wrap:wrap;">
+          <button type="button" id="btnFiiSubtabCash" class="ctrl-btn fii-dii-subtab-btn active" style="font-weight:700; font-size:12px; padding:7px 16px; cursor:pointer;">💵 Cash Market Flow</button>
+          <button type="button" id="btnFiiSubtabDeriv" class="ctrl-btn fii-dii-subtab-btn" style="font-weight:700; font-size:12px; padding:7px 16px; cursor:pointer;">⚡ F&amp;O Institutional Flow</button>
+          <button type="button" id="btnFiiSubtabOi" class="ctrl-btn fii-dii-subtab-btn" style="font-weight:700; font-size:12px; padding:7px 16px; cursor:pointer;">📋 Open Interest Matrix</button>
+        </div>
+
+        <!-- ================================================================
+             Sub-Tab 1: Cash Market Flow (Default)
+             ================================================================ -->
+        <div id="p1FiiSubtabCash" class="fii-dii-subpanel" style="display:block;">
+          <div class="sm-card sm-table-card" style="margin-bottom: 16px; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+            <div class="sm-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px; margin-bottom: 12px;">
+              <div>
+                <h4 style="margin: 0; font-size: 14.5px; font-weight: 800; color: var(--text-primary);">📊 FII / FPI &amp; DII Cash Market Daily Net Flow</h4>
+                <span class="matrix-subtitle" style="font-size: 11.5px; color: var(--text-muted);">Official daily turnover figures in ₹ Crores reported by NSE</span>
               </div>
-              <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
-                • Futures Shift: <strong id="smFiiFutShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Calls (CE) Shift: <strong id="smFiiCallShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Puts (PE) Shift: <strong id="smFiiPutShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Stock Futures: <strong id="smFiiStkShift" style="font-family:'JetBrains Mono';">--</strong>
-              </div>
-              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #162032; font-size: 11px; font-weight: 700; color: #f59e0b;" id="smFiiActionSummary">
-                Analyzing FII intraday order flow...
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="text" id="p1FiiTableSearch" placeholder="🔍 Filter date..." style="padding: 6px 12px; font-size: 11.5px; border-radius: 6px; border: 1px solid var(--border-default); background: var(--input-bg); color: var(--input-text); outline: none;">
+                <button id="p1FiiExportBtn" class="ctrl-btn" type="button" style="padding: 6px 12px; font-size: 11.5px; cursor: pointer;">📥 Export CSV</button>
               </div>
             </div>
-
-            <!-- PRO Intraday Action Card -->
-            <div class="sm-card" style="padding: 16px; background: #0c121e; border: 1px solid #1e293d; border-radius: 10px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-weight: 800; font-size: 13px; color: #a855f7;">🏢 PRO (Proprietary Desks)</span>
-              </div>
-              <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
-                • Futures Shift: <strong id="smProFutShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Calls (CE) Shift: <strong id="smProCallShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Puts (PE) Shift: <strong id="smProPutShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Stock Futures: <strong id="smProStkShift" style="font-family:'JetBrains Mono';">--</strong>
-              </div>
-              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #162032; font-size: 11px; font-weight: 700; color: #f59e0b;" id="smProActionSummary">
-                Analyzing Proprietary desk trades...
-              </div>
+            <div class="wpcr-table-wrap" style="overflow-x: auto; max-height: 420px;">
+              <table class="wpcr-data-table sm-table" id="p1FiiCashTable" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th style="text-align: left; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Date</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">NIFTY 50</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Combined Net (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">FII Buy (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">FII Sell (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">FII Net (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">DII Buy (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">DII Sell (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">DII Net (₹ Cr)</th>
+                  </tr>
+                </thead>
+                <tbody id="p1FiiCashTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
             </div>
-
-            <!-- CLIENT Intraday Action Card -->
-            <div class="sm-card" style="padding: 16px; background: #0c121e; border: 1px solid #1e293d; border-radius: 10px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-weight: 800; font-size: 13px; color: #f59e0b;">👤 CLIENT (Retail Traders)</span>
-              </div>
-              <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
-                • Futures Shift: <strong id="smClientFutShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Calls (CE) Shift: <strong id="smClientCallShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Puts (PE) Shift: <strong id="smClientPutShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Stock Futures: <strong id="smClientStkShift" style="font-family:'JetBrains Mono';">--</strong>
-              </div>
-              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #162032; font-size: 11px; font-weight: 700; color: #f59e0b;" id="smClientActionSummary">
-                Analyzing Retail intraday trades...
-              </div>
-            </div>
-
-            <!-- DII Intraday Action Card -->
-            <div class="sm-card" style="padding: 16px; background: #0c121e; border: 1px solid #1e293d; border-radius: 10px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-weight: 800; font-size: 13px; color: #10b981;">🏛️ DII (Domestic Inst)</span>
-              </div>
-              <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
-                • Futures Shift: <strong id="smDiiFutShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Calls (CE) Shift: <strong id="smDiiCallShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Puts (PE) Shift: <strong id="smDiiPutShift" style="font-family:'JetBrains Mono';">--</strong><br>
-                • Stock Futures: <strong id="smDiiStkShift" style="font-family:'JetBrains Mono';">--</strong>
-              </div>
-              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #162032; font-size: 11px; font-weight: 700; color: #f59e0b;" id="smDiiActionSummary">
-                Analyzing Domestic institutional trades...
-              </div>
-            </div>
-
           </div>
         </div>
 
-        <!-- Row 2: Participant-Wise Detailed Breakdown Matrix Table -->
-        <div class="sm-card sm-table-card" style="margin-top: 16px;">
-          <div class="sm-card-header">
-            <h4>📋 Official NSE Participant-Wise Open Interest Matrix</h4>
-            <span class="matrix-subtitle">Complete daily audit of Index Futures, Index Calls, Index Puts, and Stock Futures across all 4 market segments</span>
-          </div>
+        <!-- ================================================================
+             Sub-Tab 2: F&O Institutional Flow (NEW Detailed Derivatives Desk)
+             ================================================================ -->
+        <div id="p1FiiSubtabDeriv" class="fii-dii-subpanel" style="display:none;">
           
-          <div class="wpcr-table-wrap" style="overflow-x: auto;">
-            <table class="wpcr-data-table sm-table" id="smParticipantTable">
-              <thead>
-                <tr>
-                  <th rowspan="2" style="vertical-align:middle;">Participant</th>
-                  <th colspan="4" style="text-align:center; background:#162032; border-bottom:1px solid #26334d; color:#38bdf8;">Index Futures</th>
-                  <th colspan="4" style="text-align:center; background:#064e3b; border-bottom:1px solid #047857; color:#34d399;">Index Calls (CE)</th>
-                  <th colspan="4" style="text-align:center; background:#881337; border-bottom:1px solid #be123c; color:#fb7185;">Index Puts (PE)</th>
-                  <th colspan="3" style="text-align:center; background:#162032; border-bottom:1px solid #26334d;">Stock Futures</th>
-                  <th rowspan="2" style="vertical-align:middle;">Intraday Trade Action</th>
-                  <th rowspan="2" style="vertical-align:middle;">Desk Stance</th>
-                </tr>
-                <tr>
-                  <th>Long</th>
-                  <th>Short</th>
-                  <th>Net Fut</th>
-                  <th style="color:#38bdf8;">Fut Shift</th>
-                  <th style="color:#10b981;">Long</th>
-                  <th style="color:#ef4444;">Short</th>
-                  <th>Net CE</th>
-                  <th style="color:#34d399;">CE Shift</th>
-                  <th style="color:#10b981;">Long</th>
-                  <th style="color:#ef4444;">Short</th>
-                  <th>Net PE</th>
-                  <th style="color:#fb7185;">PE Shift</th>
-                  <th>Long</th>
-                  <th>Short</th>
-                  <th style="color:#38bdf8;">Stk Shift</th>
-                </tr>
-              </thead>
-              <tbody id="smParticipantTableBody">
-                <!-- Populated dynamically -->
-              </tbody>
-            </table>
+          <!-- F&O Summary KPI Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 16px;">
+            <!-- Card 1: FII Index Futures Flow -->
+            <div class="sm-card" style="background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; margin-bottom: 10px;">
+                <span style="font-size: 12px; font-weight: 800; color: var(--text-primary);">📊 FII INDEX FUTURES NET</span>
+                <span class="stats-badge bearish" id="p1FiiFutBadge">SELLERS</span>
+              </div>
+              <div id="p1FiiFutNetVal" style="font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--red);">-₹328.08 Cr</div>
+              <div id="p1FiiFutSub" style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">Buy: ₹1,816 Cr | Sell: ₹2,144 Cr</div>
+            </div>
+
+            <!-- Card 2: FII Stock Futures Flow -->
+            <div class="sm-card" style="background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; margin-bottom: 10px;">
+                <span style="font-size: 12px; font-weight: 800; color: var(--text-primary);">📈 FII STOCK FUTURES NET</span>
+                <span class="stats-badge bullish" id="p1FiiStkBadge">BUYERS</span>
+              </div>
+              <div id="p1FiiStkNetVal" style="font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--green);">+₹15.65 Cr</div>
+              <div id="p1FiiStkSub" style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">Buy: ₹13,876 Cr | Sell: ₹13,860 Cr</div>
+            </div>
+
+            <!-- Card 3: FII Index Options Flow -->
+            <div class="sm-card" style="background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; margin-bottom: 10px;">
+                <span style="font-size: 12px; font-weight: 800; color: var(--text-primary);">⚡ FII INDEX OPTIONS NET</span>
+                <span class="stats-badge bullish" id="p1FiiOptBadge">INFLOW</span>
+              </div>
+              <div id="p1FiiOptNetVal" style="font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--green);">+₹2,589.69 Cr</div>
+              <div id="p1FiiOptSub" style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">Nifty: +₹2,442 Cr | BankNifty: +₹40 Cr</div>
+            </div>
+
+            <!-- Card 4: DII Option Hedging Stance -->
+            <div class="sm-card" style="background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px; margin-bottom: 10px;">
+                <span style="font-size: 12px; font-weight: 800; color: var(--text-primary);">🛡️ DII DERIVATIVES HEDGE</span>
+                <span class="stats-badge bullish" id="p1DiiHedgeBadge">PE BUYERS</span>
+              </div>
+              <div id="p1DiiHedgeNetVal" style="font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--green);">+12,275 Puts</div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">Downside Protection &amp; Risk Hedging</div>
+            </div>
           </div>
+
+          <!-- Table 1: Index-Wise Futures & Options Turnover (₹ Crores) -->
+          <div class="sm-card sm-table-card" style="margin-bottom: 16px; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+            <div class="sm-card-header" style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px; margin-bottom: 12px;">
+              <h4 style="margin: 0; font-size: 14.5px; font-weight: 800; color: var(--text-primary);">🏛️ Index-Wise FII Futures &amp; Options Turnover Breakdown</h4>
+              <span class="matrix-subtitle" style="font-size: 11.5px; color: var(--text-muted);">Official turnover in ₹ Crores across Nifty 50, Bank Nifty, Midcap Nifty, and Fin Nifty</span>
+            </div>
+            <div class="wpcr-table-wrap" style="overflow-x: auto;">
+              <table class="wpcr-data-table sm-table" id="p1FiiIndexDerivTable" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th style="text-align: left; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Index</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--cyan); border-bottom: 1px solid var(--table-border);">Fut Buy (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--cyan); border-bottom: 1px solid var(--table-border);">Fut Sell (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--cyan); border-bottom: 1px solid var(--table-border);">Fut Net (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--green); border-bottom: 1px solid var(--table-border);">Opt Buy (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--red); border-bottom: 1px solid var(--table-border);">Opt Sell (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Opt Net (₹ Cr)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Total F&amp;O Net (₹ Cr)</th>
+                  </tr>
+                </thead>
+                <tbody id="p1FiiIndexDerivTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Table 2: Participant Call (CE) vs Put (PE) Day Volume Flow -->
+          <div class="sm-card sm-table-card" style="background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+            <div class="sm-card-header" style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px; margin-bottom: 12px;">
+              <h4 style="margin: 0; font-size: 14.5px; font-weight: 800; color: var(--text-primary);">🎯 Participant-Wise Daily Trading Action (Calls vs Puts Volume Flow)</h4>
+              <span class="matrix-subtitle" style="font-size: 11.5px; color: var(--text-muted);">Total contracts bought and sold today across FII, DII, Client, and Pro desks</span>
+            </div>
+            <div class="wpcr-table-wrap" style="overflow-x: auto;">
+              <table class="wpcr-data-table sm-table" id="p1FiiParticipantVolTable" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th style="text-align: left; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Participant</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--green); border-bottom: 1px solid var(--table-border);">Call Buy (CE)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--red); border-bottom: 1px solid var(--table-border);">Call Sell (CE)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--cyan); border-bottom: 1px solid var(--table-border);">Net CE Shift</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--green); border-bottom: 1px solid var(--table-border);">Put Buy (PE)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--red); border-bottom: 1px solid var(--table-border);">Put Sell (PE)</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--cyan); border-bottom: 1px solid var(--table-border);">Net PE Shift</th>
+                    <th style="text-align: right; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Index Fut Net</th>
+                    <th style="text-align: center; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Daily Action</th>
+                  </tr>
+                </thead>
+                <tbody id="p1FiiParticipantVolTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Row 3: Official Major Indices Cash Delivery Absorption Benchmark Table -->
-        <div class="sm-card sm-table-card" style="margin-top: 16px;">
-          <div class="sm-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-            <div>
-              <h4 style="margin:0; font-size:15px; font-weight:800; color:#0f172a;">🏢 Major Indices Cash Delivery Absorption &amp; Delivery Averages (EOD)</h4>
-              <span class="matrix-subtitle">Institutional Demat absorption benchmarks across Nifty 50, Bank Nifty, IT, Auto, FMCG, Metal, Pharma, Energy, and FinNifty</span>
+        <!-- ================================================================
+             Sub-Tab 3: Official NSE Participant-Wise Open Interest Matrix
+             ================================================================ -->
+        <div id="p1FiiSubtabOi" class="fii-dii-subpanel" style="display:none;">
+          <div class="sm-card sm-table-card" style="background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
+            <div class="sm-card-header" style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px; margin-bottom: 12px;">
+              <h4 style="margin: 0; font-size: 14.5px; font-weight: 800; color: var(--text-primary);">📋 Official NSE Derivatives Participant Matrix (F&amp;O Open Interest)</h4>
+              <span class="matrix-subtitle" style="font-size: 11.5px; color: var(--text-muted);">EOD audit of Index Futures, Index Calls, Index Puts, and Stock Futures across FII, DII, Pro &amp; Client</span>
             </div>
-            <span class="badge-tag" style="background:#eff6ff; color:#1d4ed8; font-weight:700; border:1px solid #bfdbfe;">NSE Cash Bhavcopy EOD</span>
-          </div>
-          
-          <div class="wpcr-table-wrap" style="overflow-x: auto;">
-            <table class="wpcr-data-table sm-table" id="smIndicesDeliveryTable">
-              <thead>
-                <tr>
-                  <th>Major Index</th>
-                  <th>Stocks</th>
-                  <th>Day Delivery %</th>
-                  <th>5-Day Delivery Avg</th>
-                  <th>Volume Surge / Shock</th>
-                  <th>Cash Delivery Turnover</th>
-                  <th>Total Traded Turnover</th>
-                  <th>Acc / Dist Count</th>
-                  <th>Institutional Absorption Stance</th>
-                </tr>
-              </thead>
-              <tbody id="smIndicesDeliveryTableBody">
-                <!-- Populated dynamically -->
-              </tbody>
-            </table>
+            <div class="wpcr-table-wrap" style="overflow-x: auto;">
+              <table class="wpcr-data-table sm-table" id="smParticipantTable" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th rowspan="2" style="vertical-align:middle; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Participant</th>
+                    <th colspan="3" style="text-align:center; padding: 8px 10px; background: var(--table-th-bg); color: var(--cyan); border-bottom: 1px solid var(--table-border);">Index Futures</th>
+                    <th colspan="3" style="text-align:center; padding: 8px 10px; background: var(--table-th-bg); color: var(--green); border-bottom: 1px solid var(--table-border);">Index Calls (CE)</th>
+                    <th colspan="3" style="text-align:center; padding: 8px 10px; background: var(--table-th-bg); color: var(--red); border-bottom: 1px solid var(--table-border);">Index Puts (PE)</th>
+                    <th colspan="3" style="text-align:center; padding: 8px 10px; background: var(--table-th-bg); color: var(--cyan); border-bottom: 1px solid var(--table-border);">Stock Futures</th>
+                    <th rowspan="2" style="vertical-align:middle; text-align:center; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Desk Stance</th>
+                  </tr>
+                  <tr>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Long</th>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Short</th>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--cyan);">Net Fut</th>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--green);">Long</th>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--red);">Short</th>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Net CE</th>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--green);">Long</th>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--red);">Short</th>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Net PE</th>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Long</th>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Short</th>
+                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--cyan);">Net Stk</th>
+                  </tr>
+                </thead>
+                <tbody id="smParticipantTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -2082,8 +2608,9 @@
             <label>
               <span>Trading Session</span>
               <select id="delivSessionSelect" class="ctrl-select" style="font-weight:700; min-width:160px;">
-                <option value="2026-08-31" selected>31 Aug 2026 (Latest)</option>
+                <option value="" disabled selected>⏳ Loading sessions...</option>
               </select>
+
             </label>
             <label>
               <span>Custom Date</span>
@@ -3254,6 +3781,13 @@
               </div>
             </div>
 
+            <!-- Official T+1 Schedule Notice -->
+            <div style="font-size:11px; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:7px 12px; margin-top:10px; display:flex; align-items:center; gap:8px;">
+              <span style="font-size:13px;">ℹ️</span>
+              <span><strong>Official NSE Regulatory Schedule:</strong> Brokers report MTF books on a <strong>T+1 settlement schedule</strong>. As of today morning (22 Sep), the latest official disclosure published by NSE is <strong>18 Sep 2026</strong>. Monday (21 Sep) data is compiled and released by NSE today afternoon/evening.</span>
+            </div>
+
+
             <!-- Historical Multi-Session Trend Chart -->
             <div class="mta-section" style="margin-top:14px;padding:12px 14px;box-shadow:none;border:1px solid #e2e8f0;">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -3863,7 +4397,9 @@
       </footer>
     </main>
 
-    <script src="/app.js?v=20260921_v6"></script>
+    <script src="/app.js?v=20260922_v12"></script>
+    <script src="/upstox_chain.js?v=20260922_v1"></script>
+    <script src="/futures_desk.js?v=20260922_v1"></script>
     <script src="/auth_sync.js?v=20260919_v1"></script>
   </body>
 </html>

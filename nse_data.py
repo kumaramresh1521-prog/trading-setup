@@ -54,19 +54,18 @@ def fetch_nse_participant_oi_csv(d: date) -> Optional[str]:
         with open(local_path, "r", encoding="utf-8", errors="ignore") as f:
             return f.read()
             
-    # For dates that need downloading
-    if d.year <= 2025:
-        url = f"https://archives.nseindia.com/content/nsccl/fao_participant_oi_{d_str}.csv"
-        try:
-            req = urllib.request.Request(url, headers=HEADERS)
-            with urllib.request.urlopen(req, timeout=1.5) as resp:
-                content = resp.read().decode("utf-8", errors="ignore")
-                if "Client Type" in content:
-                    with open(local_path, "w", encoding="utf-8") as f:
-                        f.write(content)
-                    return content
-        except Exception:
-            pass
+    # Try to download from NSE archives (works for all years)
+    url = f"https://archives.nseindia.com/content/nsccl/fao_participant_oi_{d_str}.csv"
+    try:
+        req = urllib.request.Request(url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            content = resp.read().decode("utf-8", errors="ignore")
+            if "Client Type" in content:
+                with open(local_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                return content
+    except Exception:
+        pass
         
     latest_real = os.path.join(CACHE_DIR, "fao_participant_oi_14082024.csv")
     if os.path.exists(latest_real):
@@ -82,18 +81,18 @@ def fetch_nse_bhavcopy_csv(d: date) -> Optional[str]:
         with open(local_path, "r", encoding="utf-8", errors="ignore") as f:
             return f.read()
             
-    if d.year <= 2025:
-        url = f"https://archives.nseindia.com/products/content/sec_bhavdata_full_{d_str}.csv"
-        try:
-            req = urllib.request.Request(url, headers=HEADERS)
-            with urllib.request.urlopen(req, timeout=1.5) as resp:
-                content = resp.read().decode("utf-8", errors="ignore")
-                if "SYMBOL" in content:
-                    with open(local_path, "w", encoding="utf-8") as f:
-                        f.write(content)
-                    return content
-        except Exception:
-            pass
+    # Try to download from NSE archives (works for all years)
+    url = f"https://archives.nseindia.com/products/content/sec_bhavdata_full_{d_str}.csv"
+    try:
+        req = urllib.request.Request(url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            content = resp.read().decode("utf-8", errors="ignore")
+            if "SYMBOL" in content:
+                with open(local_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                return content
+    except Exception:
+        pass
         
     latest_real = os.path.join(CACHE_DIR, "sec_bhavdata_full_14082024.csv")
     if os.path.exists(latest_real):
@@ -109,18 +108,18 @@ def fetch_nse_index_close_csv(d: date) -> Optional[str]:
         with open(local_path, "r", encoding="utf-8", errors="ignore") as f:
             return f.read()
             
-    if d.year <= 2025:
-        url = f"https://archives.nseindia.com/content/indices/ind_close_all_{d_str}.csv"
-        try:
-            req = urllib.request.Request(url, headers=HEADERS)
-            with urllib.request.urlopen(req, timeout=1.5) as resp:
-                content = resp.read().decode("utf-8", errors="ignore")
-                if "Index Name" in content:
-                    with open(local_path, "w", encoding="utf-8") as f:
-                        f.write(content)
-                    return content
-        except Exception:
-            pass
+    # Try to download from NSE archives (works for all years)
+    url = f"https://archives.nseindia.com/content/indices/ind_close_all_{d_str}.csv"
+    try:
+        req = urllib.request.Request(url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            content = resp.read().decode("utf-8", errors="ignore")
+            if "Index Name" in content:
+                with open(local_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                return content
+    except Exception:
+        pass
         
     latest_real = os.path.join(CACHE_DIR, "ind_close_all_14082024.csv")
     if os.path.exists(latest_real):

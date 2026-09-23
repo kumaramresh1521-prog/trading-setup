@@ -362,6 +362,169 @@
         border: 1px solid rgba(239, 68, 68, 0.3);
         color: #f87171;
       }
+
+      /* System Health & Diagnostics Grid */
+      .diag-hero-banner {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(11, 19, 41, 0.85) 100%);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 12px;
+        padding: 22px 26px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      }
+      .diag-hero-banner.has-issue {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(11, 19, 41, 0.85) 100%);
+        border-color: rgba(239, 68, 68, 0.35);
+      }
+      .diag-hero-banner.has-warn {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(11, 19, 41, 0.85) 100%);
+        border-color: rgba(245, 158, 11, 0.35);
+      }
+      .diag-hero-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .diag-hero-icon {
+        font-size: 36px;
+        line-height: 1;
+      }
+      .diag-hero-title {
+        font-size: 18px;
+        font-weight: 800;
+        margin: 0 0 4px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .diag-hero-desc {
+        margin: 0;
+        font-size: 13px;
+        color: var(--adm-muted);
+      }
+      .diag-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 18px;
+        margin-bottom: 24px;
+      }
+      .diag-card {
+        background: #080f22;
+        border: 1px solid var(--adm-border);
+        border-radius: 10px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+      }
+      .diag-card:hover {
+        border-color: rgba(96, 165, 250, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      }
+      .diag-card.pass {
+        border-left: 4px solid var(--adm-success);
+      }
+      .diag-card.warn {
+        border-left: 4px solid var(--adm-warning);
+      }
+      .diag-card.fail {
+        border-left: 4px solid var(--adm-danger);
+      }
+      .diag-card.info {
+        border-left: 4px solid var(--adm-primary);
+      }
+      .diag-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+      }
+      .diag-card-title-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .diag-card-icon {
+        font-size: 20px;
+      }
+      .diag-card-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: #f8fafc;
+        margin: 0;
+      }
+      .diag-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        letter-spacing: 0.3px;
+      }
+      .diag-badge.pass {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+      .diag-badge.warn {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+      .diag-badge.fail {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+      .diag-badge.info {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+      .diag-card-summary {
+        font-size: 13px;
+        font-weight: 600;
+        color: #e2e8f0;
+        margin-bottom: 8px;
+        line-height: 1.4;
+      }
+      .diag-card-detail {
+        font-size: 11.5px;
+        color: #94a3b8;
+        background: #040814;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-family: 'JetBrains Mono', monospace;
+        line-height: 1.5;
+        margin-bottom: 12px;
+        word-break: break-word;
+      }
+      .diag-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: var(--adm-muted);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 10px;
+      }
+      .diag-latency-pill {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10.5px;
+        padding: 2px 7px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.05);
+      }
     </style>
   </head>
   <body>
@@ -428,11 +591,42 @@
         <section id="panelTelemetry" class="admin-panel-view active">
           <div class="admin-header">
             <div>
-              <h1>📊 System Telemetry &amp; Health</h1>
-              <p>Real-time server uptime, background daemons, and cloud synchronization status.</p>
+              <h1>📊 System Health &amp; Diagnostics</h1>
+              <p>Live health verification, integrity audit across all desks, and automated tick mark status indicators.</p>
             </div>
-            <button type="button" class="btn-adm-primary" onclick="loadTelemetry()">🔄 Refresh Stats</button>
+            <div style="display:flex; gap:10px;">
+              <button type="button" class="btn-adm-primary" id="btnRunDiagnostics" onclick="loadDiagnostics()">🧪 Run Live Diagnostics</button>
+              <button type="button" class="btn-adm-danger" onclick="loadTelemetry()">🔄 Refresh Stats</button>
+            </div>
           </div>
+
+          <!-- Master Diagnostics Hero Banner -->
+          <div class="diag-hero-banner" id="diagHeroBanner">
+            <div class="diag-hero-left">
+              <span class="diag-hero-icon" id="diagHeroIcon">🟢</span>
+              <div>
+                <h3 class="diag-hero-title" id="diagHeroTitle">All Systems Operational <span style="font-size:12px; background:rgba(16,185,129,0.2); color:#34d399; padding:2px 8px; border-radius:12px;">Auditing...</span></h3>
+                <p class="diag-hero-desc" id="diagHeroDesc">Automated verification of market feeds, caches, and official NSE participant files.</p>
+              </div>
+            </div>
+            <div>
+              <button type="button" class="btn-adm-primary" onclick="loadDiagnostics()" style="padding:8px 16px; font-size:12px;">⚡ Re-Verify All Desks</button>
+            </div>
+          </div>
+
+          <!-- Live Diagnostic Service Cards (Tick Marks Grid) -->
+          <h3 style="font-size:15px; font-weight:700; margin:0 0 14px 0; color:#cbd5e1; display:flex; align-items:center; gap:8px;">
+            <span>🛡️ Real-Time Service Status Grid</span>
+            <span style="font-size:11px; font-weight:500; color:var(--adm-muted);">(Live integrity verification across all 8 core subsystems)</span>
+          </h3>
+          <div class="diag-grid" id="diagGrid">
+            <div style="grid-column: 1 / -1; padding:30px; text-align:center; color:var(--adm-muted); background:var(--adm-card); border-radius:10px; border:1px solid var(--adm-border);">
+              ⏳ Loading live system diagnostics...
+            </div>
+          </div>
+
+          <!-- Server Runtime Telemetry Grid -->
+          <h3 style="font-size:15px; font-weight:700; margin:24px 0 14px 0; color:#cbd5e1;">⚡ Server Telemetry &amp; Resources</h3>
 
           <div class="stat-grid">
             <div class="stat-box">
@@ -519,6 +713,95 @@
               </div>
               <small style="color:var(--adm-muted); font-size:11px; margin-top:4px; display:block;">Enter your live 6-digit TOTP code here for instant session authentication.</small>
             </div>
+          </div>
+
+          <!-- UPSTOX OPTION CHAIN API CARD -->
+          <div class="adm-card" style="border: 2px solid #10b981; margin-top:24px;">
+            <div class="adm-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="color:#34d399; margin:0;">⚡ Upstox API v2 (Dedicated Option Chain Desk)</h3>
+                <small style="color:var(--adm-muted);">Direct Upstox Option Chain, Live Greeks (Delta, Gamma, Theta, Vega, IV), Strikes &amp; Expiries</small>
+              </div>
+              <span id="admUpstoxBadge" class="p2-badge p2-badge-teal" style="font-size:11px; padding:4px 10px; background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3);">CHECKING...</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+              <div class="adm-form-group">
+                <label>Upstox API Key</label>
+                <input type="text" id="admUpstoxKey" class="adm-input" placeholder="e.g. 40184fd7-5d24-4aa0-aca3-..." />
+              </div>
+              <div class="adm-form-group">
+                <label>Upstox API Secret</label>
+                <input type="password" id="admUpstoxSecret" class="adm-input" placeholder="e.g. zgjtae0eae" />
+              </div>
+            </div>
+
+            <div class="adm-form-group">
+              <label>Upstox Daily OAuth Access Token (Bearer Token)</label>
+              <textarea id="admUpstoxToken" class="adm-textarea" style="min-height:75px; font-family:'JetBrains Mono',monospace; font-size:12px;" placeholder="Paste your active Upstox access token here (from Upstox Developer Portal)"></textarea>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; flex-wrap:wrap; gap:10px;">
+                <small style="color:var(--adm-muted); font-size:11px;">
+                  Generate or refresh this token daily at <a href="https://upstox.com/developer/api-documentation/" target="_blank" style="color:#60a5fa; text-decoration:none;">Upstox Developer Console ↗</a>
+                </small>
+                <div style="display:flex; gap:10px;">
+                  <button type="button" class="btn-adm-primary" onclick="testUpstoxConnection()" style="background:#10b981; padding:8px 16px; font-size:12px;">🧪 Test Upstox Option Chain Connection</button>
+                  <button type="button" class="btn-adm-primary" onclick="saveMasterBrokers()" style="padding:8px 16px; font-size:12px;">💾 Save Keys</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="upstoxTestResultBox" style="display:none; padding:12px 14px; border-radius:8px; font-size:12.5px; font-weight:600; margin-top:12px;"></div>
+          </div>
+
+          <!-- KOTAK NEO API CARD -->
+          <div class="adm-card" style="border: 2px solid #ef4444; margin-top:24px;">
+            <div class="adm-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="color:#f87171; margin:0;">⚡ Kotak Neo API (Futures &amp; Derivatives Engine)</h3>
+                <small style="color:var(--adm-muted);">Direct Exchange F&amp;O Feeds, Intraday Candles, Stock &amp; Index Futures Quotes</small>
+              </div>
+              <span id="admKotakBadge" class="p2-badge p2-badge-teal" style="font-size:11px; padding:4px 10px; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3);">CHECKING...</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+              <div class="adm-form-group">
+                <label>Kotak Neo API Consumer Key / Token</label>
+                <input type="text" id="admKotakConsumerKey" class="adm-input" placeholder="e.g. c722e2b7-a7d4-467a-921e-..." />
+                <small style="color:var(--adm-muted); font-size:11px;">From Kotak Neo App: Invest &gt; Trade API &gt; API Dashboard</small>
+              </div>
+              <div class="adm-form-group">
+                <label>Consumer Secret <span style="color:#94a3b8; font-weight:normal;">(Optional - Not needed in Neo v2)</span></label>
+                <input type="password" id="admKotakConsumerSecret" class="adm-input" placeholder="Leave blank if not provided in Neo v2" />
+                <small style="color:var(--adm-muted); font-size:11px;">Optional for Kotak Neo v2 users.</small>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="adm-form-group">
+                <label>Registered Mobile Number</label>
+                <input type="text" id="admKotakMobileNo" class="adm-input" placeholder="e.g. 9876543210" />
+              </div>
+              <div class="adm-form-group">
+                <label>Account MPIN (6-Digit)</label>
+                <input type="password" id="admKotakMpin" class="adm-input" placeholder="e.g. 123456" maxlength="6" />
+              </div>
+            </div>
+
+            <div class="adm-form-group">
+              <label>Daily Kotak Neo Access Token / Session Token (Bearer Token)</label>
+              <textarea id="admKotakToken" class="adm-textarea" style="min-height:70px; font-family:'JetBrains Mono',monospace; font-size:12px;" placeholder="Paste your active Kotak Neo Bearer / Access token here"></textarea>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; flex-wrap:wrap; gap:10px;">
+                <small style="color:var(--adm-muted); font-size:11px;">
+                  Manage credentials on <a href="https://neo.kotaksecurities.com/" target="_blank" style="color:#60a5fa; text-decoration:none;">Kotak Neo Developer Portal ↗</a>
+                </small>
+                <div style="display:flex; gap:10px;">
+                  <button type="button" class="btn-adm-primary" onclick="testKotakConnection()" style="background:#ef4444; padding:8px 16px; font-size:12px;">🧪 Test Kotak Neo Connection</button>
+                  <button type="button" class="btn-adm-primary" onclick="saveMasterBrokers()" style="padding:8px 16px; font-size:12px;">💾 Save Keys</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="kotakTestResultBox" style="display:none; padding:12px 14px; border-radius:8px; font-size:12.5px; font-weight:600; margin-top:12px;"></div>
           </div>
         </section>
 
@@ -668,6 +951,7 @@
             document.getElementById('adminLockOverlay').style.display = 'none';
             document.getElementById('adminLayout').style.display = 'flex';
             loadTelemetry();
+            loadDiagnostics();
             loadMasterBrokers();
             loadSeoConfig();
           } else {
@@ -726,8 +1010,85 @@
         } catch(e) {}
       }
 
+      // Live Diagnostics Audit & Tick Marks
+      async function loadDiagnostics() {
+        const btn = document.getElementById('btnRunDiagnostics');
+        const heroBanner = document.getElementById('diagHeroBanner');
+        const heroIcon = document.getElementById('diagHeroIcon');
+        const heroTitle = document.getElementById('diagHeroTitle');
+        const heroDesc = document.getElementById('diagHeroDesc');
+        const grid = document.getElementById('diagGrid');
+
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '⏳ Auditing Services...';
+        }
+
+        try {
+          const res = await fetch('/api/admin/diagnostics', {
+            method: 'POST',
+            headers: getAuthHeaders()
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.message || 'Diagnostic failed');
+
+          // Update Hero Banner
+          const isHealthy = data.overallStatus === 'HEALTHY';
+          const isDegraded = data.overallStatus === 'DEGRADED';
+          heroBanner.className = 'diag-hero-banner ' + (isHealthy ? '' : (isDegraded ? 'has-warn' : 'has-issue'));
+          heroIcon.textContent = isHealthy ? '🟢' : (isDegraded ? '🟡' : '🔴');
+          heroTitle.innerHTML = isHealthy
+            ? `<span>All Systems Operational</span> <span style="font-size:12px; background:rgba(16,185,129,0.2); color:#34d399; padding:2px 8px; border-radius:12px;">${data.score}</span>`
+            : `<span>${isDegraded ? 'System Warnings Detected' : 'Attention Required'}</span> <span style="font-size:12px; background:rgba(239,68,68,0.2); color:#f87171; padding:2px 8px; border-radius:12px;">${data.score}</span>`;
+          heroDesc.textContent = `Last audited: ${data.timestamp} • Total response time: ${data.totalLatencyMs} ms`;
+
+          // Render Diagnostic Cards
+          grid.innerHTML = (data.checks || []).map(c => {
+            const st = (c.status || 'PASS').toLowerCase();
+            let badgeHtml = '';
+            if (st === 'pass') {
+              badgeHtml = `<span class="diag-badge pass">✅ ALL CLEAR</span>`;
+            } else if (st === 'warn') {
+              badgeHtml = `<span class="diag-badge warn">⚠️ ATTENTION</span>`;
+            } else if (st === 'fail') {
+              badgeHtml = `<span class="diag-badge fail">❌ ISSUE DETECTED</span>`;
+            } else {
+              badgeHtml = `<span class="diag-badge info">ℹ️ INFO</span>`;
+            }
+
+            return `
+              <div class="diag-card ${st}">
+                <div class="diag-card-top">
+                  <div class="diag-card-title-group">
+                    <span class="diag-card-icon">${c.icon || '⚡'}</span>
+                    <h4 class="diag-card-name">${c.name}</h4>
+                  </div>
+                  ${badgeHtml}
+                </div>
+                <div class="diag-card-summary">${c.summary}</div>
+                <div class="diag-card-detail">${c.detail}</div>
+                <div class="diag-card-footer">
+                  <span>${c.category}</span>
+                  <span class="diag-latency-pill">${c.latencyMs} ms</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          showAdmAlert(`✓ Diagnostic audit complete: ${data.score}`, 'success');
+        } catch(e) {
+          showAdmAlert('Diagnostic error: ' + e.message, 'error');
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '🧪 Run Live Diagnostics';
+          }
+        }
+      }
+
       // 2. Master Brokers
       // 2. Master Brokers (Angel One Primary)
+      // 2. Master Brokers (Angel One & Upstox Option Chain)
       async function loadMasterBrokers() {
         try {
           const res = await fetch('/api/admin/broker-config', { headers: getAuthHeaders() });
@@ -735,7 +1096,7 @@
           const data = await res.json();
           if (!data.ok) return;
 
-          // Angel
+          // Angel One
           if (data.angel) {
             document.getElementById('admAngelKey').value = data.angel.apiKey || '';
             document.getElementById('admAngelClient').value = data.angel.clientCode || '';
@@ -743,6 +1104,62 @@
             document.getElementById('admAngelTotp').value = data.angel.totpSecret || '';
             if (document.getElementById('admAngelTotpCode')) {
               document.getElementById('admAngelTotpCode').value = data.angel.totpCode || '';
+            }
+          }
+
+          // Upstox Option Chain
+          if (data.upstox) {
+            if (document.getElementById('admUpstoxKey')) {
+              document.getElementById('admUpstoxKey').value = data.upstox.apiKey || '';
+            }
+            if (document.getElementById('admUpstoxSecret')) {
+              document.getElementById('admUpstoxSecret').value = data.upstox.apiSecret || '';
+            }
+            if (document.getElementById('admUpstoxToken')) {
+              document.getElementById('admUpstoxToken').value = data.upstox.accessToken || '';
+            }
+            const b = document.getElementById('admUpstoxBadge');
+            if (b) {
+              if (data.upstox.configured) {
+                b.textContent = 'CONNECTED';
+                b.style.background = 'rgba(16, 185, 129, 0.2)';
+                b.style.color = '#34d399';
+              } else {
+                b.textContent = 'TOKEN NEEDED';
+                b.style.background = 'rgba(245, 158, 11, 0.2)';
+                b.style.color = '#fbbf24';
+              }
+            }
+          }
+
+          // Kotak Neo Derivatives Engine
+          if (data.kotak) {
+            if (document.getElementById('admKotakConsumerKey')) {
+              document.getElementById('admKotakConsumerKey').value = data.kotak.consumerKey || '';
+            }
+            if (document.getElementById('admKotakConsumerSecret')) {
+              document.getElementById('admKotakConsumerSecret').value = data.kotak.consumerSecret || '';
+            }
+            if (document.getElementById('admKotakMobileNo')) {
+              document.getElementById('admKotakMobileNo').value = data.kotak.mobileNo || '';
+            }
+            if (document.getElementById('admKotakMpin')) {
+              document.getElementById('admKotakMpin').value = data.kotak.mpin || '';
+            }
+            if (document.getElementById('admKotakToken')) {
+              document.getElementById('admKotakToken').value = data.kotak.accessToken || '';
+            }
+            const kb = document.getElementById('admKotakBadge');
+            if (kb) {
+              if (data.kotak.configured) {
+                kb.textContent = 'CONNECTED';
+                kb.style.background = 'rgba(16, 185, 129, 0.2)';
+                kb.style.color = '#34d399';
+              } else {
+                kb.textContent = 'KEYS NEEDED';
+                kb.style.background = 'rgba(239, 68, 68, 0.2)';
+                kb.style.color = '#f87171';
+              }
             }
           }
         } catch(e) {}
@@ -757,6 +1174,18 @@
             pin: document.getElementById('admAngelPin').value.trim(),
             totpSecret: document.getElementById('admAngelTotp').value.trim(),
             totpCode: (document.getElementById('admAngelTotpCode')?.value || '').trim()
+          },
+          upstox: {
+            apiKey: (document.getElementById('admUpstoxKey')?.value || '').trim(),
+            apiSecret: (document.getElementById('admUpstoxSecret')?.value || '').trim(),
+            accessToken: (document.getElementById('admUpstoxToken')?.value || '').trim()
+          },
+          kotak: {
+            consumerKey: (document.getElementById('admKotakConsumerKey')?.value || '').trim(),
+            consumerSecret: (document.getElementById('admKotakConsumerSecret')?.value || '').trim(),
+            mobileNo: (document.getElementById('admKotakMobileNo')?.value || '').trim(),
+            mpin: (document.getElementById('admKotakMpin')?.value || '').trim(),
+            accessToken: (document.getElementById('admKotakToken')?.value || '').trim()
           }
         };
 
@@ -768,8 +1197,9 @@
           });
           const result = await res.json();
           if (result.ok) {
-            showAdmAlert('✓ Angel One SmartAPI configuration saved!', 'success');
+            showAdmAlert('✓ Broker (Angel, Upstox & Kotak) configuration saved successfully!', 'success');
             loadTelemetry();
+            loadMasterBrokers();
           } else {
             showAdmAlert(result.message || 'Failed to save', 'error');
           }
@@ -796,6 +1226,126 @@
           }
         } catch(e) {
           showAdmAlert(e.message, 'error');
+        }
+      }
+
+      async function testUpstoxConnection() {
+        const token = (document.getElementById('admUpstoxToken')?.value || '').trim();
+        const apiKey = (document.getElementById('admUpstoxKey')?.value || '').trim();
+        const apiSecret = (document.getElementById('admUpstoxSecret')?.value || '').trim();
+        const resBox = document.getElementById('upstoxTestResultBox');
+        const badge = document.getElementById('admUpstoxBadge');
+
+        if (resBox) {
+          resBox.style.display = 'block';
+          resBox.style.background = 'rgba(59, 130, 246, 0.15)';
+          resBox.style.color = '#60a5fa';
+          resBox.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+          resBox.textContent = '⏳ Testing connection to Upstox API v2...';
+        }
+
+        try {
+          const res = await fetch('/api/upstox/test-connection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, apiKey, apiSecret })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            if (resBox) {
+              resBox.style.background = 'rgba(16, 185, 129, 0.15)';
+              resBox.style.color = '#34d399';
+              resBox.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+              resBox.textContent = '✅ ' + data.message;
+            }
+            if (badge) {
+              badge.textContent = 'CONNECTED';
+              badge.style.background = 'rgba(16, 185, 129, 0.2)';
+              badge.style.color = '#34d399';
+            }
+            showAdmAlert('✓ ' + data.message, 'success');
+          } else {
+            if (resBox) {
+              resBox.style.background = 'rgba(239, 68, 68, 0.15)';
+              resBox.style.color = '#f87171';
+              resBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+              resBox.textContent = '❌ ' + (data.message || 'Upstox connection failed');
+            }
+            if (badge) {
+              badge.textContent = 'TOKEN NEEDED';
+              badge.style.background = 'rgba(245, 158, 11, 0.2)';
+              badge.style.color = '#fbbf24';
+            }
+            showAdmAlert('❌ ' + (data.message || 'Upstox test failed'), 'error');
+          }
+        } catch(e) {
+          if (resBox) {
+            resBox.style.background = 'rgba(239, 68, 68, 0.15)';
+            resBox.style.color = '#f87171';
+            resBox.textContent = '❌ Connection error: ' + e.message;
+          }
+          showAdmAlert('Error testing Upstox: ' + e.message, 'error');
+        }
+      }
+
+      async function testKotakConnection() {
+        const token = (document.getElementById('admKotakToken')?.value || '').trim();
+        const consumerKey = (document.getElementById('admKotakConsumerKey')?.value || '').trim();
+        const consumerSecret = (document.getElementById('admKotakConsumerSecret')?.value || '').trim();
+        const mobileNo = (document.getElementById('admKotakMobileNo')?.value || '').trim();
+        const mpin = (document.getElementById('admKotakMpin')?.value || '').trim();
+        const resBox = document.getElementById('kotakTestResultBox');
+        const badge = document.getElementById('admKotakBadge');
+
+        if (resBox) {
+          resBox.style.display = 'block';
+          resBox.style.background = 'rgba(59, 130, 246, 0.15)';
+          resBox.style.color = '#60a5fa';
+          resBox.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+          resBox.textContent = '⏳ Testing Kotak Neo API connection...';
+        }
+
+        try {
+          const res = await fetch('/api/kotak/test-connection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, consumerKey, consumerSecret, mobileNo, mpin })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            if (resBox) {
+              resBox.style.background = 'rgba(16, 185, 129, 0.15)';
+              resBox.style.color = '#34d399';
+              resBox.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+              resBox.textContent = '✅ ' + data.message;
+            }
+            if (badge) {
+              badge.textContent = 'CONNECTED';
+              badge.style.background = 'rgba(16, 185, 129, 0.2)';
+              badge.style.color = '#34d399';
+            }
+            showAdmAlert('✓ ' + data.message, 'success');
+          } else {
+            if (resBox) {
+              resBox.style.background = 'rgba(239, 68, 68, 0.15)';
+              resBox.style.color = '#f87171';
+              resBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+              resBox.textContent = '❌ ' + (data.message || 'Kotak connection failed');
+            }
+            if (badge) {
+              badge.textContent = 'CONFIG NEEDED';
+              badge.style.background = 'rgba(239, 68, 68, 0.2)';
+              badge.style.color = '#f87171';
+            }
+            showAdmAlert('❌ ' + (data.message || 'Kotak test failed'), 'error');
+          }
+        } catch(e) {
+          if (resBox) {
+            resBox.style.background = 'rgba(239, 68, 68, 0.15)';
+            resBox.style.color = '#f87171';
+            resBox.textContent = '❌ Connection error: ' + e.message;
+          }
+          showAdmAlert('Error testing Kotak Neo: ' + e.message, 'error');
         }
       }
 
@@ -901,6 +1451,7 @@
             document.getElementById('adminLockOverlay').style.display = 'none';
             document.getElementById('adminLayout').style.display = 'flex';
             loadTelemetry();
+            loadDiagnostics();
             loadMasterBrokers();
             loadSeoConfig();
           }

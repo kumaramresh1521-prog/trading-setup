@@ -3381,6 +3381,10 @@
   }
 
   async function loadBreadthContributionSuite(indexKey = "nifty50", dateStr = null, isRefresh = false) {
+    const dateBadge = document.getElementById("contribDateDisplayBadge");
+    if (dateBadge && !dateBadge.textContent.includes("⏳")) {
+      dateBadge.textContent = "⏳ Computing Breadth...";
+    }
     try {
       const effDate = dateStr || currentContribDate || _todayStr;
       const url = `/api/index-breadth-contribution?index=${encodeURIComponent(indexKey)}&date=${encodeURIComponent(effDate)}${isRefresh ? '&refresh=true' : ''}`;
@@ -3393,8 +3397,7 @@
       contribTimeline = data.timeline || [];
 
       // Update Date elements
-      const displayDate = data.displayDate || "18-Sep-2026";
-      const dateBadge = document.getElementById("contribDateDisplayBadge");
+      const displayDate = data.displayDate || "22-Sep-2026";
       const dateInput = document.getElementById("contribDateInput");
       if (dateBadge) dateBadge.textContent = displayDate;
       if (dateInput && data.date) dateInput.value = data.date;

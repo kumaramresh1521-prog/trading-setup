@@ -127,6 +127,29 @@ body[data-theme="dark"] {
   box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
 }
 
+.fii-dii-subtab-btn {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-default);
+  padding: 8px 18px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.fii-dii-subtab-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+.fii-dii-subtab-btn.active {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
 /* ==========================================================================
    ⚡ ULTRA-MODERN QUANT TERMINAL TICKER & THEME UPGRADES
    ========================================================================== */
@@ -11166,6 +11189,201 @@ html, body {
     font-size: 14.5px !important;
   }
   .idx-spot {
+    padding: 2px 10px 8px 10px !important;
+  }
+
+  .inst-dm-go {
+    font-size: 10px !important;
+  }
+
+  /* 5. Control Bands & Forms on Mobile */
+  .control-band, .options-control-band, .tool-control-band, .sm-controls {
+    padding: 8px 10px !important;
+    gap: 6px !important;
+    border-radius: 9px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .ctrl-group {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  .ctrl-group label {
+    font-size: 10px !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .ctrl-group select, .ctrl-group input {
+    font-size: 13px !important;
+    height: 34px !important;
+    padding: 4px 6px !important;
+    border-radius: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .ctrl-group button, .control-band button, .options-control-band button {
+    height: 36px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+  }
+
+  /* 6. Metric Strips & KPI Rows across all tabs */
+  .metrics, .opt-metrics-grid, .sm-metrics, .stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .metric, .metric-card, .opt-metric-item, .sm-card {
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+  }
+
+  .metric span:first-child, .stat-lbl, .opt-metric-label {
+    font-size: 9.5px !important;
+  }
+
+  .metric b, .stat-val, .opt-metric-value {
+    font-size: 15px !important;
+  }
+
+  /* 7. Canvas Charts Responsive */
+  canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .chart-card, .card {
+    padding: 8px !important;
+    border-radius: 9px !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Opstra Dual Chart on Mobile */
+  .opstra-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    padding: 4px 2px 8px !important;
+  }
+
+  .opstra-zoom-group {
+    width: 100% !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 2px !important;
+    scrollbar-width: none !important;
+  }
+  .opstra-zoom-group::-webkit-scrollbar { display: none; }
+
+  .opstra-zoom-btn {
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .opstra-symbol-title {
+    font-size: 14px !important;
+  }
+
+  .opstra-date-group {
+    font-size: 10px !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .opstra-date-box {
+    width: 85px !important;
+    font-size: 10px !important;
+    padding: 2px 4px !important;
+  }
+
+  .opstra-pane-price {
+    height: 190px !important;
+  }
+
+  .opstra-pane-pcr {
+    height: 150px !important;
+  }
+
+  /* 8. Table Containers — Smooth Touch Scrolling */
+  .table-scroll, .wpcr-table-wrap, .deliv-table-wrap, [style*="overflow-x:auto"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin-bottom: 8px !important;
+    border-radius: 8px !important;
+  }
+
+  table, .wpcr-data-table, .opt-table, .sm-table, .deliv-table, .mtf-table {
+    font-size: 11px !important;
+  }
+
+  table th, .wpcr-data-table th, .opt-table th {
+    padding: 6px 8px !important;
+    font-size: 9.5px !important;
+  }
+
+  table td, .wpcr-data-table td, .opt-table td {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+
+  /* 9. Sub-tabs (MTF, Tools, etc.) */
+  .mta-inner-tabs, .tool-subtabs {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding: 2px 4px !important;
+    gap: 4px !important;
+  }
+  .mta-inner-tabs::-webkit-scrollbar, .tool-subtabs::-webkit-scrollbar { display: none; }
+
+  .mta-inner-tab, .tool-subtab {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 10. Footer Mobile */
+  .terminal-footer {
+    padding: 16px 10px !important;
+  }
+
+  .footer-inner {
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  .footer-col-links {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .footer-bottom {
+    flex-direction: column !important;
+    gap: 6px !important;
+    text-align: center !important;
+  }
+}
+
+/* Extra small mobile screens (< 420px) */
+@media (max-width: 420px) {
+  .inst-kpi-val {
+    font-size: 14.5px !important;
+  }
+  .idx-spot {
     font-size: 14px !important;
   }
   .inst-dm-title {
@@ -11175,4 +11393,891 @@ html, body {
     padding: 7px 9px !important;
     font-size: 11px !important;
   }
+}
+
+/* ==============================================================================
+   ⚡ Upstox Option Chain Pro Desk Styles
+   ============================================================================== */
+.upstox-chain-desk {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.upstox-hero-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.upstox-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.upstox-hero-icon {
+  font-size: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.upstox-hero-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upstox-hero-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.upstox-ctrl-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--card-bg, #0b1329);
+  border: 1px solid var(--border-color, #1e293b);
+  border-radius: 10px;
+  padding: 12px 18px;
+}
+
+.upstox-ctrl-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.upstox-ctrl-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.upstox-ctrl-item label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.upstox-select {
+  padding: 7px 12px;
+  border-radius: 6px;
+  background: #040814;
+  border: 1px solid #27354f;
+  color: #f8fafc;
+  font-size: 12.5px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+.upstox-select:focus {
+  border-color: #10b981;
+}
+
+.upstox-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.upstox-kpi-card {
+  background: var(--card-bg, #0b1329);
+  border: 1px solid var(--border-color, #1e293b);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.upstox-kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.upstox-kpi-val {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: #f8fafc;
+}
+
+.upstox-kpi-sub {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Upstox Table */
+.upstox-table-wrapper {
+  background: var(--card-bg, #0b1329);
+  border: 1px solid var(--border-color, #1e293b);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.upstox-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.upstox-table th, .upstox-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.upstox-table thead tr.head-group th {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #334155;
+  text-align: center;
+}
+
+.upstox-table thead tr.head-sub th {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  background: #060b17;
+  border-bottom: 2px solid #1e293b;
+}
+
+.th-calls {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border-right: 2px solid #1e293b;
+}
+
+.th-puts {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-left: 2px solid #1e293b;
+}
+
+.th-strike {
+  background: #040814;
+  color: #38bdf8;
+  width: 90px;
+  text-align: center !important;
+}
+
+.col-strike {
+  text-align: center !important;
+  font-weight: 800;
+  background: #060b17;
+  color: #38bdf8;
+  border-left: 2px solid #1e293b;
+  border-right: 2px solid #1e293b;
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+.strike-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.atm-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  background: #10b981;
+  color: #040814;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.atm-strike-badge {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  box-shadow: inset 0 0 0 1px #10b981;
+}
+
+.upstox-chain-row.is-atm {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.itm-call {
+  background: rgba(234, 179, 8, 0.04);
+}
+
+.itm-put {
+  background: rgba(234, 179, 8, 0.04);
+}
+
+.upstox-chain-row:hover td {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.oi-bar {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  opacity: 0.35;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.oi-bar-call {
+  right: 2px;
+  background: #10b981;
+}
+
+.oi-bar-put {
+  left: 2px;
+  background: #ef4444;
+}
+
+.up-tick {
+  color: #34d399;
+}
+
+.down-tick {
+  color: #f87171;
+}
+
+.text-green {
+  color: #34d399;
+}
+
+.text-red {
+  color: #f87171;
+}
+
+@keyframes upstox-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-spin {
+  animation: upstox-spin 1s linear infinite;
+}
+
+/* ==========================================================================
+   ⚡ INSTITUTIONAL FUTURES INTELLIGENCE DESK (KOTAK NEO DERIVATIVES ENGINE)
+   ========================================================================== */
+.futures-desk {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.fut-hero-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 16px 20px;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  flex-wrap: wrap;
+}
+
+.fut-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.fut-hero-icon {
+  font-size: 28px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.fut-hero-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fut-hero-desc {
+  margin: 4px 0 0 0;
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+
+/* Subtabs bar */
+.fut-subtabs-bar {
+  display: flex;
+  gap: 8px;
+  background: #090f1d;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid #1e293d;
+  overflow-x: auto;
+}
+
+.fut-subtab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fut-subtab-btn:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.fut-subtab-btn.active {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.4);
+}
+
+/* Badges */
+.fut-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fut-badge-lb {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.fut-badge-sb {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.fut-badge-sc {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.fut-badge-lu {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.fut-badge-neutral {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+/* KPI Cards Grid */
+.fut-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.fut-kpi-card {
+  background: #0d1527;
+  border: 1px solid #1e293d;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.fut-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #ef4444;
+}
+
+.fut-kpi-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fut-kpi-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: #f8fafc;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.fut-kpi-sub {
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* Index Futures Cards Grid */
+.fut-index-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.fut-index-card {
+  background: #0c1220;
+  border: 1px solid #1e293d;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.fut-index-card:hover {
+  transform: translateY(-2px);
+  border-color: #3b82f6;
+}
+
+.fut-index-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.fut-index-sym {
+  font-size: 15px;
+  font-weight: 800;
+  color: #f8fafc;
+  display: block;
+}
+
+.fut-index-exp {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.fut-index-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.fut-index-ltp {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.fut-index-chg {
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.fut-index-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: #070c18;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.fut-im-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fim-label {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.fim-val {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Mini Row List */
+.fut-mini-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid #141c2c;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.fut-mini-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.fm-sym-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 90px;
+}
+
+.fm-sym {
+  font-weight: 700;
+  font-size: 12.5px;
+  color: #60a5fa;
+}
+
+.fm-sec {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.fm-price-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 80px;
+}
+
+.fm-ltp {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: #f8fafc;
+}
+
+.fm-chg {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Buildup Quadrant Grid */
+.fut-quad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.fut-quad-card {
+  background: #0c1220;
+  border: 1px solid #1e293d;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.fut-quad-card.lb { border-top: 3px solid #10b981; }
+.fut-quad-card.sb { border-top: 3px solid #ef4444; }
+.fut-quad-card.sc { border-top: 3px solid #3b82f6; }
+.fut-quad-card.lu { border-top: 3px solid #f59e0b; }
+
+.fut-quad-header {
+  padding: 12px 14px;
+  background: #080d19;
+  border-bottom: 1px solid #1a2336;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fut-quad-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fut-quad-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin: 2px 0 0 0;
+}
+
+.fut-quad-list {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.fut-quad-item {
+  background: #050a14;
+  border: 1px solid #162032;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fut-quad-item:hover {
+  background: #0e172a;
+  border-color: #3b82f6;
+  transform: translateX(2px);
+}
+
+/* F&O Heatmap Grid */
+.fut-heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  padding: 12px 0;
+}
+
+.fut-heatmap-tile {
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 85px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.fut-heatmap-tile:hover {
+  transform: scale(1.04);
+  z-index: 10;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+}
+
+.fut-heatmap-tile.tile-large {
+  grid-column: span 2;
+  min-height: 110px;
+}
+
+.fht-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.fht-symbol {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.fht-chg {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.fht-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fht-ltp {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', monospace;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.fht-oi {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'JetBrains Mono', monospace;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.fht-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #040814;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: #f8fafc;
+  pointer-events: none;
+  z-index: 50;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  line-height: 1.4;
+}
+
+.fut-heatmap-tile:hover .fht-tooltip {
+  display: block;
+}
+
+/* MWPL Progress Bar & Ban Alerts */
+.fut-mwpl-pbar {
+  height: 6px;
+  background: #141c2c;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.fut-mwpl-pfill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.fut-ban-alert-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+
+.fut-ban-chip {
+  background: #1e131d;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 6px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.fut-ban-chip strong {
+  color: #f87171;
+}
+
+.fut-ban-chip span {
+  color: #fca5a5;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+.fut-mwpl-alert-card {
+  background: #0d1527;
+  border: 1px solid #1e293d;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* Table styling for Screener & MWPL */
+.fut-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #1e293d;
+  border-radius: 10px;
+  background: #080d19;
+}
+
+.fut-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.fut-table th {
+  background: #0c1424;
+  color: #94a3b8;
+  font-weight: 700;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #1e293d;
+  white-space: nowrap;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fut-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #141c2c;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.fut-row {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.fut-row:hover td {
+  background: rgba(255, 255, 255, 0.04) !important;
 }

@@ -57,6 +57,7 @@ const els = {
   panelTools: document.getElementById("panelTools"),
   panelSettings: document.getElementById("panelSettings"),
   panelDashboard: document.getElementById("panelDashboard"),
+  panelFutures: document.getElementById("panelFutures"),
 
   // Institutional Nav Buttons
   navDashboard: document.getElementById("navDashboard"),
@@ -353,6 +354,42 @@ const els = {
   smIndicesDeliveryTableBody: document.getElementById("smIndicesDeliveryTableBody"),
   smHistoryCanvas: document.getElementById("smHistoryCanvas"),
   smHistoryTooltip: document.getElementById("smHistoryTooltip"),
+
+  // Page 1 FII / DII Cash Flow Elements
+  p1FiiValTotal: document.getElementById("p1FiiValTotal"),
+  p1FiiBadgeTotal: document.getElementById("p1FiiBadgeTotal"),
+  p1FiiValFii: document.getElementById("p1FiiValFii"),
+  p1FiiBadgeFii: document.getElementById("p1FiiBadgeFii"),
+  p1FiiBuyVal: document.getElementById("p1FiiBuyVal"),
+  p1FiiSellVal: document.getElementById("p1FiiSellVal"),
+  p1FiiValDii: document.getElementById("p1FiiValDii"),
+  p1FiiBadgeDii: document.getElementById("p1FiiBadgeDii"),
+  p1DiiBuyVal: document.getElementById("p1DiiBuyVal"),
+  p1DiiSellVal: document.getElementById("p1DiiSellVal"),
+  p1FiiCashTableBody: document.getElementById("p1FiiCashTableBody"),
+  p1FiiTableSearch: document.getElementById("p1FiiTableSearch"),
+  p1FiiExportBtn: document.getElementById("p1FiiExportBtn"),
+
+  // Page 1 FII / DII Sub-Tabs and F&O Flow Elements
+  btnFiiSubtabCash: document.getElementById("btnFiiSubtabCash"),
+  btnFiiSubtabDeriv: document.getElementById("btnFiiSubtabDeriv"),
+  btnFiiSubtabOi: document.getElementById("btnFiiSubtabOi"),
+  p1FiiSubtabCash: document.getElementById("p1FiiSubtabCash"),
+  p1FiiSubtabDeriv: document.getElementById("p1FiiSubtabDeriv"),
+  p1FiiSubtabOi: document.getElementById("p1FiiSubtabOi"),
+  p1FiiFutNetVal: document.getElementById("p1FiiFutNetVal"),
+  p1FiiFutSub: document.getElementById("p1FiiFutSub"),
+  p1FiiFutBadge: document.getElementById("p1FiiFutBadge"),
+  p1FiiStkNetVal: document.getElementById("p1FiiStkNetVal"),
+  p1FiiStkSub: document.getElementById("p1FiiStkSub"),
+  p1FiiStkBadge: document.getElementById("p1FiiStkBadge"),
+  p1FiiOptNetVal: document.getElementById("p1FiiOptNetVal"),
+  p1FiiOptSub: document.getElementById("p1FiiOptSub"),
+  p1FiiOptBadge: document.getElementById("p1FiiOptBadge"),
+  p1DiiHedgeNetVal: document.getElementById("p1DiiHedgeNetVal"),
+  p1DiiHedgeBadge: document.getElementById("p1DiiHedgeBadge"),
+  p1FiiIndexDerivTableBody: document.getElementById("p1FiiIndexDerivTableBody"),
+  p1FiiParticipantVolTableBody: document.getElementById("p1FiiParticipantVolTableBody"),
 
   // Delivery Desk Elements
   delivSessionSelect: document.getElementById("delivSessionSelect"),
@@ -2973,6 +3010,11 @@ async function loadSmartMoneyData(requestedDate = "") {
     renderSmartMoneyDashboard(data);
   } catch (err) {
     console.error("Smart money load error:", err);
+    if (els.smStatusBadge) {
+      els.smStatusBadge.textContent = `⚠️ Load Error: ${err.message}`;
+      els.smStatusBadge.style.background = "#fee2e2";
+      els.smStatusBadge.style.color = "#b91c1c";
+    }
   } finally {
     if (els.smRefreshBtn) {
       els.smRefreshBtn.disabled = false;
@@ -2981,17 +3023,76 @@ async function loadSmartMoneyData(requestedDate = "") {
   }
 }
 
+let p1FiiCashDataRows = [];
+
 function renderSmartMoneyDashboard(data) {
   if (!data) return;
 
   if (els.smDateInput && data.dateIso) {
-    els.smDateInput.value = data.dateIso;
+    els.smDateInput.value = data.dateIso.slice(0, 10);
+    els.smDateInput.setAttribute("max", new Date().toISOString().slice(0, 10));
   }
   if (els.smStatusBadge) {
     els.smStatusBadge.textContent = `🟢 NSE Official Participant File Verified (${data.date})`;
+    els.smStatusBadge.style.background = "#dcfce7";
+    els.smStatusBadge.style.color = "#15803d";
   }
 
-  // 1. FII Metrics
+
+  // 1. Page 1 Cash Market Top KPI Cards (Total, FII, DII)
+  const cash = data.cashFlow || {};
+  const dailyCash = cash.daily || [];
+  const latestCash = dailyCash.length > 0 ? dailyCash[0] : null;
+
+  if (latestCash) {
+    const totNet = Number(latestCash.totalNet) || 0;
+    const fiiNet = Number(latestCash.fiiNet) || 0;
+    const diiNet = Number(latestCash.diiNet) || 0;
+
+    // Card 1: Total Institutional Net
+    if (els.p1FiiValTotal) {
+      els.p1FiiValTotal.textContent = `${totNet > 0 ? "+" : ""}₹${totNet.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
+      els.p1FiiValTotal.style.color = totNet >= 0 ? "var(--green)" : "var(--red)";
+    }
+    if (els.p1FiiBadgeTotal) {
+      els.p1FiiBadgeTotal.textContent = totNet >= 0 ? "INFLOW" : "OUTFLOW";
+      els.p1FiiBadgeTotal.className = `stats-badge ${totNet >= 0 ? "bullish" : "bearish"}`;
+    }
+
+    // Card 2: FII Cash Flow
+    if (els.p1FiiValFii) {
+      els.p1FiiValFii.textContent = `${fiiNet > 0 ? "+" : ""}₹${fiiNet.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
+      els.p1FiiValFii.style.color = fiiNet >= 0 ? "var(--green)" : "var(--red)";
+    }
+    if (els.p1FiiBadgeFii) {
+      els.p1FiiBadgeFii.textContent = fiiNet >= 0 ? "BUYERS" : "SELLERS";
+      els.p1FiiBadgeFii.className = `stats-badge ${fiiNet >= 0 ? "bullish" : "bearish"}`;
+    }
+    if (els.p1FiiBuyVal) {
+      els.p1FiiBuyVal.textContent = `₹${Number(latestCash.fiiBuy || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr`;
+    }
+    if (els.p1FiiSellVal) {
+      els.p1FiiSellVal.textContent = `₹${Number(latestCash.fiiSell || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr`;
+    }
+
+    // Card 3: DII Cash Flow
+    if (els.p1FiiValDii) {
+      els.p1FiiValDii.textContent = `${diiNet > 0 ? "+" : ""}₹${diiNet.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
+      els.p1FiiValDii.style.color = diiNet >= 0 ? "var(--green)" : "var(--red)";
+    }
+    if (els.p1FiiBadgeDii) {
+      els.p1FiiBadgeDii.textContent = diiNet >= 0 ? "BUYERS" : "SELLERS";
+      els.p1FiiBadgeDii.className = `stats-badge ${diiNet >= 0 ? "bullish" : "bearish"}`;
+    }
+    if (els.p1DiiBuyVal) {
+      els.p1DiiBuyVal.textContent = `₹${Number(latestCash.diiBuy || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr`;
+    }
+    if (els.p1DiiSellVal) {
+      els.p1DiiSellVal.textContent = `₹${Number(latestCash.diiSell || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr`;
+    }
+  }
+
+  // 2. Card 4: FII Index Futures Stance
   const fii = data.fiiMetrics || {};
   if (els.smFiiLongPct) els.smFiiLongPct.textContent = `${fii.longPct}%`;
   if (els.smFiiShortPct) els.smFiiShortPct.textContent = `${fii.shortPct}%`;
@@ -3000,7 +3101,7 @@ function renderSmartMoneyDashboard(data) {
   if (els.smFiiNetFut) {
     const nf = fii.netFutures || 0;
     els.smFiiNetFut.textContent = `${nf > 0 ? "+" : ""}${nf.toLocaleString("en-IN")} contracts`;
-    els.smFiiNetFut.style.color = nf > 0 ? "#10b981" : "#ef4444";
+    els.smFiiNetFut.style.color = nf > 0 ? "var(--green)" : "var(--red)";
   }
   if (els.smFiiNetValCr) {
     const vc = fii.netFuturesValueCr || 0;
@@ -3008,7 +3109,7 @@ function renderSmartMoneyDashboard(data) {
     const dashFii = document.getElementById("dashKpiFii");
     if (dashFii) {
       dashFii.textContent = `₹${vc > 0 ? "+" : ""}${vc.toLocaleString("en-IN")} Cr`;
-      dashFii.style.color = vc >= 0 ? "#10b981" : "#ef4444";
+      dashFii.style.color = vc >= 0 ? "var(--green)" : "var(--red)";
     }
   }
   if (els.smFiiZoneBadge) {
@@ -3017,73 +3118,16 @@ function renderSmartMoneyDashboard(data) {
   }
   if (els.smFiiZoneDesc) els.smFiiZoneDesc.textContent = fii.zoneDesc || "";
 
-  // 2. Trap Radar
-  const trap = data.trapRadar || {};
-  if (els.smTrapBadge) {
-    els.smTrapBadge.textContent = trap.badge || "BALANCED";
-    els.smTrapBadge.className = `stats-badge ${trap.level.includes("BULL") ? "bearish" : (trap.level.includes("BEAR") ? "bullish" : "")}`;
-  }
-  if (els.smTrapTitle) els.smTrapTitle.textContent = trap.title || "Institutional Stance";
-  if (els.smTrapDesc) els.smTrapDesc.textContent = trap.desc || "";
+  // 3. Render Cash Market Historical Data Table
+  renderP1FiiCashTable(dailyCash);
 
-  if (els.smClientCalls) {
-    const cc = trap.clientNetCalls || 0;
-    els.smClientCalls.textContent = `${cc > 0 ? "+" : ""}${cc.toLocaleString("en-IN")}`;
-    els.smClientCalls.style.color = cc > 0 ? "#10b981" : "#ef4444";
-  }
-  if (els.smSmartCalls) {
-    const sc = trap.smartMoneyNetCalls || 0;
-    els.smSmartCalls.textContent = `${sc > 0 ? "+" : ""}${sc.toLocaleString("en-IN")}`;
-    els.smSmartCalls.style.color = sc > 0 ? "#10b981" : "#ef4444";
-  }
-  if (els.smClientPuts) {
-    const cp = trap.clientNetPuts || 0;
-    els.smClientPuts.textContent = `${cp > 0 ? "+" : ""}${cp.toLocaleString("en-IN")}`;
-    els.smClientPuts.style.color = cp > 0 ? "#10b981" : "#ef4444";
-  }
-  if (els.smSmartPuts) {
-    const sp = trap.smartMoneyNetPuts || 0;
-    els.smSmartPuts.textContent = `${sp > 0 ? "+" : ""}${sp.toLocaleString("en-IN")}`;
-    els.smSmartPuts.style.color = sp > 0 ? "#10b981" : "#ef4444";
+  // 3b. Render Detailed F&O Institutional Flow
+  if (data.derivativesFlow) {
+    renderFiiDerivativesFlow(data.derivativesFlow);
   }
 
-  // 3. Gameplan
-  const gp = data.gameplan || {};
-  if (els.smGameplanBias) {
-    els.smGameplanBias.textContent = (gp.bias || "BALANCED").replace("_", " ");
-    els.smGameplanBias.className = `stats-badge ${gp.bias === "BULLISH_BIAS" ? "bullish" : (gp.bias === "BEARISH_BIAS" ? "bearish" : "")}`;
-  }
-  if (els.smGameplanSummary) els.smGameplanSummary.textContent = gp.summary || "";
-
-  // 4. Participant Matrix Table
+  // 4. Render Derivatives Participant Matrix Table
   renderParticipantTable(data.participants || []);
-
-  // 5. Populate Intraday Trade Action Summary Cards
-  const participants = data.participants || [];
-  const getP = type => participants.find(p => p.type === type) || {};
-
-  const fmtSign = n => (n > 0 ? `+${n.toLocaleString("en-IN")}` : (n < 0 ? n.toLocaleString("en-IN") : "0"));
-  const applyVal = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.textContent = fmtSign(val);
-      el.style.color = val > 0 ? "#10b981" : (val < 0 ? "#ef4444" : "#94a3b8");
-    }
-  };
-
-  ["FII", "PRO", "CLIENT", "DII"].forEach(type => {
-    const p = getP(type);
-    const keyPrefix = "sm" + type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-    
-    applyVal(keyPrefix + "FutShift", p.futIdxDayChg || p.futIdxDayChange || 0);
-    applyVal(keyPrefix + "CallShift", p.optCallDayChg || p.optCallDayChange || 0);
-    applyVal(keyPrefix + "PutShift", p.optPutDayChg || p.optPutDayChange || 0);
-    applyVal(keyPrefix + "StkShift", p.futStkDayChg || p.futStkDayChange || 0);
-
-    const sumEl = document.getElementById(keyPrefix + "ActionSummary");
-    if (sumEl) sumEl.textContent = p.intradayActionLabel || "Minor Position Adjustments";
-  });
-
 
   // 5. Dynamic Real Session Buttons
   if (els.smQuickDates && data.availableSessions && data.availableSessions.length) {
@@ -3116,34 +3160,264 @@ function renderSmartMoneyDashboard(data) {
       });
     });
   }
+}
 
-  // 6. Major Indices Delivery Absorption Benchmark Table (EOD)
-  if (els.smIndicesDeliveryTableBody) {
-    const indices = data.majorIndicesDelivery || [];
-    if (!indices.length) {
-      els.smIndicesDeliveryTableBody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:18px; color:var(--text-muted);">No Major Indices Cash Delivery data available for this session.</td></tr>`;
+function renderP1FiiCashTable(rows) {
+  p1FiiCashDataRows = rows || [];
+  const tbody = els.p1FiiCashTableBody;
+  if (!tbody) return;
+
+  if (!rows || !rows.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--text-muted);">No Cash Market Data Available</td></tr>`;
+    return;
+  }
+
+  const query = (els.p1FiiTableSearch ? els.p1FiiTableSearch.value : "").trim().toLowerCase();
+  const filtered = query
+    ? rows.filter(r => (r.date || "").toLowerCase().includes(query) || (r.period || "").toLowerCase().includes(query))
+    : rows;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--text-muted);">No matching dates found for "${query}"</td></tr>`;
+    return;
+  }
+
+  const fmtCr = (n, showSign = false) => {
+    if (n === null || n === undefined || isNaN(n)) return "--";
+    const num = Number(n);
+    const sign = showSign && num > 0 ? "+" : "";
+    return `${sign}₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const signStyle = n => {
+    const num = Number(n) || 0;
+    return num >= 0 ? "color:var(--green); font-weight:700;" : "color:var(--red); font-weight:700;";
+  };
+
+  tbody.innerHTML = filtered.map(r => {
+    const niftyClose = r.niftyClose ? Number(r.niftyClose).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "--";
+    const niftyChgPct = r.niftyPct !== undefined && r.niftyPct !== null
+      ? `<span style="font-size:10.5px; font-weight:700; ${r.niftyPct >= 0 ? 'color:var(--green);' : 'color:var(--red);'}">${r.niftyPct >= 0 ? '+' : ''}${r.niftyPct}%</span>`
+      : "";
+
+    return `
+      <tr style="border-bottom: 1px solid var(--table-border);">
+        <td style="font-weight:700; color:var(--text-primary); padding:8px 10px; white-space:nowrap;">${r.date || r.period}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--text-secondary);">${niftyClose} ${niftyChgPct}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; ${signStyle(r.totalNet)}">${fmtCr(r.totalNet, true)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--text-secondary);">${fmtCr(r.fiiBuy)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--text-secondary);">${fmtCr(r.fiiSell)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; ${signStyle(r.fiiNet)}">${fmtCr(r.fiiNet, true)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--text-secondary);">${fmtCr(r.diiBuy)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--text-secondary);">${fmtCr(r.diiSell)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; ${signStyle(r.diiNet)}">${fmtCr(r.diiNet, true)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function exportP1FiiCashCsv() {
+  if (!p1FiiCashDataRows || !p1FiiCashDataRows.length) return;
+  const headers = ["Date", "Nifty 50 Close", "Nifty Change %", "Combined Net Cr", "FII Buy Cr", "FII Sell Cr", "FII Net Cr", "DII Buy Cr", "DII Sell Cr", "DII Net Cr"];
+  const csvRows = [headers.join(",")];
+  p1FiiCashDataRows.forEach(r => {
+    csvRows.push([
+      `"${r.date || r.period}"`,
+      r.niftyClose || "",
+      r.niftyPct !== undefined ? r.niftyPct : "",
+      r.totalNet !== undefined ? r.totalNet : "",
+      r.fiiBuy !== undefined ? r.fiiBuy : "",
+      r.fiiSell !== undefined ? r.fiiSell : "",
+      r.fiiNet !== undefined ? r.fiiNet : "",
+      r.diiBuy !== undefined ? r.diiBuy : "",
+      r.diiSell !== undefined ? r.diiSell : "",
+      r.diiNet !== undefined ? r.diiNet : ""
+    ].join(","));
+  });
+  const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `FII_DII_Cash_Turnover_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+let activeP1FiiSubtab = "cash";
+
+function switchP1FiiSubtab(tabKey) {
+  activeP1FiiSubtab = tabKey;
+  const tabs = [
+    { btn: els.btnFiiSubtabCash, panel: els.p1FiiSubtabCash, key: "cash" },
+    { btn: els.btnFiiSubtabDeriv, panel: els.p1FiiSubtabDeriv, key: "deriv" },
+    { btn: els.btnFiiSubtabOi, panel: els.p1FiiSubtabOi, key: "oi" },
+  ];
+
+  tabs.forEach(t => {
+    const isActive = t.key === tabKey;
+    if (t.btn) {
+      if (isActive) {
+        t.btn.classList.add("active");
+        t.btn.style.background = "var(--primary)";
+        t.btn.style.color = "#ffffff";
+      } else {
+        t.btn.classList.remove("active");
+        t.btn.style.background = "transparent";
+        t.btn.style.color = "var(--text-secondary)";
+      }
+    }
+    if (t.panel) {
+      t.panel.style.display = isActive ? "block" : "none";
+    }
+  });
+}
+
+function renderFiiDerivativesFlow(flowData) {
+  if (!flowData) return;
+  const fiiStats = flowData.fiiStats || {};
+  const partVol = flowData.participantVol || [];
+  const indices = flowData.indices || [];
+
+  const fmtCr = (n, showSign = false) => {
+    if (n === null || n === undefined || isNaN(n)) return "--";
+    const num = Number(n);
+    const sign = showSign && num > 0 ? "+" : "";
+    return `${sign}₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
+  };
+
+  const fmtContracts = (n, showSign = false) => {
+    if (n === null || n === undefined || isNaN(n)) return "--";
+    const num = Number(n);
+    const sign = showSign && num > 0 ? "+" : "";
+    return `${sign}${num.toLocaleString("en-IN")}`;
+  };
+
+  const signColor = n => {
+    const num = Number(n) || 0;
+    return num >= 0 ? "var(--green)" : "var(--red)";
+  };
+
+  // 1. Populate Top 4 F&O KPI Cards
+  const idxFut = fiiStats.indexFutures || {};
+  const stkFut = fiiStats.stockFutures || {};
+  const idxOpt = fiiStats.indexOptions || {};
+
+  // Card 1: FII Index Futures
+  if (els.p1FiiFutNetVal) {
+    const netCr = idxFut.netCr || 0;
+    els.p1FiiFutNetVal.textContent = fmtCr(netCr, true);
+    els.p1FiiFutNetVal.style.color = signColor(netCr);
+  }
+  if (els.p1FiiFutBadge) {
+    const netCr = idxFut.netCr || 0;
+    els.p1FiiFutBadge.textContent = netCr >= 0 ? "BUYERS" : "SELLERS";
+    els.p1FiiFutBadge.className = `stats-badge ${netCr >= 0 ? "bullish" : "bearish"}`;
+  }
+  if (els.p1FiiFutSub) {
+    els.p1FiiFutSub.textContent = `Buy: ₹${Number(idxFut.buyCr || 0).toLocaleString("en-IN")} Cr | Sell: ₹${Number(idxFut.sellCr || 0).toLocaleString("en-IN")} Cr (${fmtContracts(idxFut.netContracts, true)} contracts)`;
+  }
+
+  // Card 2: FII Stock Futures
+  if (els.p1FiiStkNetVal) {
+    const netCr = stkFut.netCr || 0;
+    els.p1FiiStkNetVal.textContent = fmtCr(netCr, true);
+    els.p1FiiStkNetVal.style.color = signColor(netCr);
+  }
+  if (els.p1FiiStkBadge) {
+    const netCr = stkFut.netCr || 0;
+    els.p1FiiStkBadge.textContent = netCr >= 0 ? "BUYERS" : "SELLERS";
+    els.p1FiiStkBadge.className = `stats-badge ${netCr >= 0 ? "bullish" : "bearish"}`;
+  }
+  if (els.p1FiiStkSub) {
+    els.p1FiiStkSub.textContent = `Buy: ₹${Number(stkFut.buyCr || 0).toLocaleString("en-IN")} Cr | Sell: ₹${Number(stkFut.sellCr || 0).toLocaleString("en-IN")} Cr (${fmtContracts(stkFut.netContracts, true)} contracts)`;
+  }
+
+  // Card 3: FII Index Options
+  if (els.p1FiiOptNetVal) {
+    const netCr = idxOpt.netCr || 0;
+    els.p1FiiOptNetVal.textContent = fmtCr(netCr, true);
+    els.p1FiiOptNetVal.style.color = signColor(netCr);
+  }
+  if (els.p1FiiOptBadge) {
+    const netCr = idxOpt.netCr || 0;
+    els.p1FiiOptBadge.textContent = netCr >= 0 ? "INFLOW" : "OUTFLOW";
+    els.p1FiiOptBadge.className = `stats-badge ${netCr >= 0 ? "bullish" : "bearish"}`;
+  }
+  if (els.p1FiiOptSub) {
+    els.p1FiiOptSub.textContent = `Turnover Buy: ₹${Number(idxOpt.buyCr || 0).toLocaleString("en-IN", {maximumFractionDigits: 0})} Cr | Sell: ₹${Number(idxOpt.sellCr || 0).toLocaleString("en-IN", {maximumFractionDigits: 0})} Cr`;
+  }
+
+  // Card 4: DII Hedging Stance
+  const diiVol = partVol.find(p => p.type === "DII") || {};
+  if (els.p1DiiHedgeNetVal) {
+    const peNet = diiVol.putNet || 0;
+    els.p1DiiHedgeNetVal.textContent = `${fmtContracts(peNet, true)} Puts`;
+    els.p1DiiHedgeNetVal.style.color = peNet > 0 ? "var(--green)" : (peNet < 0 ? "var(--red)" : "var(--text-secondary)");
+  }
+  if (els.p1DiiHedgeBadge) {
+    const peNet = diiVol.putNet || 0;
+    els.p1DiiHedgeBadge.textContent = peNet > 5000 ? "HEAVY PE HEDGE" : (peNet > 0 ? "PE BUYERS" : "NEUTRAL");
+    els.p1DiiHedgeBadge.className = `stats-badge ${peNet > 0 ? "bullish" : "neutral"}`;
+  }
+
+  // 2. Table 1: Index-Wise Futures & Options Turnover
+  const tbodyIdx = els.p1FiiIndexDerivTableBody;
+  if (tbodyIdx) {
+    if (!indices || !indices.length) {
+      tbodyIdx.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:18px; color:var(--text-muted);">No Index-wise Derivatives data available</td></tr>`;
     } else {
-      els.smIndicesDeliveryTableBody.innerHTML = indices.map(idx => {
-        const fillClass = idx.avgDeliveryPct >= 60 ? "high" : (idx.avgDeliveryPct >= 40 ? "med" : "low");
-        const sigClass = idx.stance === "STRONG_ACCUMULATION" ? "acc" : (idx.stance === "HEAVY_DISTRIBUTION" ? "dist" : "neutral");
+      tbodyIdx.innerHTML = indices.map(idx => {
         return `
-          <tr>
-            <td><strong style="color:#0f172a; font-weight:800;">${idx.label}</strong></td>
-            <td><span class="badge-tag">${idx.stockCount} Stocks</span></td>
-            <td>
-              <div class="deliv-progress-wrap" style="min-width:130px;">
-                <span style="font-weight:800; width:45px;">${idx.avgDeliveryPct}%</span>
-                <div class="deliv-progress-bar">
-                  <div class="deliv-progress-fill ${fillClass}" style="width:${Math.min(100, idx.avgDeliveryPct)}%;"></div>
-                </div>
-              </div>
-            </td>
-            <td style="color:#64748b; font-weight:600;">${idx.avg5dPct}%</td>
-            <td><span class="deliv-shock-badge ${idx.shockRatio >= 1.2 ? 'surge' : 'normal'}">${idx.shockRatio}x</span></td>
-            <td style="color:#16a34a; font-weight:800;">₹${Number(idx.delivTurnoverCr).toLocaleString("en-IN")} Cr</td>
-            <td style="color:#64748b;">₹${Number(idx.tradedTurnoverCr).toLocaleString("en-IN")} Cr</td>
-            <td><span style="color:#16a34a; font-weight:700;">${idx.accumulationCount} 🟢</span> / <span style="color:#dc2626; font-weight:700;">${idx.distributionCount} 🔴</span></td>
-            <td><span class="deliv-sig-pill ${sigClass}">${idx.stanceBadge}</span></td>
+          <tr style="border-bottom: 1px solid var(--table-border);">
+            <td style="font-weight:800; color:var(--text-primary); padding:8px 10px;">${idx.name}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--text-secondary);">₹${Number(idx.futBuyCr || 0).toLocaleString("en-IN", {minimumFractionDigits: 2})}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--text-secondary);">₹${Number(idx.futSellCr || 0).toLocaleString("en-IN", {minimumFractionDigits: 2})}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; font-weight:700; color:${signColor(idx.futNetCr)};">${fmtCr(idx.futNetCr, true)}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--green);">₹${Number(idx.optBuyCr || 0).toLocaleString("en-IN", {minimumFractionDigits: 2})}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--red);">₹${Number(idx.optSellCr || 0).toLocaleString("en-IN", {minimumFractionDigits: 2})}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; font-weight:700; color:${signColor(idx.optNetCr)};">${fmtCr(idx.optNetCr, true)}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; font-weight:800; color:${signColor(idx.totalNetCr)};">${fmtCr(idx.totalNetCr, true)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+  }
+
+  // 3. Table 2: Participant Call vs Put Day Volume Flow
+  const tbodyVol = els.p1FiiParticipantVolTableBody;
+  if (tbodyVol) {
+    if (!partVol || !partVol.length) {
+      tbodyVol.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:18px; color:var(--text-muted);">No Participant Volume data available</td></tr>`;
+    } else {
+      tbodyVol.innerHTML = partVol.map(p => {
+        const isTotal = p.type === "TOTAL";
+        const tagClass = p.type.toLowerCase();
+        const rowBg = isTotal
+          ? "background: var(--bg-subtle); font-weight:800; border-top: 2px solid var(--border-default);"
+          : "border-bottom: 1px solid var(--table-border);";
+
+        const actionPill = (tag) => {
+          let cls = "neutral";
+          let lbl = tag || "NEUTRAL";
+          if (tag === "VOLATILITY_BUY") { cls = "bullish"; lbl = "VOLATILITY BUY"; }
+          else if (tag === "PREMIUM_SELLER") { cls = "bearish"; lbl = "PREMIUM SELLER"; }
+          else if (tag === "BULLISH_BIAS") { cls = "bullish"; lbl = "BULLISH BIAS"; }
+          else if (tag === "BEARISH_HEDGE") { cls = "bearish"; lbl = "BEARISH HEDGE"; }
+          return `<span class="stance-pill ${cls}">${lbl}</span>`;
+        };
+
+        return `
+          <tr style="${rowBg}">
+            <td style="padding:8px 10px;"><span class="participant-tag ${tagClass}">${p.label || p.type}</span></td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--green);">${fmtContracts(p.callBuy)}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--red);">${fmtContracts(p.callSell)}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; font-weight:700; color:${signColor(p.callNet)};">${fmtContracts(p.callNet, true)}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--green);">${fmtContracts(p.putBuy)}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--red);">${fmtContracts(p.putSell)}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; font-weight:700; color:${signColor(p.putNet)};">${fmtContracts(p.putNet, true)}</td>
+            <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; font-weight:700; color:${signColor(p.futIdxNet)};">${fmtContracts(p.futIdxNet, true)}</td>
+            <td style="text-align:center; padding:8px 10px;">${actionPill(p.actionTag)}</td>
           </tr>
         `;
       }).join("");
@@ -3154,8 +3428,8 @@ function renderSmartMoneyDashboard(data) {
 function renderParticipantTable(participants) {
   const tbody = els.smParticipantTableBody;
   if (!tbody) return;
-  if (!participants.length) {
-    tbody.innerHTML = `<tr><td colspan="17" style="text-align:center; color:var(--text-muted);">No Participant Data Available</td></tr>`;
+  if (!participants || !participants.length) {
+    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; padding:20px; color:var(--text-muted);">No Participant Data Available</td></tr>`;
     return;
   }
 
@@ -3167,46 +3441,38 @@ function renderParticipantTable(participants) {
     const netFut = p.futIdxNet || 0;
     const netCalls = p.optCallNet || 0;
     const netPuts = p.optPutNet || 0;
-    const netStk = p.futStkNet || 0;
+    const netStk = (p.futStkLong || 0) - (p.futStkShort || 0);
     const stance = p.stance || "NEUTRAL";
-
-    const futChg = p.futIdxDayChg || p.futIdxDayChange || 0;
-    const callChg = p.optCallDayChg || p.optCallDayChange || 0;
-    const putChg = p.optPutDayChg || p.optPutDayChange || 0;
-    const stkChg = p.futStkDayChg || p.futStkDayChange || 0;
-
-    const actionText = p.intradayActionLabel || "Minor Adjustments";
 
     const fmt = n => (n !== undefined && n !== null ? Number(n).toLocaleString("en-IN") : "--");
     const fmtSign = n => `${n > 0 ? "+" : ""}${fmt(n)}`;
-    const signColor = n => n > 0 ? "#10b981" : (n < 0 ? "#ef4444" : "#94a3b8");
+    const signColor = n => n > 0 ? "var(--green)" : (n < 0 ? "var(--red)" : "var(--text-muted)");
+
+    const rowBg = isTotal
+      ? "background: var(--bg-subtle); font-weight:800; border-top: 2px solid var(--border-default);"
+      : "border-bottom: 1px solid var(--table-border);";
 
     return `
-      <tr style="${isTotal ? "font-weight:800; background:#1e293d;" : ""}">
-        <td><span class="participant-tag ${tagClass}">${tagLabel}</span></td>
+      <tr style="${rowBg}">
+        <td style="padding:8px 10px;"><span class="participant-tag ${tagClass}">${tagLabel}</span></td>
         <!-- Index Futures -->
-        <td>${fmt(p.futIdxLong)}</td>
-        <td>${fmt(p.futIdxShort)}</td>
-        <td style="font-weight:700; color:${signColor(netFut)};">${fmtSign(netFut)}</td>
-        <td style="font-weight:800; font-family:'JetBrains Mono', monospace; color:${signColor(futChg)};">${fmtSign(futChg)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--text-secondary);">${fmt(p.futIdxLong)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--text-secondary);">${fmt(p.futIdxShort)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; font-weight:700; color:${signColor(netFut)};">${fmtSign(netFut)}</td>
         <!-- Index Calls -->
-        <td style="color:#10b981;">${fmt(p.optCallLong)}</td>
-        <td style="color:#ef4444;">${fmt(p.optCallShort)}</td>
-        <td style="font-weight:700; color:${signColor(netCalls)};">${fmtSign(netCalls)}</td>
-        <td style="font-weight:800; font-family:'JetBrains Mono', monospace; color:${signColor(callChg)};">${fmtSign(callChg)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--green);">${fmt(p.optCallLong)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--red);">${fmt(p.optCallShort)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; font-weight:700; color:${signColor(netCalls)};">${fmtSign(netCalls)}</td>
         <!-- Index Puts -->
-        <td style="color:#10b981;">${fmt(p.optPutLong)}</td>
-        <td style="color:#ef4444;">${fmt(p.optPutShort)}</td>
-        <td style="font-weight:700; color:${signColor(netPuts)};">${fmtSign(netPuts)}</td>
-        <td style="font-weight:800; font-family:'JetBrains Mono', monospace; color:${signColor(putChg)};">${fmtSign(putChg)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--green);">${fmt(p.optPutLong)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--red);">${fmt(p.optPutShort)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; font-weight:700; color:${signColor(netPuts)};">${fmtSign(netPuts)}</td>
         <!-- Stock Futures -->
-        <td>${fmt(p.futStkLong)}</td>
-        <td>${fmt(p.futStkShort)}</td>
-        <td style="font-weight:800; font-family:'JetBrains Mono', monospace; color:${signColor(stkChg)};">${fmtSign(stkChg)}</td>
-        <!-- Intraday Action -->
-        <td style="font-size:11px; font-weight:600; color:#cbd5e1; max-width:220px; line-height:1.3;">${actionText}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--text-secondary);">${fmt(p.futStkLong)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; color:var(--text-secondary);">${fmt(p.futStkShort)}</td>
+        <td style="text-align:right; font-family:'JetBrains Mono', monospace; padding:8px 10px; font-weight:700; color:${signColor(netStk)};">${fmtSign(netStk)}</td>
         <!-- Desk Stance -->
-        <td>
+        <td style="text-align:center; padding:8px 10px;">
           <span class="stance-pill ${stance.toLowerCase().replace("heavy_", "").replace("mild_", "")}">
             ${stance.replace("_", " ")}
           </span>
@@ -3433,10 +3699,11 @@ async function loadDeliveryAnalytics(dateStr) {
       els.delivStatusBadge.style.color = "#1d4ed8";
     }
 
+    const selectedDate = (dateStr !== undefined && dateStr !== "") ? dateStr : ((els.delivSessionSelect && els.delivSessionSelect.value) ? els.delivSessionSelect.value : "");
     const payload = {
       universe: (els.delivUniverseSelect && els.delivUniverseSelect.value) || "nifty50",
       filter: delivActiveFilter || "all",
-      date: dateStr || ""
+      date: selectedDate
     };
 
     const res = await fetch("/api/delivery-analytics", {
@@ -3450,8 +3717,9 @@ async function loadDeliveryAnalytics(dateStr) {
     if (!data.ok) throw new Error(data.message || "Failed to load delivery data");
 
     delivDataGlobal = data;
-    if (els.delivDateInput && data.dateIso) {
-      els.delivDateInput.value = data.dateIso.slice(0, 10);
+    if (els.delivDateInput) {
+      if (data.dateIso) els.delivDateInput.value = data.dateIso.slice(0, 10);
+      els.delivDateInput.setAttribute("max", new Date().toISOString().slice(0, 10));
     }
     if (els.delivStatusBadge) {
       if (data.isNearestSession) {
@@ -4028,11 +4296,11 @@ function renderMtfDashboard(data) {
   }
 
   const statusEl = document.getElementById('mtaAsOfStatus');
-  if (statusEl) statusEl.textContent = `Session: ${formatMtfDate(data.stockScreenerAsOf || data.asOf || 'Latest')}`;
+  if (statusEl) {
+    const formattedDate = formatMtfDate(data.stockScreenerAsOf || data.asOf || 'Latest');
+    statusEl.innerHTML = `<span style="color:#15803d;font-weight:700;">🟢 Latest NSE Disclosure: ${formattedDate}</span> <span style="color:#64748b;">(Official T+1 broker schedule • Monday 21 Sep due today EOD)</span>`;
+  }
 
-  // Auto-sync latest date across desks
-  const latestDateIso = (data.stockScreenerAsOf || data.asOf || '').slice(0, 10);
-  if (latestDateIso) mtaAutoSyncDates(latestDateIso);
 
   // ── Render each sub-panel ─────────────────────────────────────────────────
   mtaRenderOverview(data);
@@ -5346,24 +5614,7 @@ function mtaExportCsv() {
    📅 DYNAMIC DATE AUTO-SYNC
    ========================================================================== */
 function mtaAutoSyncDates(latestIso) {
-  if (!latestIso || typeof latestIso !== 'string' || latestIso.length < 10) return;
-  const iso = latestIso.slice(0, 10);
-  const targetIds = ['dateInput', 'endDateInput', 'mcDateInput', 'smDateInput', 'delivDateInput'];
-  
-  targetIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (el.dataset.userModified !== 'true') {
-      el.value = iso;
-      if (el.hasAttribute('max')) el.setAttribute('max', iso);
-    }
-    if (!el.dataset.listenerAttached) {
-      el.dataset.listenerAttached = 'true';
-      el.addEventListener('change', () => {
-        el.dataset.userModified = 'true';
-      });
-    }
-  });
+  // Desks manage their own respective session dates based on underlying regulatory/exchange publication schedules.
 }
 
 /* ==========================================================================
@@ -5780,7 +6031,7 @@ function toggleTheme() {
 
 function switchTab(tab) {
   [els.tabBreadth, els.tabOptions, els.tabSmartMoney, els.tabDelivery, els.tabMtf, els.tabTools, els.tabSettings].forEach(el => el && el.classList.remove("active"));
-  [els.panelBreadth, els.panelOptions, els.panelSmartMoney, els.panelDelivery, els.panelMtf, els.panelTools, els.panelSettings].forEach(el => {
+  [els.panelBreadth, els.panelOptions, els.panelSmartMoney, els.panelDelivery, els.panelMtf, els.panelTools, els.panelSettings, document.getElementById("panelUpstoxChain"), document.getElementById("panelFutures")].forEach(el => {
     if (el) {
       el.classList.remove("active");
       el.style.display = "none";
@@ -5795,6 +6046,16 @@ function switchTab(tab) {
     resizeNiftyCanvas();
     resizeNiftyAdCanvas();
     resizeAdCanvases();
+  } else if (tab === "futures") {
+    isOptionsTabActive = false;
+    const p = document.getElementById("panelFutures");
+    if (p) {
+      p.classList.add("active");
+      p.style.display = "block";
+    }
+    if (window.futuresDesk) {
+      window.futuresDesk.init();
+    }
   } else if (tab === "options") {
     isOptionsTabActive = true;
     els.tabOptions.classList.add("active");
@@ -5842,6 +6103,16 @@ function switchTab(tab) {
     }
     if (typeof loadBrokerSettings === "function") {
       loadBrokerSettings();
+    }
+  } else if (tab === "upstoxChain") {
+    isOptionsTabActive = false;
+    const p = document.getElementById("panelUpstoxChain");
+    if (p) {
+      p.classList.add("active");
+      p.style.display = "block";
+    }
+    if (window.upstoxOptionChain) {
+      window.upstoxOptionChain.refresh();
     }
   }
 }
@@ -7667,6 +7938,25 @@ if (els.smDateInput) {
     }
   });
 }
+if (els.p1FiiTableSearch) {
+  els.p1FiiTableSearch.addEventListener("input", () => {
+    if (smartMoneyDataGlobal && smartMoneyDataGlobal.cashFlow && smartMoneyDataGlobal.cashFlow.daily) {
+      renderP1FiiCashTable(smartMoneyDataGlobal.cashFlow.daily);
+    }
+  });
+}
+if (els.p1FiiExportBtn) {
+  els.p1FiiExportBtn.addEventListener("click", () => exportP1FiiCashCsv());
+}
+if (els.btnFiiSubtabCash) {
+  els.btnFiiSubtabCash.addEventListener("click", () => switchP1FiiSubtab("cash"));
+}
+if (els.btnFiiSubtabDeriv) {
+  els.btnFiiSubtabDeriv.addEventListener("click", () => switchP1FiiSubtab("deriv"));
+}
+if (els.btnFiiSubtabOi) {
+  els.btnFiiSubtabOi.addEventListener("click", () => switchP1FiiSubtab("oi"));
+}
 
 // Delivery Desk event listeners
 if (els.delivRefreshBtn) {
@@ -7778,8 +8068,7 @@ if (els.btnRefreshIndicesOverview) {
 }
 if (els.smJumpToIndicesBtn) {
   els.smJumpToIndicesBtn.addEventListener("click", () => {
-    switchTab("options");
-    switchOptionsSubtab("chainView");
+    window.location.href = "page2.html";
   });
 }
 
@@ -9270,23 +9559,24 @@ if (document.readyState === "loading") {
 
 // Map of instNav keys → which old switchTab() key they correspond to
 const INST_NAV_MAP = {
-  dashboard:  null,          // new dashboard panel
-  breadth:    "breadth",
-  futures:    "breadth",     // Futures → Market Breadth panel
-  options:    "options",
-  analytics:  "breadth",
-  smartmoney: "smartMoney",
-  fiidii:     "smartMoney",
-  mtf:        "mtf",
-  delivery:   "delivery",
-  tools:      "tools",
-  settings:   "settings",
-  resources:  "tools",
+  dashboard:   null,          // new dashboard panel
+  breadth:     "breadth",
+  futures:     "futures",     // Dedicated Institutional Futures Intelligence Desk
+  options:     "options",
+  upstoxChain: "upstoxChain", // Dedicated Upstox Option Chain Pro
+  analytics:   "breadth",
+  smartmoney:  "smartMoney",
+  fiidii:      "smartMoney",
+  mtf:         "mtf",
+  delivery:    "delivery",
+  tools:       "tools",
+  settings:    "settings",
+  resources:   "tools",
 };
 
 // All institutional nav buttons
 const INST_NAV_BTN_IDS = [
-  "navDashboard", "navFutures", "navOptions", "navAnalytics",
+  "navDashboard", "navFutures", "navOptions", "navUpstoxChain", "navAnalytics",
   "navFiiDii", "navMtf", "navDelivery", "navResources"
 ];
 
@@ -9296,6 +9586,7 @@ const INST_NAV_ACTIVE_MAP = {
   breadth:     "navAnalytics",
   futures:     "navFutures",
   options:     "navOptions",
+  upstoxChain: "navUpstoxChain",
   smartMoney:  "navFiiDii",
   mtf:         "navMtf",
   delivery:    "navDelivery",
@@ -9303,7 +9594,7 @@ const INST_NAV_ACTIVE_MAP = {
   settings:    "navResources",
 };
 
-function instNav(key) {
+function instNav(key, subview) {
   const panelDashboard = document.getElementById("panelDashboard");
 
   // Clear all inst-nav-btn active states
@@ -9343,6 +9634,11 @@ function instNav(key) {
     if (activeBtnId) {
       const btn = document.getElementById(activeBtnId);
       if (btn) btn.classList.add("active");
+    }
+
+    // If subview provided (e.g. futures sub-desk)
+    if (tabKey === "futures" && subview && window.futuresDesk && typeof window.futuresDesk.switchSubTab === "function") {
+      window.futuresDesk.switchSubTab(subview);
     }
   }
 }
