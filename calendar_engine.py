@@ -70,7 +70,7 @@ def get_calendar_matrix(
     upstox_tok = os.getenv("UPSTOX_ACCESS_TOKEN", "").strip()
     is_upstox_live = bool(upstox_tok and len(upstox_tok) > 20)
 
-    # 1. Resolve Available Expiries from Upstox or Defaults
+    # 1. Resolve Real Available Exchange Expiries (NSE / Upstox / Angel Scrip Master)
     expiries = []
     if is_upstox_live:
         try:
@@ -79,9 +79,18 @@ def get_calendar_matrix(
             pass
 
     if not expiries:
+        try:
+            import server
+            today_str = datetime.now(IST).strftime("%Y-%m-%d")
+            real_items = server.available_index_expiries(sym, today_str)
+            if real_items:
+                expiries = [item["label"] for item in real_items]
+        except Exception:
+            pass
+
+    if not expiries:
         # Fallback upcoming Thursday expiries
         now_dt = datetime.now(IST)
-        # Find next 4 Thursdays
         days_ahead = (3 - now_dt.weekday()) % 7
         if days_ahead == 0 and now_dt.hour >= 16:
             days_ahead = 7

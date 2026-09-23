@@ -1075,7 +1075,7 @@
     function onUnderlyingChange() {
       saveCurrentToStore();
       currentUnderlying = document.getElementById('cfgUnderlying').value;
-      fetchLiveMarketData(true);
+      fetchLiveMarketData(true, true);
     }
 
     // Live Streaming Auto-Tick Controller
@@ -1102,7 +1102,7 @@
       stopStreaming();
       streamInterval = setInterval(() => {
         if (!isFetching && isLiveStreaming) {
-          fetchLiveMarketData(false);
+          fetchLiveMarketData(false, false);
         }
       }, 1000);
     }
@@ -1144,7 +1144,7 @@
           document.getElementById('btnUpstoxStatus').textContent = '🟢 Upstox Active';
           setTimeout(() => {
             closeUpstoxModal();
-            fetchLiveMarketData(true);
+            fetchLiveMarketData(true, false);
           }, 1200);
         } else {
           statusEl.innerHTML = `<span style="color:#ef4444;">❌ ${d.message}</span>`;
@@ -1155,7 +1155,7 @@
     }
 
     // Primary Live Data Fetch Function
-    async function fetchLiveMarketData(forceFullRender = false) {
+    async function fetchLiveMarketData(forceFullRender = false, isUnderlyingChange = false) {
       if (isFetching) return;
       isFetching = true;
 
@@ -1180,7 +1180,7 @@
           const data = await res.json();
           if (data && data.ok) {
             updateEngineHeader(data);
-            populateAvailableExpiries(data.availableExpiries);
+            populateAvailableExpiries(data.availableExpiries, isUnderlyingChange);
 
             const pairKey = getPairKey();
             const existingRows = customMatrixStore[pairKey];
@@ -1219,13 +1219,17 @@
       }
     }
 
-    function populateAvailableExpiries(expList) {
+    function populateAvailableExpiries(expList, isUnderlyingChange = false) {
       if (!expList || expList.length === 0) return;
-      ['cfgFarExpiry', 'cfgNearExpiry'].forEach((id, idx) => {
+      ['cfgFarExpiry', 'cfgNearExpiry'].forEach((id) => {
         const sel = document.getElementById(id);
-        const currentVal = sel.value;
+        const currentVal = isUnderlyingChange ? 'AUTO' : sel.value;
 
-        // Ensure options exist
+        if (isUnderlyingChange) {
+          sel.innerHTML = '<option value="__ADD_CUSTOM__" style="color:#38bdf8; font-weight:700;">➕ Add Custom Expiry Date...</option>';
+        }
+
+        // Ensure all real market expiries are populated
         expList.forEach((eStr, i) => {
           let exists = false;
           for (let opt of sel.options) {
@@ -1234,9 +1238,9 @@
           if (!exists) {
             const opt = document.createElement('option');
             opt.value = eStr;
-            opt.textContent = `${eStr}${i === 0 ? ' (Near)' : (i === 1 ? ' (Far)' : '')}`;
-            // insert before the last __ADD_CUSTOM__ option
-            const lastIdx = sel.options.length - 1;
+            const tag = i === 0 ? ' (Near / Current)' : (i === 1 ? ' (Far / Next)' : (i === expList.length - 1 ? ' (Far Monthly)' : ''));
+            opt.textContent = `${eStr}${tag}`;
+            const lastIdx = Math.max(0, sel.options.length - 1);
             sel.insertBefore(opt, sel.options[lastIdx] || null);
           }
         });
