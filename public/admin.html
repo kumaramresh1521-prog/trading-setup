@@ -1209,14 +1209,32 @@
       }
 
       async function testActiveBroker() {
+        const apiKey = (document.getElementById('admAngelKey')?.value || '').trim();
+        const clientCode = (document.getElementById('admAngelClient')?.value || '').trim();
+        const pin = (document.getElementById('admAngelPin')?.value || '').trim();
+        const totpSecret = (document.getElementById('admAngelTotp')?.value || '').trim();
         const liveTotp = (document.getElementById('admAngelTotpCode')?.value || '').trim();
+
+        if (apiKey || clientCode || pin) {
+          try {
+            await saveMasterBrokers();
+          } catch(e) {}
+        }
+
         showAdmAlert(`Connecting to Angel One SmartAPI with TOTP...`, 'success');
 
         try {
           const res = await fetch('/api/settings/test', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ broker: 'ANGEL', manualTotp: liveTotp })
+            body: JSON.stringify({
+              broker: 'ANGEL',
+              manualTotp: liveTotp,
+              apiKey: apiKey,
+              clientCode: clientCode,
+              pin: pin,
+              totpSecret: totpSecret
+            })
           });
           const data = await res.json();
           if (data.ok) {

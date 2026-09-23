@@ -8075,6 +8075,20 @@ class RequestHandler(BaseHTTPRequestHandler):
                     client = brokers.FyersClient(cache_dir=CACHE_DIR, env_func=env)
                 else:
                     client = AngelClient()
+                    updates = {}
+                    if payload.get("apiKey"):
+                        client.api_key = str(payload["apiKey"]).strip()
+                        updates["ANGEL_API_KEY"] = client.api_key
+                    if payload.get("clientCode"):
+                        client.client_code = str(payload["clientCode"]).strip()
+                        updates["ANGEL_CLIENT_CODE"] = client.client_code
+                    if payload.get("pin"):
+                        client.pin = str(payload["pin"]).strip()
+                        updates["ANGEL_PIN"] = client.pin
+                    if payload.get("totpSecret"):
+                        updates["ANGEL_TOTP_SECRET"] = str(payload["totpSecret"]).strip()
+                    if updates:
+                        save_dotenv(updates)
                 
                 manual_totp = str(payload.get("manualTotp") or env("ANGEL_TOTP_CODE") or "").strip()
                 if hasattr(client, "manual_totp") and manual_totp:
