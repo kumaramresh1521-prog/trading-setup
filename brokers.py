@@ -537,30 +537,57 @@ class KotakNeoClient(BaseBrokerClient):
 
         fetched = []
         unfetched = []
-        tokens = [getattr(inst, "token", "") for inst in instruments if getattr(inst, "token", "")]
-        url = f"{self.BASE_URL}/Orders/2.0/quick/user/quotes"
-        try:
-            res = http_json(url, method="POST", body={"tokens": tokens}, headers=self.headers(), timeout=10)
-            data = res.get("data") or []
-            lookup = {str(item.get("token")): item for item in data}
-            for inst in instruments:
-                q = lookup.get(str(getattr(inst, "token", "")))
-                if q:
-                    fetched.append({
-                        "symbolToken": getattr(inst, "token", ""),
-                        "tradingSymbol": getattr(inst, "trading_symbol", ""),
-                        "ltp": float(q.get("lastPrice") or q.get("ltp") or 0.0),
-                        "open": float(q.get("open") or 0.0),
-                        "high": float(q.get("high") or 0.0),
-                        "low": float(q.get("low") or 0.0),
-                        "close": float(q.get("close") or 0.0),
-                        "volume": int(q.get("volume") or 0),
-                        "opnInterest": int(q.get("oi") or 0),
-                    })
-                else:
-                    unfetched.append({"symbolToken": getattr(inst, "token", "")})
-        except Exception:
-            unfetched.extend([{"symbolToken": getattr(inst, "token", "")} for inst in instruments])
+        token_map = {}
+        for inst in instruments:
+            tok = str(getattr(inst, "token", "") or "").strip()
+            if tok:
+                token_map[tok] = inst
+
+        if not token_map:
+            return {"fetched": [], "unfetched": []}
+
+        # Kotak Neo v2 uses nse_cm|{token} batch format
+        batches = []
+        tok_list = list(token_map.keys())
+        for i in range(0, len(tok_list), 40):
+            batches.append(tok_list[i : i + 40])
+
+        headers = {
+            "Authorization": self.consumer_key or self.access_token,
+            "neo-fin-key": "neotradeapi",
+            "Sid": self.view_token,
+            "User-Agent": "neo-api-client/2.0.0",
+        }
+
+        for batch in batches:
+            sym_items = [f"nse_cm|{t}" for t in batch]
+            url = f"https://mis.kotaksecurities.com/script-details/1.0/quotes/neosymbol/{','.join(sym_items)}/all"
+            try:
+                req = urllib.request.Request(url, headers=headers)
+                with urllib.request.urlopen(req, timeout=8) as r:
+                    data = json.loads(r.read().decode("utf-8"))
+                    for q in (data if isinstance(data, list) else []):
+                        t = str(q.get("exchange_token") or "")
+                        inst = token_map.get(t)
+                        ltp = float(q.get("ltp") or 0.0)
+                        if t and ltp > 0:
+                            fetched.append({
+                                "symbolToken": t,
+                                "tradingSymbol": getattr(inst, "trading_symbol", q.get("display_symbol", "")),
+                                "ltp": ltp,
+                                "open": float(q.get("open") or 0.0),
+                                "high": float(q.get("high") or 0.0),
+                                "low": float(q.get("low") or 0.0),
+                                "close": float(q.get("close_price") or q.get("close") or ltp),
+                                "volume": int(float(q.get("last_volume") or q.get("volume") or 0)),
+                                "opnInterest": int(float(q.get("open_interest") or q.get("oi") or 0)),
+                            })
+                            token_map.pop(t, None)
+            except Exception:
+                pass
+
+        for remaining_tok in token_map:
+            unfetched.append({"symbolToken": remaining_tok})
 
         return {"fetched": fetched, "unfetched": unfetched}
 
