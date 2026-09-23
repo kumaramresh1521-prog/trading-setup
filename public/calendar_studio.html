@@ -182,23 +182,76 @@
       color: #fff;
     }
 
-    .ai-items-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 8px;
-      margin-top: 4px;
+    /* Saved Combination Tabs Strip */
+    .saved-tabs-strip {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    .ai-item-pill {
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 11.5px;
+    .tabs-scroll-container {
       display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
       align-items: center;
-      gap: 6px;
-      color: #e2e8f0;
+    }
+
+    .combo-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      background: #0b1329;
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .combo-tab:hover {
+      background: #111e3b;
+      border-color: #38bdf8;
+      color: #f8fafc;
+    }
+    .combo-tab.active-combo {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.22), rgba(99, 102, 241, 0.22));
+      border-color: #38bdf8;
+      color: #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+    }
+    .combo-tab .tab-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+    }
+    .combo-tab.active-combo .tab-badge {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      font-weight: 700;
+    }
+    .combo-tab .tab-close {
+      color: #64748b;
+      cursor: pointer;
+      padding: 0 2px;
+      font-size: 13px;
+      line-height: 1;
+      border-radius: 50%;
+    }
+    .combo-tab .tab-close:hover {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.15);
     }
 
     /* Top Controls Strip: Underlying -> Far Expiry -> Near Expiry */
@@ -208,7 +261,7 @@
       border-radius: 10px;
       padding: 14px 18px;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       flex-wrap: wrap;
       gap: 16px;
     }
@@ -217,7 +270,7 @@
       display: flex;
       flex-direction: column;
       gap: 5px;
-      min-width: 220px;
+      min-width: 210px;
       flex: 1;
     }
 
@@ -242,6 +295,7 @@
       font-family: var(--font-mono);
       outline: none;
       transition: border-color 0.15s ease;
+      height: 38px;
     }
     .control-select:focus, .control-input:focus {
       border-color: var(--border-highlight);
@@ -487,7 +541,7 @@
     }
     .notes-textarea:focus { border-color: var(--border-highlight); }
 
-    /* Modal */
+    /* Modals */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -567,7 +621,28 @@
       </div>
     </section>
 
-    <!-- 1. Top Controls: Underlying -> Far Expiry -> Near Expiry -->
+    <!-- 📑 Saved Expiry Combinations Bar (Clickable Tabs) -->
+    <section class="saved-tabs-strip" id="savedTabsSection">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:12px; font-weight:700; color:#38bdf8; text-transform:uppercase; letter-spacing:0.5px;">
+            📑 Saved Combination Tabs (Click to Switch):
+          </span>
+          <span id="savedTabCountBadge" style="background:#1e293b; color:#94a3b8; font-size:11px; padding:1px 6px; border-radius:10px; font-family:var(--font-mono);">0 tabs</span>
+        </div>
+        <button class="btn btn-indigo" style="font-size:11px; padding:4px 12px;" onclick="promptSaveCurrentAsTab()">
+          ➕ Save Current Combination as Tab
+        </button>
+      </div>
+      <div class="tabs-scroll-container" id="tabsScrollContainer">
+        <!-- Rendered dynamically -->
+        <span style="font-size:11.5px; color:#64748b; font-style:italic;" id="emptyTabsNotice">
+          Koi combination tab abhi save nahi kiya hai. Niche Far aur Near Expiry select karein aur "Save Current Combination as Tab" dabayein!
+        </span>
+      </div>
+    </section>
+
+    <!-- 1. Top Controls: Underlying -> Far Expiry -> Near Expiry -> Save Tab Button -->
     <section class="setup-strip">
       <!-- Underlying -->
       <div class="control-box">
@@ -581,26 +656,29 @@
         </select>
       </div>
 
-      <!-- Far Expiry (Buy Leg) -->
+      <!-- Far Expiry (Buy Leg) with Add Option inside dropdown -->
       <div class="control-box">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <label class="control-label" style="color: #38bdf8;">📅 2. Far Expiry (Buy Leg)</label>
-          <button class="btn btn-secondary" style="font-size:10px; padding:2px 7px; color:#38bdf8;" onclick="promptAddExpiry('far')">➕ Add Expiry</button>
-        </div>
-        <select id="cfgFarExpiry" class="control-select" onchange="onExpiryChange()">
+        <label class="control-label" style="color: #38bdf8;">📅 2. Far Expiry (Buy Leg)</label>
+        <select id="cfgFarExpiry" class="control-select" onchange="handleSelectExpiryChange('far')">
           <option value="AUTO">AUTO (Next Weekly)</option>
+          <option value="__ADD_CUSTOM__" style="color:#38bdf8; font-weight:700;">➕ Add Custom Date...</option>
         </select>
       </div>
 
-      <!-- Near Expiry (Sell Leg) -->
+      <!-- Near Expiry (Sell Leg) with Add Option inside dropdown -->
       <div class="control-box">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <label class="control-label" style="color: #f59e0b;">⏳ 3. Near Expiry (Sell Leg)</label>
-          <button class="btn btn-secondary" style="font-size:10px; padding:2px 7px; color:#f59e0b;" onclick="promptAddExpiry('near')">➕ Add Expiry</button>
-        </div>
-        <select id="cfgNearExpiry" class="control-select" onchange="onExpiryChange()">
+        <label class="control-label" style="color: #f59e0b;">⏳ 3. Near Expiry (Sell Leg)</label>
+        <select id="cfgNearExpiry" class="control-select" onchange="handleSelectExpiryChange('near')">
           <option value="AUTO">AUTO (Current Weekly)</option>
+          <option value="__ADD_CUSTOM__" style="color:#f59e0b; font-weight:700;">➕ Add Custom Date...</option>
         </select>
+      </div>
+
+      <!-- Save this Combination as Tab Button right here as requested -->
+      <div class="control-box" style="flex: 0 0 auto;">
+        <button class="btn btn-indigo" style="height: 38px; font-size: 12px; padding: 0 16px;" onclick="promptSaveCurrentAsTab()">
+          💾 Save as Tab
+        </button>
       </div>
     </section>
 
@@ -634,7 +712,7 @@
           <button class="btn btn-indigo" onclick="addSectionLabelRow()">🏷️ Add Strategy / Diagonal Label</button>
         </div>
         <div style="font-size: 11px; color: #38bdf8; font-family: var(--font-mono); display:flex; align-items:center; gap:6px;">
-          <span>⚡ Active Pair: <strong id="activePairDisplay" style="color:#f8fafc;">--</strong> | Strikes auto-persisted</span>
+          <span>⚡ Active Combination: <strong id="activePairDisplay" style="color:#f8fafc;">--</strong></span>
         </div>
       </div>
 
@@ -728,6 +806,21 @@
     </div>
   </div>
 
+  <!-- Custom Expiry Prompt Modal -->
+  <div class="modal-overlay" id="expiryModal">
+    <div style="background:#0b1329; border:1px solid #38bdf8; border-radius:12px; padding:20px; max-width:440px; width:90%; display:flex; flex-direction:column; gap:14px;">
+      <h3 style="color:#f8fafc; font-size:15px; font-weight:700;">📅 Add Custom Expiry Date</h3>
+      <p style="font-size:12px; color:#94a3b8;">
+        Nayi expiry date enter karein (Format: <code>DD-Mon-YYYY</code>, jaise <code>15-Oct-2026</code>):
+      </p>
+      <input type="text" id="customExpiryInput" class="control-input" placeholder="e.g. 15-Oct-2026" style="width:100%;" />
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn-secondary" onclick="closeExpiryModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmAddExpiryModal()">Add Expiry</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast">✅ Saved and Synced with Assistant!</div>
 
   <script>
@@ -736,7 +829,12 @@
     let isLiveStreaming = true;
     let streamInterval = null;
     let isFetching = false;
+    let currentPendingExpiryTarget = 'far';
+
+    // Matrix persistence & Saved Tabs
     let customMatrixStore = {}; // Maps `${underlying}_${farExpiry}_${nearExpiry}_${type}` -> rows[]
+    let savedTabsStore = [];    // Array of { id, name, underlying, farExpiry, nearExpiry, optionType, rows }
+    let activeTabId = null;
 
     function getPairKey() {
       const u = document.getElementById('cfgUnderlying').value;
@@ -752,11 +850,47 @@
       if (el) el.textContent = `${f} / ${n}`;
     }
 
-    function promptAddExpiry(target) {
-      const custom = prompt("Nayi Expiry Date dalein (Example: 15-Oct-2026):");
-      if (!custom || !custom.trim()) return;
-      const val = custom.trim();
+    // Dropdown Expiry Selection & Add Option
+    function handleSelectExpiryChange(target) {
+      const selId = target === 'far' ? 'cfgFarExpiry' : 'cfgNearExpiry';
+      const sel = document.getElementById(selId);
+      if (sel.value === '__ADD_CUSTOM__') {
+        openExpiryModal(target);
+        return;
+      }
+      onExpiryChange();
+    }
 
+    function openExpiryModal(target) {
+      currentPendingExpiryTarget = target;
+      const m = document.getElementById('expiryModal');
+      m.style.display = 'flex';
+      const inp = document.getElementById('customExpiryInput');
+      inp.value = '';
+      inp.focus();
+    }
+
+    function closeExpiryModal() {
+      document.getElementById('expiryModal').style.display = 'none';
+      // Reset select away from __ADD_CUSTOM__ if user cancelled
+      const selId = currentPendingExpiryTarget === 'far' ? 'cfgFarExpiry' : 'cfgNearExpiry';
+      const sel = document.getElementById(selId);
+      if (sel.value === '__ADD_CUSTOM__') {
+        sel.selectedIndex = 0;
+      }
+    }
+
+    function confirmAddExpiryModal() {
+      const inp = document.getElementById('customExpiryInput');
+      const val = inp.value.trim();
+      if (!val) return;
+      addExpiryOptionToDropdowns(val, currentPendingExpiryTarget);
+      closeExpiryModal();
+      onExpiryChange();
+      showToast(`✅ Expiry ${val} add ho gayi!`);
+    }
+
+    function addExpiryOptionToDropdowns(val, targetToSelect) {
       ['cfgFarExpiry', 'cfgNearExpiry'].forEach(id => {
         const sel = document.getElementById(id);
         let exists = false;
@@ -766,18 +900,133 @@
         if (!exists) {
           const opt = document.createElement('option');
           opt.value = val;
-          opt.textContent = val + " (Custom)";
-          sel.appendChild(opt);
+          opt.textContent = `${val} (Custom)`;
+          // Insert right before the last '__ADD_CUSTOM__' option
+          const customOptIndex = sel.options.length - 1;
+          sel.insertBefore(opt, sel.options[customOptIndex] || null);
         }
       });
 
-      if (target === 'far') {
+      if (targetToSelect === 'far') {
         document.getElementById('cfgFarExpiry').value = val;
-      } else {
+      } else if (targetToSelect === 'near') {
         document.getElementById('cfgNearExpiry').value = val;
       }
-      onExpiryChange();
-      showToast(`✅ Expiry ${val} add ho gayi!`);
+      updateActivePairLabel();
+    }
+
+    // ==========================================
+    // 📑 Saved Expiry Combination Tabs Feature
+    // ==========================================
+    function promptSaveCurrentAsTab() {
+      saveCurrentToStore();
+      const u = document.getElementById('cfgUnderlying').value;
+      const f = document.getElementById('cfgFarExpiry').value;
+      const n = document.getElementById('cfgNearExpiry').value;
+      const t = currentType;
+
+      const defaultName = `${u} (${f} / ${n}) ${t}`;
+      const name = prompt("Is Expiry Combination Tab ka naam dalein:", defaultName);
+      if (!name || !name.trim()) return;
+
+      const currentRows = readCurrentRowsFromDom();
+      const newTab = {
+        id: 'tab_' + Date.now(),
+        name: name.trim(),
+        underlying: u,
+        farExpiry: f,
+        nearExpiry: n,
+        optionType: t,
+        rows: currentRows
+      };
+
+      savedTabsStore.push(newTab);
+      activeTabId = newTab.id;
+      renderTabsBar();
+      savePayload(true);
+      showToast(`✅ Tab "${newTab.name}" save ho gaya!`);
+    }
+
+    function renderTabsBar() {
+      const container = document.getElementById('tabsScrollContainer');
+      const countBadge = document.getElementById('savedTabCountBadge');
+      const notice = document.getElementById('emptyTabsNotice');
+
+      if (!savedTabsStore || savedTabsStore.length === 0) {
+        container.innerHTML = '<span style="font-size:11.5px; color:#64748b; font-style:italic;" id="emptyTabsNotice">Koi combination tab abhi save nahi kiya hai. Niche Far aur Near Expiry select karein aur "Save as Tab" dabayein!</span>';
+        countBadge.textContent = '0 tabs';
+        return;
+      }
+
+      countBadge.textContent = `${savedTabsStore.length} tab${savedTabsStore.length > 1 ? 's' : ''}`;
+      container.innerHTML = '';
+
+      savedTabsStore.forEach(tab => {
+        const tabEl = document.createElement('div');
+        tabEl.className = 'combo-tab' + (tab.id === activeTabId ? ' active-combo' : '');
+        tabEl.innerHTML = `
+          <span>${tab.name}</span>
+          <span class="tab-badge">${tab.farExpiry.split(' ')[0]} / ${tab.nearExpiry.split(' ')[0]}</span>
+          <span class="tab-badge" style="color:${tab.optionType === 'CE' ? '#10b981' : '#f43f5e'}">${tab.optionType}</span>
+          <span class="tab-close" onclick="deleteSavedTab(event, '${tab.id}')" title="Delete Tab">✕</span>
+        `;
+        tabEl.onclick = (e) => {
+          if (e.target.classList.contains('tab-close')) return;
+          switchSavedTab(tab.id);
+        };
+        container.appendChild(tabEl);
+      });
+    }
+
+    function switchSavedTab(tabId) {
+      saveCurrentToStore();
+      const tab = savedTabsStore.find(t => t.id === tabId);
+      if (!tab) return;
+
+      activeTabId = tab.id;
+
+      // Switch underlying
+      document.getElementById('cfgUnderlying').value = tab.underlying;
+      currentUnderlying = tab.underlying;
+
+      // Switch Expiries (ensure options exist)
+      addExpiryOptionToDropdowns(tab.farExpiry, 'far');
+      addExpiryOptionToDropdowns(tab.nearExpiry, 'near');
+
+      // Switch CE/PE
+      currentType = tab.optionType;
+      document.getElementById('tabCe').className = 'type-tab ' + (currentType === 'CE' ? 'active-ce' : '');
+      document.getElementById('tabPe').className = 'type-tab ' + (currentType === 'PE' ? 'active-pe' : '');
+      const badge = document.getElementById('tableTitleBadge');
+      badge.textContent = currentType;
+      badge.style.background = currentType === 'CE' ? '#10b981' : '#f43f5e';
+      document.getElementById('tableTitleText').textContent = (currentType === 'CE' ? 'Call' : 'Put') + ' Calendar Spread Matrix (Far Exp vs Near Exp)';
+
+      updateActivePairLabel();
+      renderTabsBar();
+
+      // Load saved rows if present
+      if (tab.rows && tab.rows.length > 0) {
+        renderGrid(tab.rows);
+      } else {
+        fetchLiveMarketData(true);
+      }
+
+      showToast(`Switched to: ${tab.name}`);
+    }
+
+    function deleteSavedTab(e, tabId) {
+      e.stopPropagation();
+      const tab = savedTabsStore.find(t => t.id === tabId);
+      if (!confirm(`Kya aap tab "${tab ? tab.name : 'Combination'}" ko delete karna chahte hain?`)) return;
+
+      savedTabsStore = savedTabsStore.filter(t => t.id !== tabId);
+      if (activeTabId === tabId) {
+        activeTabId = savedTabsStore.length > 0 ? savedTabsStore[0].id : null;
+      }
+      renderTabsBar();
+      savePayload(true);
+      showToast("Tab removed");
     }
 
     function saveCurrentToStore() {
@@ -785,8 +1034,20 @@
       const rows = readCurrentRowsFromDom();
       if (rows && rows.length > 0) {
         customMatrixStore[currentKey] = rows;
+        // Also update active tab if active
+        if (activeTabId) {
+          const curTab = savedTabsStore.find(t => t.id === activeTabId);
+          if (curTab) {
+            curTab.rows = rows;
+            curTab.underlying = document.getElementById('cfgUnderlying').value;
+            curTab.farExpiry = document.getElementById('cfgFarExpiry').value;
+            curTab.nearExpiry = document.getElementById('cfgNearExpiry').value;
+            curTab.optionType = currentType;
+          }
+        }
         try {
           localStorage.setItem('calendar_matrix_store', JSON.stringify(customMatrixStore));
+          localStorage.setItem('calendar_saved_tabs', JSON.stringify(savedTabsStore));
         } catch (e) {}
       }
     }
@@ -922,13 +1183,11 @@
             populateAvailableExpiries(data.availableExpiries);
 
             const pairKey = getPairKey();
-            // If user has customized rows saved for this pair, use those custom rows as base
             const existingRows = customMatrixStore[pairKey];
 
             if (forceFullRender || !existingRows || document.querySelectorAll('#gridBody tr').length === 0) {
               renderGrid(data.rows);
             } else {
-              // Smooth in-place tick update
               updateGridInPlace(data.rows);
             }
 
@@ -965,7 +1224,8 @@
       ['cfgFarExpiry', 'cfgNearExpiry'].forEach((id, idx) => {
         const sel = document.getElementById(id);
         const currentVal = sel.value;
-        // Keep current custom or selected options
+
+        // Ensure options exist
         expList.forEach((eStr, i) => {
           let exists = false;
           for (let opt of sel.options) {
@@ -975,13 +1235,29 @@
             const opt = document.createElement('option');
             opt.value = eStr;
             opt.textContent = `${eStr}${i === 0 ? ' (Near)' : (i === 1 ? ' (Far)' : '')}`;
-            sel.appendChild(opt);
+            // insert before the last __ADD_CUSTOM__ option
+            const lastIdx = sel.options.length - 1;
+            sel.insertBefore(opt, sel.options[lastIdx] || null);
           }
         });
-        if (currentVal && currentVal !== 'AUTO') {
+
+        // Ensure __ADD_CUSTOM__ is always at the bottom
+        let hasCustomOpt = false;
+        for (let opt of sel.options) {
+          if (opt.value === '__ADD_CUSTOM__') { hasCustomOpt = true; break; }
+        }
+        if (!hasCustomOpt) {
+          const optCustom = document.createElement('option');
+          optCustom.value = '__ADD_CUSTOM__';
+          optCustom.textContent = '➕ Add Custom Expiry Date...';
+          optCustom.style.color = '#38bdf8';
+          optCustom.style.fontWeight = '700';
+          sel.appendChild(optCustom);
+        }
+
+        if (currentVal && currentVal !== 'AUTO' && currentVal !== '__ADD_CUSTOM__') {
           sel.value = currentVal;
         } else {
-          // Defaults: Far -> index 1, Near -> index 0
           if (id === 'cfgFarExpiry' && expList.length > 1) sel.value = expList[1];
           if (id === 'cfgNearExpiry') sel.value = expList[0];
         }
@@ -1038,7 +1314,6 @@
         const fresh = rowMap[s1];
         if (!fresh) return;
 
-        // If user is actively typing in this row, skip updating
         if (tr.contains(document.activeElement)) return;
 
         updateCellWithFlash(tds[2], fresh.farBid);
@@ -1069,7 +1344,7 @@
       if (cell.textContent !== String(newVal)) {
         cell.textContent = newVal;
         cell.classList.remove('cell-uptick', 'cell-downtick');
-        void cell.offsetWidth; // Trigger reflow
+        void cell.offsetWidth;
         if (parsedNew > oldVal) cell.classList.add('cell-uptick');
         else if (parsedNew < oldVal) cell.classList.add('cell-downtick');
       }
@@ -1087,7 +1362,6 @@
       updateRowCount();
     }
 
-    // Auto-fill values when a Strike is typed in Strike 1 or Strike 2
     function onStrikeInput(el) {
       const tr = el.closest('tr');
       if (tr.classList.contains('section-label-row')) return;
@@ -1291,6 +1565,8 @@
         ],
         rows: currentRows,
         matrixStore: customMatrixStore,
+        savedTabs: savedTabsStore,
+        activeTabId: activeTabId,
         userNotes: document.getElementById('liveNotes').value.trim(),
         timestamp: new Date().toLocaleTimeString()
       };
@@ -1329,6 +1605,12 @@
     // Restore saved feedback if available
     async function loadSavedFeedback() {
       try {
+        // Load local tabs store
+        const lTabs = localStorage.getItem('calendar_saved_tabs');
+        if (lTabs) {
+          try { savedTabsStore = JSON.parse(lTabs); } catch(e){}
+        }
+
         const res = await fetch('/api/calendar/feedback');
         if (res.ok) {
           const resData = await res.json();
@@ -1336,6 +1618,12 @@
           if (fb) {
             if (fb.matrixStore && typeof fb.matrixStore === 'object') {
               customMatrixStore = fb.matrixStore;
+            }
+            if (fb.savedTabs && Array.isArray(fb.savedTabs)) {
+              savedTabsStore = fb.savedTabs;
+            }
+            if (fb.activeTabId) {
+              activeTabId = fb.activeTabId;
             }
             if (fb.userNotes) {
               document.getElementById('liveNotes').value = fb.userNotes;
@@ -1352,6 +1640,7 @@
       } catch (e) {
         console.warn("Feedback load notice:", e);
       }
+      renderTabsBar();
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
