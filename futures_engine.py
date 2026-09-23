@@ -24,9 +24,17 @@ import os
 import time
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+# Ensure environment variables are loaded
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
 
 logger = logging.getLogger("futures_engine")
 
@@ -34,18 +42,18 @@ KOTAK_BASE_URL = "https://napi.kotaksecurities.com"
 
 # Master F&O Universe with Sectors and Lot Sizes
 FO_UNIVERSE = [
-    {'symbol': 'NIFTY', 'name': 'Nifty 50 Index', 'sector': 'Index', 'lot': 75, 'isIndex': True, 'basePrice': 25480.0, 'mwplBase': 40.0},
-    {'symbol': 'BANKNIFTY', 'name': 'Nifty Bank Index', 'sector': 'Index', 'lot': 30, 'isIndex': True, 'basePrice': 53250.0, 'mwplBase': 42.0},
-    {'symbol': 'FINNIFTY', 'name': 'Nifty Financial Services', 'sector': 'Index', 'lot': 65, 'isIndex': True, 'basePrice': 24350.0, 'mwplBase': 38.0},
-    {'symbol': 'MIDCPNIFTY', 'name': 'Nifty Midcap Select', 'sector': 'Index', 'lot': 120, 'isIndex': True, 'basePrice': 12900.0, 'mwplBase': 35.0},
+    {'symbol': 'NIFTY', 'name': 'Nifty 50 Index', 'sector': 'Index', 'lot': 75, 'isIndex': True, 'basePrice': 23446.8, 'mwplBase': 40.0},
+    {'symbol': 'BANKNIFTY', 'name': 'Nifty Bank Index', 'sector': 'Index', 'lot': 30, 'isIndex': True, 'basePrice': 56548.9, 'mwplBase': 42.0},
+    {'symbol': 'FINNIFTY', 'name': 'Nifty Financial Services', 'sector': 'Index', 'lot': 65, 'isIndex': True, 'basePrice': 25564.85, 'mwplBase': 38.0},
+    {'symbol': 'MIDCPNIFTY', 'name': 'Nifty Midcap Select', 'sector': 'Index', 'lot': 120, 'isIndex': True, 'basePrice': 14572.25, 'mwplBase': 35.0},
     {'symbol': 'NIFTYNXT50', 'name': 'Nifty Next 50', 'sector': 'Index', 'lot': 25, 'isIndex': True, 'basePrice': 71200.0, 'mwplBase': 32.0},
-    {'symbol': 'SENSEX', 'name': 'BSE Sensex', 'sector': 'Index', 'lot': 20, 'isIndex': True, 'basePrice': 82800.0, 'mwplBase': 39.0},
-    {'symbol': 'BANKEX', 'name': 'BSE Bankex', 'sector': 'Index', 'lot': 15, 'isIndex': True, 'basePrice': 64200.0, 'mwplBase': 41.0},
-    {'symbol': 'HDFCBANK', 'name': 'HDFC Bank Ltd', 'sector': 'Banking', 'lot': 550, 'basePrice': 1645.0, 'mwplBase': 62.4},
-    {'symbol': 'ICICIBANK', 'name': 'ICICI Bank Ltd', 'sector': 'Banking', 'lot': 700, 'basePrice': 1220.0, 'mwplBase': 58.1},
-    {'symbol': 'SBIN', 'name': 'State Bank of India', 'sector': 'Banking', 'lot': 750, 'basePrice': 795.0, 'mwplBase': 71.5},
-    {'symbol': 'KOTAKBANK', 'name': 'Kotak Mahindra Bank', 'sector': 'Banking', 'lot': 400, 'basePrice': 1780.0, 'mwplBase': 45.2},
-    {'symbol': 'AXISBANK', 'name': 'Axis Bank Ltd', 'sector': 'Banking', 'lot': 625, 'basePrice': 1190.0, 'mwplBase': 66.8},
+    {'symbol': 'SENSEX', 'name': 'BSE Sensex', 'sector': 'Index', 'lot': 20, 'isIndex': True, 'basePrice': 74828.25, 'mwplBase': 39.0},
+    {'symbol': 'BANKEX', 'name': 'BSE Bankex', 'sector': 'Index', 'lot': 15, 'isIndex': True, 'basePrice': 63916.5, 'mwplBase': 41.0},
+    {'symbol': 'HDFCBANK', 'name': 'HDFC Bank Ltd', 'sector': 'Banking', 'lot': 550, 'basePrice': 737.25, 'mwplBase': 62.4},
+    {'symbol': 'ICICIBANK', 'name': 'ICICI Bank Ltd', 'sector': 'Banking', 'lot': 700, 'basePrice': 1340.0, 'mwplBase': 58.1},
+    {'symbol': 'SBIN', 'name': 'State Bank of India', 'sector': 'Banking', 'lot': 750, 'basePrice': 994.1, 'mwplBase': 71.5},
+    {'symbol': 'KOTAKBANK', 'name': 'Kotak Mahindra Bank', 'sector': 'Banking', 'lot': 400, 'basePrice': 413.25, 'mwplBase': 45.2},
+    {'symbol': 'AXISBANK', 'name': 'Axis Bank Ltd', 'sector': 'Banking', 'lot': 625, 'basePrice': 1243.2, 'mwplBase': 66.8},
     {'symbol': 'INDUSINDBK', 'name': 'IndusInd Bank Ltd', 'sector': 'Banking', 'lot': 500, 'basePrice': 1415.0, 'mwplBase': 74.2},
     {'symbol': 'BANKBARODA', 'name': 'Bank of Baroda', 'sector': 'Banking', 'lot': 2925, 'basePrice': 242.0, 'mwplBase': 78.5},
     {'symbol': 'PNB', 'name': 'Punjab National Bank', 'sector': 'Banking', 'lot': 8000, 'basePrice': 105.0, 'mwplBase': 84.1},
@@ -507,60 +515,132 @@ def classify_buildup(price_chg: float, oi_chg: float) -> tuple[str, str, str]:
         return "CONSOLIDATION", "badge-neutral", "NEUT"
 
 
-_KOTAK_QUOTES_CACHE: dict = {"ts": 0.0, "data": {}}
+_LIVE_QUOTES_CACHE: dict = {"ts": 0.0, "data": {}}
 _KOTAK_TOKEN_MAP: dict = {}
 
 def get_live_kotak_quotes_map() -> dict[str, dict]:
-    global _KOTAK_QUOTES_CACHE, _KOTAK_TOKEN_MAP
+    """
+    Unified high-fidelity live quote engine:
+    1. Fetches real benchmark indices (NIFTY, BANKNIFTY, FINNIFTY, MIDCPNIFTY, SENSEX, BANKEX) & special symbols via Angel One SmartAPI.
+    2. Fetches 185+ F&O stocks via Kotak Securities Neo API in parallel batches (sub-second).
+    3. Seamlessly caches for 3s to support high-frequency frontend ticker polling.
+    """
+    global _LIVE_QUOTES_CACHE, _KOTAK_TOKEN_MAP
     now = time.time()
-    if _KOTAK_QUOTES_CACHE["data"] and (now - _KOTAK_QUOTES_CACHE["ts"]) < 3.0:
-        return _KOTAK_QUOTES_CACHE["data"]
+    if _LIVE_QUOTES_CACHE["data"] and (now - _LIVE_QUOTES_CACHE["ts"]) < 3.0:
+        return _LIVE_QUOTES_CACHE["data"]
 
+    quotes_res = dict(_LIVE_QUOTES_CACHE.get("data", {}))
+
+    # 1. Fetch Benchmark Indices & Special Symbols via Angel One SmartAPI
+    try:
+        from server import AngelClient, Instrument
+        ac = AngelClient()
+        if ac.is_configured():
+            ac.ensure_session()
+            angel_insts = [
+                Instrument(symbol='NIFTY', trading_symbol='NIFTY 50', token='99926000', exchange='NSE'),
+                Instrument(symbol='BANKNIFTY', trading_symbol='NIFTY BANK', token='99926009', exchange='NSE'),
+                Instrument(symbol='FINNIFTY', trading_symbol='FINNIFTY', token='99926037', exchange='NSE'),
+                Instrument(symbol='MIDCPNIFTY', trading_symbol='MIDCPNIFTY', token='99926074', exchange='NSE'),
+                Instrument(symbol='SENSEX', trading_symbol='SENSEX', token='99919000', exchange='BSE'),
+                Instrument(symbol='BANKEX', trading_symbol='BANKEX', token='99919012', exchange='BSE'),
+                Instrument(symbol='NIFTYNXT50', trading_symbol='NIFTY NEXT 50', token='99926013', exchange='NSE'),
+                Instrument(symbol='TATAMOTORS', trading_symbol='TATAMOTORS', token='3456', exchange='NSE'),
+                Instrument(symbol='ZOMATO', trading_symbol='ZOMATO', token='5097', exchange='NSE'),
+                Instrument(symbol='LTIM', trading_symbol='LTIM', token='17818', exchange='NSE'),
+                Instrument(symbol='HPCL', trading_symbol='HPCL', token='1406', exchange='NSE'),
+                Instrument(symbol='GUJGASLTD', trading_symbol='GUJGASLTD', token='10599', exchange='NSE'),
+                Instrument(symbol='MCDOWELL-N', trading_symbol='MCDOWELL-N', token='10447', exchange='NSE'),
+                Instrument(symbol='IPCA', trading_symbol='IPCALAB', token='1633', exchange='NSE'),
+                Instrument(symbol='L&TFH', trading_symbol='LTF', token='24948', exchange='NSE'),
+            ]
+            angel_res = ac.quote(angel_insts, mode='FULL')
+            for f in angel_res.get('fetched', []):
+                ts_u = str(f.get('tradingSymbol') or '').upper()
+                tok = str(f.get('symbolToken') or '')
+                sym = None
+                if tok == '99926000' or 'NIFTY 50' in ts_u: sym = 'NIFTY'
+                elif tok == '99919012' or 'BANKEX' in ts_u: sym = 'BANKEX'
+                elif tok == '99926009' or 'NIFTY BANK' in ts_u or 'BANKNIFTY' in ts_u: sym = 'BANKNIFTY'
+                elif tok == '99926037' or 'FIN' in ts_u: sym = 'FINNIFTY'
+                elif tok == '99926074' or 'MID' in ts_u: sym = 'MIDCPNIFTY'
+                elif tok == '99919000' or 'SENSEX' in ts_u: sym = 'SENSEX'
+                elif tok == '99926013' or 'NEXT' in ts_u: sym = 'NIFTYNXT50'
+                elif tok == '3456' or 'TMPV' in ts_u or 'TATAMOTORS' in ts_u: sym = 'TATAMOTORS'
+                elif tok == '5097' or 'ETERNAL' in ts_u or 'ZOMATO' in ts_u: sym = 'ZOMATO'
+                elif tok == '17818' or 'LTM' in ts_u or 'LTIM' in ts_u: sym = 'LTIM'
+                elif tok == '1406' or 'HINDPETRO' in ts_u or 'HPCL' in ts_u: sym = 'HPCL'
+                elif tok == '10599' or 'GUJENERGY' in ts_u or 'GUJGASLTD' in ts_u: sym = 'GUJGASLTD'
+                elif tok == '10447' or 'UNITDSPR' in ts_u or 'MCDOWELL' in ts_u: sym = 'MCDOWELL-N'
+                elif tok == '1633' or 'IPCA' in ts_u: sym = 'IPCA'
+                elif tok == '24948' or 'LTF' in ts_u: sym = 'L&TFH'
+                if sym:
+                    ltp = float(f.get('ltp') or 0.0)
+                    chg = float(f.get('netChange') or 0.0)
+                    pct = float(f.get('percentChange') or 0.0)
+                    close = float(f.get('close') or (ltp - chg if ltp else 0.0))
+                    if ltp > 0:
+                        quotes_res[sym] = {
+                            "ltp": ltp,
+                            "changePct": pct,
+                            "change": chg,
+                            "open": float(f.get('open') or ltp),
+                            "high": float(f.get('high') or ltp),
+                            "low": float(f.get('low') or ltp),
+                            "close": close,
+                            "volume": int(float(f.get('tradeVolume') or 0)),
+                            "oi": int(float(f.get('opnInterest') or 0)),
+                            "source": "ANGEL"
+                        }
+    except Exception as e:
+        logger.debug(f"Angel live quote fetch skipped: {e}")
+
+    # 2. Fetch All F&O Stocks via Kotak Securities Neo API (Parallel Batches)
     ckey = os.getenv("KOTAK_CONSUMER_KEY", "").strip()
     sid = os.getenv("KOTAK_VIEW_TOKEN", "").strip()
-    if not ckey:
-        return _KOTAK_QUOTES_CACHE.get("data", {})
+    if ckey:
+        if not _KOTAK_TOKEN_MAP:
+            try:
+                map_file = Path("cache/kotak_token_map.json")
+                if map_file.exists():
+                    _KOTAK_TOKEN_MAP = json.loads(map_file.read_text(encoding="utf-8"))
+            except Exception:
+                _KOTAK_TOKEN_MAP = {}
 
-    if not _KOTAK_TOKEN_MAP:
+        tokens_to_fetch = []
+        symbol_by_tok = {}
+        for item in FO_UNIVERSE:
+            sym = item["symbol"]
+            tok = _KOTAK_TOKEN_MAP.get(sym)
+            if tok:
+                tokens_to_fetch.append(tok)
+                symbol_by_tok[tok] = sym
+
+        headers = {
+            "Authorization": ckey,
+            "neo-fin-key": "neotradeapi",
+            "Sid": sid,
+            "User-Agent": "neo-api-client/2.0.0"
+        }
+
+        def _fetch_kotak_chunk(chunk):
+            sym_str = ",".join([f"nse_cm|{t}" for t in chunk])
+            url = f"https://mis.kotaksecurities.com/script-details/1.0/quotes/neosymbol/{sym_str}/all"
+            try:
+                req = urllib.request.Request(url, headers=headers)
+                with urllib.request.urlopen(req, timeout=6) as r:
+                    d = json.loads(r.read().decode("utf-8"))
+                    return d if isinstance(d, list) else []
+            except Exception:
+                return []
+
+        chunks = [tokens_to_fetch[i : i + 20] for i in range(0, len(tokens_to_fetch), 20)]
         try:
-            map_file = Path("cache/kotak_token_map.json")
-            if map_file.exists():
-                _KOTAK_TOKEN_MAP = json.loads(map_file.read_text(encoding="utf-8"))
-        except Exception:
-            _KOTAK_TOKEN_MAP = {}
-
-    tokens_to_fetch = []
-    symbol_by_tok = {}
-    for item in FO_UNIVERSE:
-        sym = item["symbol"]
-        tok = _KOTAK_TOKEN_MAP.get(sym)
-        if tok:
-            tokens_to_fetch.append(tok)
-            symbol_by_tok[tok] = sym
-
-    # Index explicit tokens
-    for idx_sym, idx_tok in [("NIFTY", "26000"), ("BANKNIFTY", "26009"), ("FINNIFTY", "26037"), ("MIDCPNIFTY", "26074")]:
-        tokens_to_fetch.append(idx_tok)
-        symbol_by_tok[idx_tok] = idx_sym
-
-    headers = {
-        "Authorization": ckey,
-        "neo-fin-key": "neotradeapi",
-        "Sid": sid,
-        "User-Agent": "neo-api-client/2.0.0"
-    }
-
-    quotes_res = dict(_KOTAK_QUOTES_CACHE.get("data", {}))
-    # Fetch in batches of 40
-    for i in range(0, min(160, len(tokens_to_fetch)), 40):
-        batch = tokens_to_fetch[i : i + 40]
-        sym_str = ",".join([f"nse_cm|{t}" for t in batch])
-        url = f"https://mis.kotaksecurities.com/script-details/1.0/quotes/neosymbol/{sym_str}/all"
-        try:
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=6) as r:
-                data = json.loads(r.read().decode("utf-8"))
-                for q in (data if isinstance(data, list) else []):
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                results = pool.map(_fetch_kotak_chunk, chunks)
+            for chunk_data in results:
+                for q in chunk_data:
                     t = str(q.get("exchange_token") or "")
                     sym = symbol_by_tok.get(t) or str(q.get("display_symbol", "")).replace("-EQ", "").strip()
                     ltp = float(q.get("ltp") or 0.0)
@@ -574,26 +654,49 @@ def get_live_kotak_quotes_map() -> dict[str, dict]:
                             "low": float(q.get("low") or ltp),
                             "close": float(q.get("close_price") or q.get("close") or ltp),
                             "volume": int(float(q.get("last_volume") or q.get("volume") or 0)),
-                            "oi": int(float(q.get("open_interest") or q.get("oi") or 0))
+                            "oi": int(float(q.get("open_interest") or q.get("oi") or 0)),
+                            "source": "KOTAK"
                         }
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Kotak batch fetch error: {e}")
+
+    # 3. Yahoo Finance Fallback for any missing indices
+    for idx_key, yf_sym in [("NIFTY", "%5ENSEI"), ("BANKNIFTY", "%5ENSEBANK"), ("SENSEX", "%5EBSESN")]:
+        if idx_key not in quotes_res or quotes_res[idx_key].get("ltp", 0) <= 0:
+            try:
+                url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yf_sym}?interval=1m&range=1d"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=4) as r:
+                    d = json.loads(r.read().decode())
+                    meta = d["chart"]["result"][0]["meta"]
+                    price = float(meta.get("regularMarketPrice") or 0.0)
+                    prev = float(meta.get("chartPreviousClose") or meta.get("previousClose") or price)
+                    chg = round(price - prev, 2)
+                    pct = round((chg / prev) * 100, 2) if prev else 0.0
+                    if price > 0:
+                        quotes_res[idx_key] = {
+                            "ltp": price,
+                            "changePct": pct,
+                            "change": chg,
+                            "close": prev,
+                            "source": "YAHOO"
+                        }
+            except Exception:
+                pass
 
     if quotes_res:
-        _KOTAK_QUOTES_CACHE = {"ts": now, "data": quotes_res}
+        _LIVE_QUOTES_CACHE = {"ts": now, "data": quotes_res}
     return quotes_res
 
 
 def _build_master_futures_records() -> list[dict]:
     """
     Constructs high-fidelity records for all F&O universe symbols with real-time
-    Kotak Securities Neo API exchange quotes, basis, OI, and buildup.
+    Kotak Securities Neo API and Angel SmartAPI exchange quotes, basis, OI, and buildup.
     """
     now = datetime.now()
     records = []
-    # Synchronized 3-second live tick slot
-    time_slot = int(now.timestamp() / 3)
-    kotak_quotes = get_live_kotak_quotes_map()
+    live_quotes = get_live_kotak_quotes_map()
 
     for item in FO_UNIVERSE:
         sym = item["symbol"]
@@ -601,39 +704,41 @@ def _build_master_futures_records() -> list[dict]:
         lot = item["lot"]
         is_idx = item.get("isIndex", False)
 
-        kq = kotak_quotes.get(sym)
-        if kq and kq.get("ltp"):
-            spot = round(kq["ltp"], 2)
-            chg_pct = round(kq["changePct"], 2)
-            base = round(kq.get("close") or (spot / (1.0 + chg_pct / 100.0) if chg_pct != -100 else spot), 2)
+        q = live_quotes.get(sym)
+        if q and q.get("ltp"):
+            spot = round(q["ltp"], 2)
+            chg_pct = round(q.get("changePct") or 0.0, 2)
+            base = round(q.get("close") or (spot / (1.0 + chg_pct / 100.0) if chg_pct != -100 else spot), 2)
             is_live_broker = True
-            micro_tick = 0.0
         else:
-            # Fallback realistic micro-tick
-            seed = (hash(sym) + now.day * 13) % 1000
-            base_chg_pct = ((seed % 70) - 32) * 0.08
-            if is_idx:
-                base_chg_pct = base_chg_pct * 0.35
-
-            tick_hash = int(hashlib.md5(f"{sym}_{time_slot}".encode()).hexdigest()[:6], 16)
-            micro_tick = ((tick_hash % 21) - 10) * (0.003 if is_idx else 0.006)
-            chg_pct = round(base_chg_pct + micro_tick, 2)
-            spot = round(base * (1.0 + chg_pct / 100.0), 2)
+            spot = round(base, 2)
+            chg_pct = 0.0
             is_live_broker = False
 
         seed = (hash(sym) + now.day * 13) % 1000
-        # Futures Basis: +0.2% to +0.45% typical premium
-        basis_pts = round(spot * (0.0025 + ((seed % 15) * 0.00015)), 2)
+
+        # Futures Basis: Realistic +0.15% to +0.35% premium over spot
+        basis_pts = round(spot * (0.0022 + ((seed % 10) * 0.0001)), 2)
         fut_price = round(spot + basis_pts, 2)
         basis_pct = round((basis_pts / spot) * 100.0, 2) if spot > 0 else 0.0
 
-        oi_jitter = (((int(hashlib.md5(f"{sym}_{time_slot}".encode()).hexdigest()[:6], 16)) % 11) - 5) * 0.04
-        oi_chg_pct = round(((seed % 65) - 28) * 0.42 + oi_jitter, 2)
-        base_oi = int((8500 + (seed * 45)) * (5 if is_idx else 1))
-        curr_oi = int(base_oi * (1.0 + oi_chg_pct / 100.0))
+        # Open Interest and Volume from exchange feed when present
+        raw_oi = q.get("oi") if q else 0
+        raw_vol = q.get("volume") if q else 0
+        oi_chg_pct = round(((seed % 40) - 18) * 0.35, 2)
+
+        if raw_oi and raw_oi > 0:
+            curr_oi = int(raw_oi)
+        else:
+            base_oi = int((8500 + (seed * 45)) * (5 if is_idx else 1))
+            curr_oi = int(base_oi * (1.0 + oi_chg_pct / 100.0))
+
         oi_val_cr = round((curr_oi * lot * fut_price) / 10000000.0, 2)
 
-        vol_contracts = int(curr_oi * (0.65 + ((seed % 20) * 0.03)) + (tick_hash % 80))
+        if raw_vol and raw_vol > 0:
+            vol_contracts = int(raw_vol)
+        else:
+            vol_contracts = int(curr_oi * (0.45 + ((seed % 15) * 0.02)))
         vol_cr = round((vol_contracts * lot * fut_price) / 10000000.0, 2)
 
         buildup_name, buildup_cls, buildup_code = classify_buildup(chg_pct, oi_chg_pct)
@@ -654,6 +759,8 @@ def _build_master_futures_records() -> list[dict]:
             mwpl_status = "NORMAL"
             mwpl_badge = "status-normal"
 
+        price_diff = round(fut_price - base, 2)
+
         rec = {
             "symbol": sym,
             "name": item["name"],
@@ -663,21 +770,21 @@ def _build_master_futures_records() -> list[dict]:
             "spotPrice": spot,
             "futPrice": fut_price,
             "ltp": fut_price,
-            "priceChange": round(fut_price - base, 2),
-            "change": round(fut_price - base, 2),
+            "priceChange": price_diff,
+            "change": price_diff,
             "priceChangePct": chg_pct,
             "changePct": chg_pct,
             "expiry": "26-Mar-2026",
-            "tickDir": "UP" if micro_tick >= 0 else "DOWN",
+            "tickDir": "UP" if chg_pct >= 0 else "DOWN",
             "tickTime": now.strftime("%H:%M:%S"),
             "basis": basis_pts,
             "basisPct": basis_pct,
             "basisType": "PREMIUM" if basis_pts >= 0 else "DISCOUNT",
             "coc": round(basis_pct * (365 / 15.0), 2),
             "prevClose": base,
-            "dayHigh": round(fut_price * (1.0 + ((seed % 10) * 0.0018 + 0.003)), 2),
-            "dayLow": round(fut_price * (1.0 - ((seed % 12) * 0.0018 + 0.004)), 2),
-            "vwap": round(fut_price * (1.0 + ((seed % 6) - 3) * 0.0008), 2),
+            "dayHigh": round(fut_price * (1.0 + ((seed % 10) * 0.0015 + 0.002)), 2),
+            "dayLow": round(fut_price * (1.0 - ((seed % 12) * 0.0015 + 0.003)), 2),
+            "vwap": round(fut_price * (1.0 + ((seed % 6) - 3) * 0.0005), 2),
             "rolloverPct": round(min(96.0, max(45.0, 68.0 + ((seed % 25) - 10) * 1.1)), 1),
             "oiContracts": curr_oi,
             "openInterest": curr_oi,
@@ -691,8 +798,9 @@ def _build_master_futures_records() -> list[dict]:
             "mwplPct": mwpl_cur,
             "mwplStatus": mwpl_status,
             "mwplBadge": mwpl_badge,
+            "isLiveBroker": is_live_broker,
             "sparkline": [
-                round(fut_price * (1.0 - 0.005 + i * 0.001 * (1 if chg_pct >= 0 else -1)), 2)
+                round(base + (fut_price - base) * (i / 9.0), 2)
                 for i in range(10)
             ],
         }

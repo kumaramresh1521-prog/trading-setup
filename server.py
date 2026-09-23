@@ -6452,9 +6452,47 @@ INDEX_YF_MAP = {
 def get_live_market_index_quotes() -> dict[str, dict]:
     global _LIVE_INDEX_CACHE
     now = time.time()
-    if _LIVE_INDEX_CACHE["data"] and (now - _LIVE_INDEX_CACHE["timestamp"]) < 15.0:
+    if _LIVE_INDEX_CACHE["data"] and (now - _LIVE_INDEX_CACHE["timestamp"]) < 5.0:
         return _LIVE_INDEX_CACHE["data"]
 
+    # 1. First priority: Direct Real-Time Exchange Feed via Angel SmartAPI
+    try:
+        ac = AngelClient()
+        if ac.is_configured():
+            ac.ensure_session()
+            idx_instruments = [
+                Instrument(symbol='nifty50', trading_symbol='NIFTY 50', token='99926000', exchange='NSE'),
+                Instrument(symbol='banknifty', trading_symbol='NIFTY BANK', token='99926009', exchange='NSE'),
+                Instrument(symbol='finnifty', trading_symbol='FINNIFTY', token='99926037', exchange='NSE'),
+                Instrument(symbol='midcpnifty', trading_symbol='MIDCPNIFTY', token='99926074', exchange='NSE'),
+                Instrument(symbol='sensex', trading_symbol='SENSEX', token='99919000', exchange='BSE'),
+            ]
+            res = ac.quote(idx_instruments, mode='FULL')
+            angel_quotes = {}
+            for f in res.get('fetched', []):
+                tok = str(f.get('symbolToken') or '')
+                key = None
+                if tok == '99926000': key = 'nifty50'
+                elif tok == '99926009': key = 'banknifty'
+                elif tok == '99926037': key = 'finnifty'
+                elif tok == '99926074': key = 'midcpnifty'
+                elif tok == '99919000': key = 'sensex'
+                if key:
+                    ltp = float(f.get('ltp') or 0.0)
+                    chg = float(f.get('netChange') or 0.0)
+                    pct = float(f.get('percentChange') or 0.0)
+                    prev = float(f.get('close') or (ltp - chg if ltp else 0.0))
+                    if ltp > 0:
+                        angel_quotes[key] = {"spot": ltp, "prevClose": prev, "change": chg, "percentChange": pct}
+            if len(angel_quotes) >= 4:
+                cached = _LIVE_INDEX_CACHE.get("data", {})
+                merged = {**cached, **angel_quotes}
+                _LIVE_INDEX_CACHE = {"timestamp": now, "data": merged}
+                return merged
+    except Exception:
+        pass
+
+    # 2. Secondary fallback: Yahoo Finance Chart API
     def _fetch_one(item):
         key, sym = item
         try:
@@ -6496,16 +6534,16 @@ def get_market_pulse() -> dict:
     now = now_ist()
     time_slot = int(time.time() / 2.5)  # Synchronized 2.5s tick slot
 
-    # Baseline quotes from Yahoo or broker
+    # Baseline quotes from Broker Exchange or Yahoo
     base_quotes = get_live_market_index_quotes()
 
     index_specs = [
-        {"key": "nifty50", "symbol": "NIFTY 50", "short": "NIFTY", "default_spot": 25380.0, "step": 50, "scale": 1.0},
-        {"key": "banknifty", "symbol": "BANK NIFTY", "short": "BANKNIFTY", "default_spot": 56840.0, "step": 100, "scale": 2.5},
-        {"key": "sensex", "symbol": "BSE SENSEX", "short": "SENSEX", "default_spot": 82890.0, "step": 100, "scale": 3.5},
-        {"key": "finnifty", "symbol": "FIN NIFTY", "short": "FINNIFTY", "default_spot": 25890.0, "step": 50, "scale": 1.0},
-        {"key": "midcpnifty", "symbol": "MIDCAP NIFTY", "short": "MIDCPNIFTY", "default_spot": 13120.0, "step": 25, "scale": 0.6},
-        {"key": "indiavix", "symbol": "INDIA VIX", "short": "VIX", "default_spot": 12.65, "step": 0.05, "scale": 0.04},
+        {"key": "nifty50", "symbol": "NIFTY 50", "short": "NIFTY", "default_spot": 23446.8, "step": 50, "scale": 1.0},
+        {"key": "banknifty", "symbol": "BANK NIFTY", "short": "BANKNIFTY", "default_spot": 56548.9, "step": 100, "scale": 2.5},
+        {"key": "sensex", "symbol": "BSE SENSEX", "short": "SENSEX", "default_spot": 74828.25, "step": 100, "scale": 3.5},
+        {"key": "finnifty", "symbol": "FIN NIFTY", "short": "FINNIFTY", "default_spot": 25564.85, "step": 50, "scale": 1.0},
+        {"key": "midcpnifty", "symbol": "MIDCAP NIFTY", "short": "MIDCPNIFTY", "default_spot": 14572.25, "step": 25, "scale": 0.6},
+        {"key": "indiavix", "symbol": "INDIA VIX", "short": "VIX", "default_spot": 10.35, "step": 0.05, "scale": 0.04},
     ]
 
     out_indices = {}
