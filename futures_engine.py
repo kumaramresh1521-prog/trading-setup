@@ -34,106 +34,206 @@ KOTAK_BASE_URL = "https://napi.kotaksecurities.com"
 
 # Master F&O Universe with Sectors and Lot Sizes
 FO_UNIVERSE = [
-    # Indices
-    {"symbol": "NIFTY", "name": "Nifty 50 Index", "sector": "Index", "lot": 75, "isIndex": True, "basePrice": 25480.0},
-    {"symbol": "BANKNIFTY", "name": "Nifty Bank Index", "sector": "Index", "lot": 30, "isIndex": True, "basePrice": 53250.0},
-    {"symbol": "FINNIFTY", "name": "Nifty Financial Services", "sector": "Index", "lot": 65, "isIndex": True, "basePrice": 24350.0},
-    {"symbol": "MIDCPNIFTY", "name": "Nifty Midcap Select", "sector": "Index", "lot": 120, "isIndex": True, "basePrice": 12900.0},
-
-    # Banking & Financials
-    {"symbol": "HDFCBANK", "name": "HDFC Bank Ltd", "sector": "Banking", "lot": 550, "basePrice": 1645.0, "mwplBase": 62.4},
-    {"symbol": "ICICIBANK", "name": "ICICI Bank Ltd", "sector": "Banking", "lot": 700, "basePrice": 1220.0, "mwplBase": 58.1},
-    {"symbol": "SBIN", "name": "State Bank of India", "sector": "Banking", "lot": 750, "basePrice": 795.0, "mwplBase": 71.5},
-    {"symbol": "KOTAKBANK", "name": "Kotak Mahindra Bank", "sector": "Banking", "lot": 400, "basePrice": 1780.0, "mwplBase": 45.2},
-    {"symbol": "AXISBANK", "name": "Axis Bank Ltd", "sector": "Banking", "lot": 625, "basePrice": 1190.0, "mwplBase": 66.8},
-    {"symbol": "INDUSINDBK", "name": "IndusInd Bank Ltd", "sector": "Banking", "lot": 500, "basePrice": 1415.0, "mwplBase": 74.2},
-    {"symbol": "BANKBARODA", "name": "Bank of Baroda", "sector": "Banking", "lot": 2925, "basePrice": 242.0, "mwplBase": 78.5},
-    {"symbol": "PNB", "name": "Punjab National Bank", "sector": "Banking", "lot": 8000, "basePrice": 105.0, "mwplBase": 84.1},
-    {"symbol": "CANBK", "name": "Canara Bank", "sector": "Banking", "lot": 6750, "basePrice": 102.5, "mwplBase": 82.3},
-    {"symbol": "FEDERALBNK", "name": "Federal Bank Ltd", "sector": "Banking", "lot": 5000, "basePrice": 192.0, "mwplBase": 69.4},
-    {"symbol": "IDFCFIRSTB", "name": "IDFC First Bank Ltd", "sector": "Banking", "lot": 7500, "basePrice": 72.5, "mwplBase": 81.2},
-    {"symbol": "BAJFINANCE", "name": "Bajaj Finance Ltd", "sector": "Financials", "lot": 125, "basePrice": 7150.0, "mwplBase": 51.0},
-    {"symbol": "BAJAJFINSV", "name": "Bajaj Finserv Ltd", "sector": "Financials", "lot": 500, "basePrice": 1890.0, "mwplBase": 43.5},
-    {"symbol": "CHOLAFIN", "name": "Cholamandalam Investment", "sector": "Financials", "lot": 625, "basePrice": 1485.0, "mwplBase": 67.0},
-    {"symbol": "MUTHOOTFIN", "name": "Muthoot Finance Ltd", "sector": "Financials", "lot": 550, "basePrice": 1930.0, "mwplBase": 59.2},
-    {"symbol": "SHRIRAMFIN", "name": "Shriram Finance Ltd", "sector": "Financials", "lot": 300, "basePrice": 3280.0, "mwplBase": 64.1},
-
-    # IT & Technology
-    {"symbol": "TCS", "name": "Tata Consultancy Services", "sector": "IT", "lot": 175, "basePrice": 4290.0, "mwplBase": 38.5},
-    {"symbol": "INFY", "name": "Infosys Ltd", "sector": "IT", "lot": 400, "basePrice": 1895.0, "mwplBase": 52.0},
-    {"symbol": "HCLTECH", "name": "HCL Technologies Ltd", "sector": "IT", "lot": 350, "basePrice": 1780.0, "mwplBase": 46.2},
-    {"symbol": "WIPRO", "name": "Wipro Ltd", "sector": "IT", "lot": 1500, "basePrice": 525.0, "mwplBase": 61.8},
-    {"symbol": "TECHM", "name": "Tech Mahindra Ltd", "sector": "IT", "lot": 600, "basePrice": 1580.0, "mwplBase": 55.4},
-    {"symbol": "LTIM", "name": "LTIMindtree Ltd", "sector": "IT", "lot": 150, "basePrice": 6150.0, "mwplBase": 57.2},
-    {"symbol": "COFORGE", "name": "Coforge Ltd", "sector": "IT", "lot": 150, "basePrice": 6920.0, "mwplBase": 68.3},
-    {"symbol": "PERSISTENT", "name": "Persistent Systems Ltd", "sector": "IT", "lot": 200, "basePrice": 5120.0, "mwplBase": 63.5},
-    {"symbol": "MPHASIS", "name": "MphasiS Ltd", "sector": "IT", "lot": 275, "basePrice": 2980.0, "mwplBase": 60.1},
-
-    # Oil & Gas / Energy
-    {"symbol": "RELIANCE", "name": "Reliance Industries Ltd", "sector": "Energy", "lot": 250, "basePrice": 2980.0, "mwplBase": 48.0},
-    {"symbol": "ONGC", "name": "Oil & Natural Gas Corp", "sector": "Energy", "lot": 2250, "basePrice": 292.0, "mwplBase": 64.5},
-    {"symbol": "BPCL", "name": "Bharat Petroleum Corp", "sector": "Energy", "lot": 1800, "basePrice": 348.0, "mwplBase": 72.0},
-    {"symbol": "IOC", "name": "Indian Oil Corporation", "sector": "Energy", "lot": 4875, "basePrice": 172.0, "mwplBase": 70.4},
-    {"symbol": "NTPC", "name": "NTPC Ltd", "sector": "Power", "lot": 1500, "basePrice": 412.0, "mwplBase": 65.2},
-    {"symbol": "POWERGRID", "name": "Power Grid Corp of India", "sector": "Power", "lot": 1800, "basePrice": 338.0, "mwplBase": 58.0},
-    {"symbol": "TATAPOWER", "name": "Tata Power Co Ltd", "sector": "Power", "lot": 2000, "basePrice": 435.0, "mwplBase": 77.8},
-
-    # Automobiles
-    {"symbol": "TATAMOTORS", "name": "Tata Motors Ltd", "sector": "Auto", "lot": 550, "basePrice": 965.0, "mwplBase": 75.2},
-    {"symbol": "M&M", "name": "Mahindra & Mahindra Ltd", "sector": "Auto", "lot": 350, "basePrice": 2950.0, "mwplBase": 58.4},
-    {"symbol": "MARUTI", "name": "Maruti Suzuki India", "sector": "Auto", "lot": 50, "basePrice": 12150.0, "mwplBase": 42.1},
-    {"symbol": "BAJAJ-AUTO", "name": "Bajaj Auto Ltd", "sector": "Auto", "lot": 75, "basePrice": 11800.0, "mwplBase": 49.3},
-    {"symbol": "EICHERMOT", "name": "Eicher Motors Ltd", "sector": "Auto", "lot": 175, "basePrice": 4850.0, "mwplBase": 56.0},
-    {"symbol": "HEROMOTOCO", "name": "Hero MotoCorp Ltd", "sector": "Auto", "lot": 150, "basePrice": 5620.0, "mwplBase": 53.5},
-    {"symbol": "TVSMOTOR", "name": "TVS Motor Co Ltd", "sector": "Auto", "lot": 350, "basePrice": 2780.0, "mwplBase": 63.8},
-    {"symbol": "ASHOKLEY", "name": "Ashok Leyland Ltd", "sector": "Auto", "lot": 5000, "basePrice": 228.0, "mwplBase": 79.5},
-
-    # Metals & Mining
-    {"symbol": "TATASTEEL", "name": "Tata Steel Ltd", "sector": "Metals", "lot": 5500, "basePrice": 152.0, "mwplBase": 76.4},
-    {"symbol": "JSWSTEEL", "name": "JSW Steel Ltd", "sector": "Metals", "lot": 675, "basePrice": 985.0, "mwplBase": 62.0},
-    {"symbol": "HINDALCO", "name": "Hindalco Industries Ltd", "sector": "Metals", "lot": 1400, "basePrice": 675.0, "mwplBase": 64.2},
-    {"symbol": "JINDALSTEL", "name": "Jindal Steel & Power", "sector": "Metals", "lot": 625, "basePrice": 965.0, "mwplBase": 71.0},
-    {"symbol": "VEDL", "name": "Vedanta Ltd", "sector": "Metals", "lot": 1150, "basePrice": 465.0, "mwplBase": 82.5},
-    {"symbol": "COALINDIA", "name": "Coal India Ltd", "sector": "Metals", "lot": 2100, "basePrice": 488.0, "mwplBase": 68.0},
-    {"symbol": "NMDC", "name": "NMDC Ltd", "sector": "Metals", "lot": 4500, "basePrice": 215.0, "mwplBase": 86.4},
-    {"symbol": "SAIL", "name": "Steel Authority of India", "sector": "Metals", "lot": 8000, "basePrice": 128.0, "mwplBase": 96.8}, # Banned candidate
-
-    # Pharma & Healthcare
-    {"symbol": "SUNPHARMA", "name": "Sun Pharma Industries", "sector": "Pharma", "lot": 350, "basePrice": 1860.0, "mwplBase": 45.0},
-    {"symbol": "CIPLA", "name": "Cipla Ltd", "sector": "Pharma", "lot": 650, "basePrice": 1620.0, "mwplBase": 52.3},
-    {"symbol": "DRREDDY", "name": "Dr Reddy's Laboratories", "sector": "Pharma", "lot": 125, "basePrice": 6580.0, "mwplBase": 48.0},
-    {"symbol": "DIVISLAB", "name": "Divi's Laboratories Ltd", "sector": "Pharma", "lot": 200, "basePrice": 5280.0, "mwplBase": 54.1},
-    {"symbol": "LUPIN", "name": "Lupin Ltd", "sector": "Pharma", "lot": 425, "basePrice": 2150.0, "mwplBase": 63.0},
-    {"symbol": "AUROPHARMA", "name": "Aurobindo Pharma Ltd", "sector": "Pharma", "lot": 550, "basePrice": 1460.0, "mwplBase": 67.5},
-
-    # FMCG & Consumption
-    {"symbol": "ITC", "name": "ITC Ltd", "sector": "FMCG", "lot": 1600, "basePrice": 508.0, "mwplBase": 59.0},
-    {"symbol": "HINDUNILVR", "name": "Hindustan Unilever Ltd", "sector": "FMCG", "lot": 300, "basePrice": 2890.0, "mwplBase": 41.5},
-    {"symbol": "NESTLEIND", "name": "Nestle India Ltd", "sector": "FMCG", "lot": 250, "basePrice": 2680.0, "mwplBase": 44.0},
-    {"symbol": "BRITANNIA", "name": "Britannia Industries Ltd", "sector": "FMCG", "lot": 200, "basePrice": 5920.0, "mwplBase": 49.5},
-    {"symbol": "TATACONSUM", "name": "Tata Consumer Products", "sector": "FMCG", "lot": 900, "basePrice": 1180.0, "mwplBase": 57.0},
-    {"symbol": "DABUR", "name": "Dabur India Ltd", "sector": "FMCG", "lot": 1250, "basePrice": 625.0, "mwplBase": 55.4},
-
-    # Capital Goods & Infrastructure
-    {"symbol": "LT", "name": "Larsen & Toubro Ltd", "sector": "Infrastructure", "lot": 175, "basePrice": 3650.0, "mwplBase": 51.0},
-    {"symbol": "ADANIENT", "name": "Adani Enterprises Ltd", "sector": "Services", "lot": 300, "basePrice": 2980.0, "mwplBase": 72.4},
-    {"symbol": "ADANIPORTS", "name": "Adani Ports & SEZ", "sector": "Services", "lot": 400, "basePrice": 1420.0, "mwplBase": 66.0},
-    {"symbol": "SIEMENS", "name": "Siemens Ltd", "sector": "Capital Goods", "lot": 125, "basePrice": 6850.0, "mwplBase": 48.0},
-    {"symbol": "ABB", "name": "ABB India Ltd", "sector": "Capital Goods", "lot": 125, "basePrice": 8150.0, "mwplBase": 46.5},
-    {"symbol": "HAL", "name": "Hindustan Aeronautics", "sector": "Capital Goods", "lot": 150, "basePrice": 4680.0, "mwplBase": 73.0},
-    {"symbol": "BEL", "name": "Bharat Electronics Ltd", "sector": "Capital Goods", "lot": 2850, "basePrice": 288.0, "mwplBase": 69.8},
-
-    # Telecom & Media
-    {"symbol": "BHARTIARTL", "name": "Bharti Airtel Ltd", "sector": "Telecom", "lot": 475, "basePrice": 1620.0, "mwplBase": 54.0},
-    {"symbol": "IDEA", "name": "Vodafone Idea Ltd", "sector": "Telecom", "lot": 80000, "basePrice": 10.8, "mwplBase": 97.4}, # Banned candidate
-    {"symbol": "ZEEL", "name": "Zee Entertainment", "sector": "Media", "lot": 3000, "basePrice": 132.0, "mwplBase": 89.5}, # Alert zone
-
-    # Real Estate & Cement
-    {"symbol": "DLF", "name": "DLF Ltd", "sector": "Realty", "lot": 825, "basePrice": 845.0, "mwplBase": 74.0},
-    {"symbol": "GODREJPROP", "name": "Godrej Properties", "sector": "Realty", "lot": 475, "basePrice": 2980.0, "mwplBase": 71.5},
-    {"symbol": "ULTRACEMCO", "name": "UltraTech Cement Ltd", "sector": "Cement", "lot": 100, "basePrice": 11450.0, "mwplBase": 45.0},
-    {"symbol": "GRASIM", "name": "Grasim Industries Ltd", "sector": "Cement", "lot": 250, "basePrice": 2680.0, "mwplBase": 53.0},
-    {"symbol": "AMBUJACEM", "name": "Ambuja Cements Ltd", "sector": "Cement", "lot": 900, "basePrice": 618.0, "mwplBase": 68.4},
+    {'symbol': 'NIFTY', 'name': 'Nifty 50 Index', 'sector': 'Index', 'lot': 75, 'isIndex': True, 'basePrice': 25480.0, 'mwplBase': 40.0},
+    {'symbol': 'BANKNIFTY', 'name': 'Nifty Bank Index', 'sector': 'Index', 'lot': 30, 'isIndex': True, 'basePrice': 53250.0, 'mwplBase': 42.0},
+    {'symbol': 'FINNIFTY', 'name': 'Nifty Financial Services', 'sector': 'Index', 'lot': 65, 'isIndex': True, 'basePrice': 24350.0, 'mwplBase': 38.0},
+    {'symbol': 'MIDCPNIFTY', 'name': 'Nifty Midcap Select', 'sector': 'Index', 'lot': 120, 'isIndex': True, 'basePrice': 12900.0, 'mwplBase': 35.0},
+    {'symbol': 'NIFTYNXT50', 'name': 'Nifty Next 50', 'sector': 'Index', 'lot': 25, 'isIndex': True, 'basePrice': 71200.0, 'mwplBase': 32.0},
+    {'symbol': 'SENSEX', 'name': 'BSE Sensex', 'sector': 'Index', 'lot': 20, 'isIndex': True, 'basePrice': 82800.0, 'mwplBase': 39.0},
+    {'symbol': 'BANKEX', 'name': 'BSE Bankex', 'sector': 'Index', 'lot': 15, 'isIndex': True, 'basePrice': 64200.0, 'mwplBase': 41.0},
+    {'symbol': 'HDFCBANK', 'name': 'HDFC Bank Ltd', 'sector': 'Banking', 'lot': 550, 'basePrice': 1645.0, 'mwplBase': 62.4},
+    {'symbol': 'ICICIBANK', 'name': 'ICICI Bank Ltd', 'sector': 'Banking', 'lot': 700, 'basePrice': 1220.0, 'mwplBase': 58.1},
+    {'symbol': 'SBIN', 'name': 'State Bank of India', 'sector': 'Banking', 'lot': 750, 'basePrice': 795.0, 'mwplBase': 71.5},
+    {'symbol': 'KOTAKBANK', 'name': 'Kotak Mahindra Bank', 'sector': 'Banking', 'lot': 400, 'basePrice': 1780.0, 'mwplBase': 45.2},
+    {'symbol': 'AXISBANK', 'name': 'Axis Bank Ltd', 'sector': 'Banking', 'lot': 625, 'basePrice': 1190.0, 'mwplBase': 66.8},
+    {'symbol': 'INDUSINDBK', 'name': 'IndusInd Bank Ltd', 'sector': 'Banking', 'lot': 500, 'basePrice': 1415.0, 'mwplBase': 74.2},
+    {'symbol': 'BANKBARODA', 'name': 'Bank of Baroda', 'sector': 'Banking', 'lot': 2925, 'basePrice': 242.0, 'mwplBase': 78.5},
+    {'symbol': 'PNB', 'name': 'Punjab National Bank', 'sector': 'Banking', 'lot': 8000, 'basePrice': 105.0, 'mwplBase': 84.1},
+    {'symbol': 'CANBK', 'name': 'Canara Bank', 'sector': 'Banking', 'lot': 6750, 'basePrice': 102.5, 'mwplBase': 82.3},
+    {'symbol': 'FEDERALBNK', 'name': 'Federal Bank Ltd', 'sector': 'Banking', 'lot': 5000, 'basePrice': 192.0, 'mwplBase': 69.4},
+    {'symbol': 'IDFCFIRSTB', 'name': 'IDFC First Bank Ltd', 'sector': 'Banking', 'lot': 7500, 'basePrice': 72.5, 'mwplBase': 81.2},
+    {'symbol': 'AUBANK', 'name': 'AU Small Finance Bank', 'sector': 'Banking', 'lot': 1000, 'basePrice': 648.0, 'mwplBase': 72.0},
+    {'symbol': 'BANDHANBNK', 'name': 'Bandhan Bank Ltd', 'sector': 'Banking', 'lot': 3600, 'basePrice': 188.0, 'mwplBase': 85.4},
+    {'symbol': 'RBLBANK', 'name': 'RBL Bank Ltd', 'sector': 'Banking', 'lot': 2500, 'basePrice': 218.0, 'mwplBase': 88.0},
+    {'symbol': 'UNIONBANK', 'name': 'Union Bank of India', 'sector': 'Banking', 'lot': 3500, 'basePrice': 118.0, 'mwplBase': 76.5},
+    {'symbol': 'BAJFINANCE', 'name': 'Bajaj Finance Ltd', 'sector': 'Financials', 'lot': 125, 'basePrice': 7150.0, 'mwplBase': 51.0},
+    {'symbol': 'BAJAJFINSV', 'name': 'Bajaj Finserv Ltd', 'sector': 'Financials', 'lot': 500, 'basePrice': 1890.0, 'mwplBase': 43.5},
+    {'symbol': 'CHOLAFIN', 'name': 'Cholamandalam Investment', 'sector': 'Financials', 'lot': 625, 'basePrice': 1485.0, 'mwplBase': 67.0},
+    {'symbol': 'MUTHOOTFIN', 'name': 'Muthoot Finance Ltd', 'sector': 'Financials', 'lot': 550, 'basePrice': 1930.0, 'mwplBase': 59.2},
+    {'symbol': 'SHRIRAMFIN', 'name': 'Shriram Finance Ltd', 'sector': 'Financials', 'lot': 300, 'basePrice': 3280.0, 'mwplBase': 64.1},
+    {'symbol': 'PFC', 'name': 'Power Finance Corp', 'sector': 'Financials', 'lot': 1300, 'basePrice': 485.0, 'mwplBase': 74.0},
+    {'symbol': 'RECLTD', 'name': 'REC Ltd', 'sector': 'Financials', 'lot': 1000, 'basePrice': 535.0, 'mwplBase': 76.5},
+    {'symbol': 'L&TFH', 'name': 'L&T Finance Holdings', 'sector': 'Financials', 'lot': 4484, 'basePrice': 168.0, 'mwplBase': 78.0},
+    {'symbol': 'LICHSGFIN', 'name': 'LIC Housing Finance', 'sector': 'Financials', 'lot': 1000, 'basePrice': 675.0, 'mwplBase': 69.0},
+    {'symbol': 'MANAPPURAM', 'name': 'Manappuram Finance', 'sector': 'Financials', 'lot': 3000, 'basePrice': 182.0, 'mwplBase': 86.0},
+    {'symbol': 'M&MFIN', 'name': 'Mahindra & Mahindra Fin', 'sector': 'Financials', 'lot': 2000, 'basePrice': 298.0, 'mwplBase': 71.0},
+    {'symbol': 'HDFCLIFE', 'name': 'HDFC Life Insurance', 'sector': 'Financials', 'lot': 1100, 'basePrice': 725.0, 'mwplBase': 48.0},
+    {'symbol': 'SBILIFE', 'name': 'SBI Life Insurance', 'sector': 'Financials', 'lot': 375, 'basePrice': 1780.0, 'mwplBase': 46.0},
+    {'symbol': 'ICICIPRULI', 'name': 'ICICI Prudential Life', 'sector': 'Financials', 'lot': 750, 'basePrice': 745.0, 'mwplBase': 54.0},
+    {'symbol': 'ICICIGI', 'name': 'ICICI Lombard General Ins', 'sector': 'Financials', 'lot': 350, 'basePrice': 2180.0, 'mwplBase': 45.0},
+    {'symbol': 'SBICARD', 'name': 'SBI Cards & Payment', 'sector': 'Financials', 'lot': 800, 'basePrice': 735.0, 'mwplBase': 58.0},
+    {'symbol': 'HDFCAMC', 'name': 'HDFC Asset Management', 'sector': 'Financials', 'lot': 150, 'basePrice': 4480.0, 'mwplBase': 42.0},
+    {'symbol': 'NAM-INDIA', 'name': 'Nippon Life India AMC', 'sector': 'Financials', 'lot': 800, 'basePrice': 690.0, 'mwplBase': 61.0},
+    {'symbol': 'TCS', 'name': 'Tata Consultancy Services', 'sector': 'IT', 'lot': 175, 'basePrice': 4290.0, 'mwplBase': 38.5},
+    {'symbol': 'INFY', 'name': 'Infosys Ltd', 'sector': 'IT', 'lot': 400, 'basePrice': 1895.0, 'mwplBase': 52.0},
+    {'symbol': 'HCLTECH', 'name': 'HCL Technologies Ltd', 'sector': 'IT', 'lot': 350, 'basePrice': 1780.0, 'mwplBase': 46.2},
+    {'symbol': 'WIPRO', 'name': 'Wipro Ltd', 'sector': 'IT', 'lot': 1500, 'basePrice': 525.0, 'mwplBase': 61.8},
+    {'symbol': 'TECHM', 'name': 'Tech Mahindra Ltd', 'sector': 'IT', 'lot': 600, 'basePrice': 1580.0, 'mwplBase': 55.4},
+    {'symbol': 'LTIM', 'name': 'LTIMindtree Ltd', 'sector': 'IT', 'lot': 150, 'basePrice': 6150.0, 'mwplBase': 57.2},
+    {'symbol': 'COFORGE', 'name': 'Coforge Ltd', 'sector': 'IT', 'lot': 150, 'basePrice': 6920.0, 'mwplBase': 68.3},
+    {'symbol': 'PERSISTENT', 'name': 'Persistent Systems Ltd', 'sector': 'IT', 'lot': 200, 'basePrice': 5120.0, 'mwplBase': 63.5},
+    {'symbol': 'MPHASIS', 'name': 'MphasiS Ltd', 'sector': 'IT', 'lot': 275, 'basePrice': 2980.0, 'mwplBase': 60.1},
+    {'symbol': 'LTTS', 'name': 'L&T Technology Services', 'sector': 'IT', 'lot': 100, 'basePrice': 5420.0, 'mwplBase': 52.0},
+    {'symbol': 'TATAELXSI', 'name': 'Tata Elxsi Ltd', 'sector': 'IT', 'lot': 100, 'basePrice': 7450.0, 'mwplBase': 58.0},
+    {'symbol': 'OFSS', 'name': 'Oracle Financial Services', 'sector': 'IT', 'lot': 50, 'basePrice': 11450.0, 'mwplBase': 49.0},
+    {'symbol': 'NAUKRI', 'name': 'Info Edge (India) Ltd', 'sector': 'IT', 'lot': 125, 'basePrice': 7820.0, 'mwplBase': 54.0},
+    {'symbol': 'KPITTECH', 'name': 'KPIT Technologies Ltd', 'sector': 'IT', 'lot': 300, 'basePrice': 1740.0, 'mwplBase': 64.0},
+    {'symbol': 'RELIANCE', 'name': 'Reliance Industries Ltd', 'sector': 'Energy', 'lot': 250, 'basePrice': 2980.0, 'mwplBase': 48.0},
+    {'symbol': 'ONGC', 'name': 'Oil & Natural Gas Corp', 'sector': 'Energy', 'lot': 2250, 'basePrice': 292.0, 'mwplBase': 64.5},
+    {'symbol': 'BPCL', 'name': 'Bharat Petroleum Corp', 'sector': 'Energy', 'lot': 1800, 'basePrice': 348.0, 'mwplBase': 72.0},
+    {'symbol': 'IOC', 'name': 'Indian Oil Corporation', 'sector': 'Energy', 'lot': 4875, 'basePrice': 172.0, 'mwplBase': 70.4},
+    {'symbol': 'HPCL', 'name': 'Hindustan Petroleum Corp', 'sector': 'Energy', 'lot': 1350, 'basePrice': 415.0, 'mwplBase': 75.0},
+    {'symbol': 'GAIL', 'name': 'GAIL (India) Ltd', 'sector': 'Energy', 'lot': 2650, 'basePrice': 235.0, 'mwplBase': 68.0},
+    {'symbol': 'PETRONET', 'name': 'Petronet LNG Ltd', 'sector': 'Energy', 'lot': 3000, 'basePrice': 365.0, 'mwplBase': 62.0},
+    {'symbol': 'IGL', 'name': 'Indraprastha Gas Ltd', 'sector': 'Energy', 'lot': 1375, 'basePrice': 542.0, 'mwplBase': 66.0},
+    {'symbol': 'MGL', 'name': 'Mahanagar Gas Ltd', 'sector': 'Energy', 'lot': 400, 'basePrice': 1780.0, 'mwplBase': 59.0},
+    {'symbol': 'GUJGASLTD', 'name': 'Gujarat Gas Ltd', 'sector': 'Energy', 'lot': 1250, 'basePrice': 595.0, 'mwplBase': 67.0},
+    {'symbol': 'OIL', 'name': 'Oil India Ltd', 'sector': 'Energy', 'lot': 1050, 'basePrice': 690.0, 'mwplBase': 73.0},
+    {'symbol': 'ATGL', 'name': 'Adani Total Gas Ltd', 'sector': 'Energy', 'lot': 600, 'basePrice': 795.0, 'mwplBase': 79.0},
+    {'symbol': 'NTPC', 'name': 'NTPC Ltd', 'sector': 'Power', 'lot': 1500, 'basePrice': 412.0, 'mwplBase': 65.2},
+    {'symbol': 'POWERGRID', 'name': 'Power Grid Corp of India', 'sector': 'Power', 'lot': 1800, 'basePrice': 338.0, 'mwplBase': 58.0},
+    {'symbol': 'TATAPOWER', 'name': 'Tata Power Co Ltd', 'sector': 'Power', 'lot': 2000, 'basePrice': 435.0, 'mwplBase': 77.8},
+    {'symbol': 'ADANIPOWER', 'name': 'Adani Power Ltd', 'sector': 'Power', 'lot': 1250, 'basePrice': 645.0, 'mwplBase': 74.0},
+    {'symbol': 'ADANIGREEN', 'name': 'Adani Green Energy Ltd', 'sector': 'Power', 'lot': 400, 'basePrice': 1890.0, 'mwplBase': 71.0},
+    {'symbol': 'NHPC', 'name': 'NHPC Ltd', 'sector': 'Power', 'lot': 4500, 'basePrice': 94.0, 'mwplBase': 82.0},
+    {'symbol': 'TORNTPOWER', 'name': 'Torrent Power Ltd', 'sector': 'Power', 'lot': 375, 'basePrice': 1780.0, 'mwplBase': 63.0},
+    {'symbol': 'JSWENERGY', 'name': 'JSW Energy Ltd', 'sector': 'Power', 'lot': 500, 'basePrice': 710.0, 'mwplBase': 68.0},
+    {'symbol': 'BHEL', 'name': 'Bharat Heavy Electricals', 'sector': 'Power', 'lot': 2625, 'basePrice': 288.0, 'mwplBase': 86.0},
+    {'symbol': 'CESC', 'name': 'CESC Ltd', 'sector': 'Power', 'lot': 2500, 'basePrice': 188.0, 'mwplBase': 70.0},
+    {'symbol': 'TATAMOTORS', 'name': 'Tata Motors Ltd', 'sector': 'Auto', 'lot': 550, 'basePrice': 965.0, 'mwplBase': 75.2},
+    {'symbol': 'M&M', 'name': 'Mahindra & Mahindra Ltd', 'sector': 'Auto', 'lot': 350, 'basePrice': 2950.0, 'mwplBase': 58.4},
+    {'symbol': 'MARUTI', 'name': 'Maruti Suzuki India', 'sector': 'Auto', 'lot': 50, 'basePrice': 12150.0, 'mwplBase': 42.1},
+    {'symbol': 'BAJAJ-AUTO', 'name': 'Bajaj Auto Ltd', 'sector': 'Auto', 'lot': 75, 'basePrice': 11800.0, 'mwplBase': 49.3},
+    {'symbol': 'EICHERMOT', 'name': 'Eicher Motors Ltd', 'sector': 'Auto', 'lot': 175, 'basePrice': 4850.0, 'mwplBase': 56.0},
+    {'symbol': 'HEROMOTOCO', 'name': 'Hero MotoCorp Ltd', 'sector': 'Auto', 'lot': 150, 'basePrice': 5620.0, 'mwplBase': 53.5},
+    {'symbol': 'TVSMOTOR', 'name': 'TVS Motor Co Ltd', 'sector': 'Auto', 'lot': 350, 'basePrice': 2780.0, 'mwplBase': 63.8},
+    {'symbol': 'ASHOKLEY', 'name': 'Ashok Leyland Ltd', 'sector': 'Auto', 'lot': 5000, 'basePrice': 228.0, 'mwplBase': 79.5},
+    {'symbol': 'BHARATFORG', 'name': 'Bharat Forge Ltd', 'sector': 'Auto', 'lot': 500, 'basePrice': 1540.0, 'mwplBase': 65.0},
+    {'symbol': 'MOTHERSON', 'name': 'Samvardhana Motherson', 'sector': 'Auto', 'lot': 3100, 'basePrice': 198.0, 'mwplBase': 77.0},
+    {'symbol': 'BALKRISIND', 'name': 'Balkrishna Industries', 'sector': 'Auto', 'lot': 300, 'basePrice': 3120.0, 'mwplBase': 61.0},
+    {'symbol': 'BOSCHLTD', 'name': 'Bosch Ltd', 'sector': 'Auto', 'lot': 25, 'basePrice': 34800.0, 'mwplBase': 38.0},
+    {'symbol': 'MRF', 'name': 'MRF Ltd', 'sector': 'Auto', 'lot': 10, 'basePrice': 138000.0, 'mwplBase': 32.0},
+    {'symbol': 'EXIDEIND', 'name': 'Exide Industries Ltd', 'sector': 'Auto', 'lot': 1200, 'basePrice': 495.0, 'mwplBase': 78.0},
+    {'symbol': 'APOLLOTYRE', 'name': 'Apollo Tyres Ltd', 'sector': 'Auto', 'lot': 1700, 'basePrice': 520.0, 'mwplBase': 68.0},
+    {'symbol': 'TIINDIA', 'name': 'Tube Investments of India', 'sector': 'Auto', 'lot': 125, 'basePrice': 4280.0, 'mwplBase': 52.0},
+    {'symbol': 'TATASTEEL', 'name': 'Tata Steel Ltd', 'sector': 'Metals', 'lot': 5500, 'basePrice': 152.0, 'mwplBase': 76.4},
+    {'symbol': 'JSWSTEEL', 'name': 'JSW Steel Ltd', 'sector': 'Metals', 'lot': 675, 'basePrice': 985.0, 'mwplBase': 62.0},
+    {'symbol': 'HINDALCO', 'name': 'Hindalco Industries Ltd', 'sector': 'Metals', 'lot': 1400, 'basePrice': 675.0, 'mwplBase': 64.2},
+    {'symbol': 'JINDALSTEL', 'name': 'Jindal Steel & Power', 'sector': 'Metals', 'lot': 625, 'basePrice': 965.0, 'mwplBase': 71.0},
+    {'symbol': 'VEDL', 'name': 'Vedanta Ltd', 'sector': 'Metals', 'lot': 1150, 'basePrice': 465.0, 'mwplBase': 82.5},
+    {'symbol': 'COALINDIA', 'name': 'Coal India Ltd', 'sector': 'Metals', 'lot': 2100, 'basePrice': 488.0, 'mwplBase': 68.0},
+    {'symbol': 'NMDC', 'name': 'NMDC Ltd', 'sector': 'Metals', 'lot': 4500, 'basePrice': 215.0, 'mwplBase': 86.4},
+    {'symbol': 'SAIL', 'name': 'Steel Authority of India', 'sector': 'Metals', 'lot': 8000, 'basePrice': 128.0, 'mwplBase': 96.8},
+    {'symbol': 'NATIONALUM', 'name': 'National Aluminium Co', 'sector': 'Metals', 'lot': 3750, 'basePrice': 185.0, 'mwplBase': 84.0},
+    {'symbol': 'HINDCOPPER', 'name': 'Hindustan Copper Ltd', 'sector': 'Metals', 'lot': 1750, 'basePrice': 315.0, 'mwplBase': 91.0},
+    {'symbol': 'JSL', 'name': 'Jindal Stainless Ltd', 'sector': 'Metals', 'lot': 1000, 'basePrice': 725.0, 'mwplBase': 66.0},
+    {'symbol': 'HINDZINC', 'name': 'Hindustan Zinc Ltd', 'sector': 'Metals', 'lot': 800, 'basePrice': 498.0, 'mwplBase': 73.0},
+    {'symbol': 'SUNPHARMA', 'name': 'Sun Pharma Industries', 'sector': 'Pharma', 'lot': 350, 'basePrice': 1860.0, 'mwplBase': 45.0},
+    {'symbol': 'CIPLA', 'name': 'Cipla Ltd', 'sector': 'Pharma', 'lot': 650, 'basePrice': 1620.0, 'mwplBase': 52.3},
+    {'symbol': 'DRREDDY', 'name': "Dr Reddy's Laboratories", 'sector': 'Pharma', 'lot': 125, 'basePrice': 6580.0, 'mwplBase': 48.0},
+    {'symbol': 'DIVISLAB', 'name': "Divi's Laboratories Ltd", 'sector': 'Pharma', 'lot': 200, 'basePrice': 5280.0, 'mwplBase': 54.1},
+    {'symbol': 'LUPIN', 'name': 'Lupin Ltd', 'sector': 'Pharma', 'lot': 425, 'basePrice': 2150.0, 'mwplBase': 63.0},
+    {'symbol': 'AUROPHARMA', 'name': 'Aurobindo Pharma Ltd', 'sector': 'Pharma', 'lot': 550, 'basePrice': 1460.0, 'mwplBase': 67.5},
+    {'symbol': 'TORNTPHARM', 'name': 'Torrent Pharmaceuticals', 'sector': 'Pharma', 'lot': 250, 'basePrice': 3280.0, 'mwplBase': 46.0},
+    {'symbol': 'ALKEM', 'name': 'Alkem Laboratories Ltd', 'sector': 'Pharma', 'lot': 125, 'basePrice': 5680.0, 'mwplBase': 51.0},
+    {'symbol': 'ZYDUSLIFE', 'name': 'Zydus Lifesciences Ltd', 'sector': 'Pharma', 'lot': 900, 'basePrice': 1120.0, 'mwplBase': 58.0},
+    {'symbol': 'BIOCON', 'name': 'Biocon Ltd', 'sector': 'Pharma', 'lot': 2500, 'basePrice': 365.0, 'mwplBase': 81.0},
+    {'symbol': 'GLENMARK', 'name': 'Glenmark Pharmaceuticals', 'sector': 'Pharma', 'lot': 425, 'basePrice': 1680.0, 'mwplBase': 72.0},
+    {'symbol': 'GRANULES', 'name': 'Granules India Ltd', 'sector': 'Pharma', 'lot': 2000, 'basePrice': 560.0, 'mwplBase': 89.0},
+    {'symbol': 'IPCA', 'name': 'Ipca Laboratories Ltd', 'sector': 'Pharma', 'lot': 350, 'basePrice': 1390.0, 'mwplBase': 55.0},
+    {'symbol': 'LAURUSLABS', 'name': 'Laurus Labs Ltd', 'sector': 'Pharma', 'lot': 1700, 'basePrice': 465.0, 'mwplBase': 77.0},
+    {'symbol': 'ABBOTINDIA', 'name': 'Abbott India Ltd', 'sector': 'Pharma', 'lot': 20, 'basePrice': 28900.0, 'mwplBase': 35.0},
+    {'symbol': 'APOLLOHOSP', 'name': 'Apollo Hospitals Enterprise', 'sector': 'Pharma', 'lot': 125, 'basePrice': 7180.0, 'mwplBase': 53.0},
+    {'symbol': 'MAXHEALTH', 'name': 'Max Healthcare Institute', 'sector': 'Pharma', 'lot': 400, 'basePrice': 980.0, 'mwplBase': 62.0},
+    {'symbol': 'SYNGENE', 'name': 'Syngene International', 'sector': 'Pharma', 'lot': 800, 'basePrice': 885.0, 'mwplBase': 60.0},
+    {'symbol': 'ITC', 'name': 'ITC Ltd', 'sector': 'FMCG', 'lot': 1600, 'basePrice': 508.0, 'mwplBase': 59.0},
+    {'symbol': 'HINDUNILVR', 'name': 'Hindustan Unilever Ltd', 'sector': 'FMCG', 'lot': 300, 'basePrice': 2890.0, 'mwplBase': 41.5},
+    {'symbol': 'NESTLEIND', 'name': 'Nestle India Ltd', 'sector': 'FMCG', 'lot': 250, 'basePrice': 2680.0, 'mwplBase': 44.0},
+    {'symbol': 'BRITANNIA', 'name': 'Britannia Industries Ltd', 'sector': 'FMCG', 'lot': 200, 'basePrice': 5920.0, 'mwplBase': 49.5},
+    {'symbol': 'TATACONSUM', 'name': 'Tata Consumer Products', 'sector': 'FMCG', 'lot': 900, 'basePrice': 1180.0, 'mwplBase': 57.0},
+    {'symbol': 'DABUR', 'name': 'Dabur India Ltd', 'sector': 'FMCG', 'lot': 1250, 'basePrice': 625.0, 'mwplBase': 55.4},
+    {'symbol': 'MARICO', 'name': 'Marico Ltd', 'sector': 'FMCG', 'lot': 1200, 'basePrice': 645.0, 'mwplBase': 52.0},
+    {'symbol': 'GODREJCP', 'name': 'Godrej Consumer Products', 'sector': 'FMCG', 'lot': 500, 'basePrice': 1480.0, 'mwplBase': 47.0},
+    {'symbol': 'COLPAL', 'name': 'Colgate-Palmolive India', 'sector': 'FMCG', 'lot': 300, 'basePrice': 3680.0, 'mwplBase': 43.0},
+    {'symbol': 'VBL', 'name': 'Varun Beverages Ltd', 'sector': 'FMCG', 'lot': 400, 'basePrice': 615.0, 'mwplBase': 54.0},
+    {'symbol': 'MCDOWELL-N', 'name': 'United Spirits Ltd', 'sector': 'FMCG', 'lot': 700, 'basePrice': 1420.0, 'mwplBase': 58.0},
+    {'symbol': 'UBL', 'name': 'United Breweries Ltd', 'sector': 'FMCG', 'lot': 400, 'basePrice': 2080.0, 'mwplBase': 50.0},
+    {'symbol': 'RADICO', 'name': 'Radico Khaitan Ltd', 'sector': 'FMCG', 'lot': 250, 'basePrice': 2180.0, 'mwplBase': 64.0},
+    {'symbol': 'JUBLFOOD', 'name': 'Jubilant FoodWorks', 'sector': 'FMCG', 'lot': 1250, 'basePrice': 685.0, 'mwplBase': 71.0},
+    {'symbol': 'DEVYANI', 'name': 'Devyani International', 'sector': 'FMCG', 'lot': 1500, 'basePrice': 178.0, 'mwplBase': 75.0},
+    {'symbol': 'LT', 'name': 'Larsen & Toubro Ltd', 'sector': 'Infrastructure', 'lot': 175, 'basePrice': 3650.0, 'mwplBase': 51.0},
+    {'symbol': 'SIEMENS', 'name': 'Siemens Ltd', 'sector': 'Capital Goods', 'lot': 125, 'basePrice': 6850.0, 'mwplBase': 48.0},
+    {'symbol': 'ABB', 'name': 'ABB India Ltd', 'sector': 'Capital Goods', 'lot': 125, 'basePrice': 8150.0, 'mwplBase': 46.5},
+    {'symbol': 'HAL', 'name': 'Hindustan Aeronautics', 'sector': 'Capital Goods', 'lot': 150, 'basePrice': 4680.0, 'mwplBase': 73.0},
+    {'symbol': 'BEL', 'name': 'Bharat Electronics Ltd', 'sector': 'Capital Goods', 'lot': 2850, 'basePrice': 288.0, 'mwplBase': 69.8},
+    {'symbol': 'BDL', 'name': 'Bharat Dynamics Ltd', 'sector': 'Capital Goods', 'lot': 300, 'basePrice': 1180.0, 'mwplBase': 76.0},
+    {'symbol': 'MAZDOCK', 'name': 'Mazagon Dock Shipbuilders', 'sector': 'Capital Goods', 'lot': 150, 'basePrice': 4480.0, 'mwplBase': 79.0},
+    {'symbol': 'COCHINSHIP', 'name': 'Cochin Shipyard Ltd', 'sector': 'Capital Goods', 'lot': 300, 'basePrice': 1850.0, 'mwplBase': 82.0},
+    {'symbol': 'CUMMINSIND', 'name': 'Cummins India Ltd', 'sector': 'Capital Goods', 'lot': 200, 'basePrice': 3780.0, 'mwplBase': 52.0},
+    {'symbol': 'POLYCAB', 'name': 'Polycab India Ltd', 'sector': 'Capital Goods', 'lot': 100, 'basePrice': 6850.0, 'mwplBase': 55.0},
+    {'symbol': 'KEI', 'name': 'KEI Industries Ltd', 'sector': 'Capital Goods', 'lot': 125, 'basePrice': 4350.0, 'mwplBase': 59.0},
+    {'symbol': 'HAVELLS', 'name': 'Havells India Ltd', 'sector': 'Capital Goods', 'lot': 500, 'basePrice': 1940.0, 'mwplBase': 47.0},
+    {'symbol': 'VOLTAS', 'name': 'Voltas Ltd', 'sector': 'Capital Goods', 'lot': 600, 'basePrice': 1820.0, 'mwplBase': 65.0},
+    {'symbol': 'BLUESTARCO', 'name': 'Blue Star Ltd', 'sector': 'Capital Goods', 'lot': 300, 'basePrice': 1890.0, 'mwplBase': 61.0},
+    {'symbol': 'DIXON', 'name': 'Dixon Technologies', 'sector': 'Capital Goods', 'lot': 50, 'basePrice': 13800.0, 'mwplBase': 68.0},
+    {'symbol': 'ASTRAL', 'name': 'Astral Ltd', 'sector': 'Capital Goods', 'lot': 275, 'basePrice': 2080.0, 'mwplBase': 54.0},
+    {'symbol': 'BHARTIARTL', 'name': 'Bharti Airtel Ltd', 'sector': 'Telecom', 'lot': 475, 'basePrice': 1620.0, 'mwplBase': 54.0},
+    {'symbol': 'IDEA', 'name': 'Vodafone Idea Ltd', 'sector': 'Telecom', 'lot': 80000, 'basePrice': 10.8, 'mwplBase': 97.4},
+    {'symbol': 'INDUSTOWER', 'name': 'Indus Towers Ltd', 'sector': 'Telecom', 'lot': 1700, 'basePrice': 415.0, 'mwplBase': 78.0},
+    {'symbol': 'SUNTV', 'name': 'Sun TV Network Ltd', 'sector': 'Media', 'lot': 750, 'basePrice': 795.0, 'mwplBase': 66.0},
+    {'symbol': 'ZEEL', 'name': 'Zee Entertainment', 'sector': 'Media', 'lot': 3000, 'basePrice': 132.0, 'mwplBase': 89.5},
+    {'symbol': 'PVRINOX', 'name': 'PVR INOX Ltd', 'sector': 'Media', 'lot': 400, 'basePrice': 1580.0, 'mwplBase': 72.0},
+    {'symbol': 'DLF', 'name': 'DLF Ltd', 'sector': 'Realty', 'lot': 825, 'basePrice': 845.0, 'mwplBase': 74.0},
+    {'symbol': 'GODREJPROP', 'name': 'Godrej Properties', 'sector': 'Realty', 'lot': 475, 'basePrice': 2980.0, 'mwplBase': 71.5},
+    {'symbol': 'OBEROIRLTY', 'name': 'Oberoi Realty Ltd', 'sector': 'Realty', 'lot': 350, 'basePrice': 1890.0, 'mwplBase': 64.0},
+    {'symbol': 'PHOENIXLTD', 'name': 'Phoenix Mills Ltd', 'sector': 'Realty', 'lot': 350, 'basePrice': 1740.0, 'mwplBase': 58.0},
+    {'symbol': 'PRESTIGE', 'name': 'Prestige Estates Projects', 'sector': 'Realty', 'lot': 300, 'basePrice': 1820.0, 'mwplBase': 69.0},
+    {'symbol': 'BRIGADE', 'name': 'Brigade Enterprises', 'sector': 'Realty', 'lot': 300, 'basePrice': 1380.0, 'mwplBase': 62.0},
+    {'symbol': 'NBCC', 'name': 'NBCC (India) Ltd', 'sector': 'Realty', 'lot': 3000, 'basePrice': 118.0, 'mwplBase': 84.0},
+    {'symbol': 'ULTRACEMCO', 'name': 'UltraTech Cement Ltd', 'sector': 'Cement', 'lot': 100, 'basePrice': 11450.0, 'mwplBase': 45.0},
+    {'symbol': 'AMBUJACEM', 'name': 'Ambuja Cements Ltd', 'sector': 'Cement', 'lot': 900, 'basePrice': 618.0, 'mwplBase': 68.4},
+    {'symbol': 'ACC', 'name': 'ACC Ltd', 'sector': 'Cement', 'lot': 300, 'basePrice': 2580.0, 'mwplBase': 59.0},
+    {'symbol': 'DALBHARAT', 'name': 'Dalmia Bharat Ltd', 'sector': 'Cement', 'lot': 275, 'basePrice': 1940.0, 'mwplBase': 56.0},
+    {'symbol': 'SHREECEM', 'name': 'Shree Cement Ltd', 'sector': 'Cement', 'lot': 25, 'basePrice': 25800.0, 'mwplBase': 41.0},
+    {'symbol': 'RAMCOCEM', 'name': 'The Ramco Cements', 'sector': 'Cement', 'lot': 750, 'basePrice': 880.0, 'mwplBase': 67.0},
+    {'symbol': 'GRASIM', 'name': 'Grasim Industries Ltd', 'sector': 'Cement', 'lot': 250, 'basePrice': 2680.0, 'mwplBase': 53.0},
+    {'symbol': 'PIDILITIND', 'name': 'Pidilite Industries Ltd', 'sector': 'Cement', 'lot': 250, 'basePrice': 3150.0, 'mwplBase': 42.0},
+    {'symbol': 'BERGEPAINT', 'name': 'Berger Paints India', 'sector': 'Cement', 'lot': 1100, 'basePrice': 595.0, 'mwplBase': 55.0},
+    {'symbol': 'ASIANPAINT', 'name': 'Asian Paints Ltd', 'sector': 'Cement', 'lot': 200, 'basePrice': 3280.0, 'mwplBase': 44.0},
+    {'symbol': 'PIIND', 'name': 'PI Industries Ltd', 'sector': 'Chemicals', 'lot': 250, 'basePrice': 4580.0, 'mwplBase': 49.0},
+    {'symbol': 'UPL', 'name': 'UPL Ltd', 'sector': 'Chemicals', 'lot': 1300, 'basePrice': 565.0, 'mwplBase': 76.0},
+    {'symbol': 'SRF', 'name': 'SRF Ltd', 'sector': 'Chemicals', 'lot': 375, 'basePrice': 2480.0, 'mwplBase': 58.0},
+    {'symbol': 'AARTIIND', 'name': 'Aarti Industries Ltd', 'sector': 'Chemicals', 'lot': 1000, 'basePrice': 585.0, 'mwplBase': 82.0},
+    {'symbol': 'DEEPAKNTR', 'name': 'Deepak Nitrite Ltd', 'sector': 'Chemicals', 'lot': 300, 'basePrice': 2890.0, 'mwplBase': 63.0},
+    {'symbol': 'TATACHEM', 'name': 'Tata Chemicals Ltd', 'sector': 'Chemicals', 'lot': 550, 'basePrice': 1080.0, 'mwplBase': 79.0},
+    {'symbol': 'ATUL', 'name': 'Atul Ltd', 'sector': 'Chemicals', 'lot': 75, 'basePrice': 7650.0, 'mwplBase': 52.0},
+    {'symbol': 'NAVINFLUOR', 'name': 'Navin Fluorine Int', 'sector': 'Chemicals', 'lot': 175, 'basePrice': 3450.0, 'mwplBase': 65.0},
+    {'symbol': 'COROMANDEL', 'name': 'Coromandel International', 'sector': 'Chemicals', 'lot': 400, 'basePrice': 1680.0, 'mwplBase': 50.0},
+    {'symbol': 'CHAMBLFERT', 'name': 'Chambal Fertilisers', 'sector': 'Chemicals', 'lot': 1500, 'basePrice': 495.0, 'mwplBase': 86.0},
+    {'symbol': 'TRENT', 'name': 'Trent Ltd', 'sector': 'Services', 'lot': 100, 'basePrice': 7250.0, 'mwplBase': 66.0},
+    {'symbol': 'ADANIENT', 'name': 'Adani Enterprises Ltd', 'sector': 'Services', 'lot': 300, 'basePrice': 2980.0, 'mwplBase': 72.4},
+    {'symbol': 'ADANIPORTS', 'name': 'Adani Ports & SEZ', 'sector': 'Services', 'lot': 400, 'basePrice': 1420.0, 'mwplBase': 66.0},
+    {'symbol': 'DMART', 'name': 'Avenue Supermarts (DMart)', 'sector': 'Services', 'lot': 150, 'basePrice': 4950.0, 'mwplBase': 45.0},
+    {'symbol': 'NYKAA', 'name': 'FSN E-Commerce (Nykaa)', 'sector': 'Services', 'lot': 2000, 'basePrice': 218.0, 'mwplBase': 69.0},
+    {'symbol': 'ZOMATO', 'name': 'Zomato Ltd', 'sector': 'Services', 'lot': 2000, 'basePrice': 285.0, 'mwplBase': 74.0},
+    {'symbol': 'DELHIVERY', 'name': 'Delhivery Ltd', 'sector': 'Services', 'lot': 1200, 'basePrice': 435.0, 'mwplBase': 61.0},
+    {'symbol': 'CONCOR', 'name': 'Container Corp of India', 'sector': 'Services', 'lot': 1000, 'basePrice': 965.0, 'mwplBase': 64.0},
+    {'symbol': 'INDIGO', 'name': 'InterGlobe Aviation', 'sector': 'Services', 'lot': 150, 'basePrice': 4780.0, 'mwplBase': 55.0},
+    {'symbol': 'IRCTC', 'name': 'Indian Railway Catering', 'sector': 'Services', 'lot': 875, 'basePrice': 945.0, 'mwplBase': 68.0},
+    {'symbol': 'BSE', 'name': 'BSE Ltd', 'sector': 'Services', 'lot': 250, 'basePrice': 4150.0, 'mwplBase': 78.0},
+    {'symbol': 'MCX', 'name': 'Multi Commodity Exchange', 'sector': 'Services', 'lot': 125, 'basePrice': 5850.0, 'mwplBase': 74.0},
+    {'symbol': 'CDSL', 'name': 'Central Depository Services', 'sector': 'Services', 'lot': 300, 'basePrice': 1620.0, 'mwplBase': 71.0},
+    {'symbol': 'ANGELONE', 'name': 'Angel One Ltd', 'sector': 'Services', 'lot': 125, 'basePrice': 2780.0, 'mwplBase': 68.0},
 ]
 
 # In-Memory Cache
@@ -368,6 +468,12 @@ def _build_master_futures_records() -> list[dict]:
             "basis": basis_pts,
             "basisPct": basis_pct,
             "basisType": "PREMIUM" if basis_pts >= 0 else "DISCOUNT",
+            "coc": round(basis_pct * (365 / 15.0), 2),
+            "prevClose": base,
+            "dayHigh": round(fut_price * (1.0 + ((seed % 10) * 0.0018 + 0.003)), 2),
+            "dayLow": round(fut_price * (1.0 - ((seed % 12) * 0.0018 + 0.004)), 2),
+            "vwap": round(fut_price * (1.0 + ((seed % 6) - 3) * 0.0008), 2),
+            "rolloverPct": round(min(96.0, max(45.0, 68.0 + ((seed % 25) - 10) * 1.1)), 1),
             "oiContracts": curr_oi,
             "openInterest": curr_oi,
             "oiChangePct": oi_chg_pct,
@@ -454,15 +560,41 @@ def get_futures_dashboard() -> dict:
     }
 
 
-def get_futures_screener(sector: str = "ALL", search: str = "", sort_by: str = "oiValueCr", sort_dir: str = "desc") -> dict:
+def get_futures_screener(sector: str = "ALL", search: str = "", sort_by: str = "oiValueCr", sort_dir: str = "desc", signal: str = "ALL") -> dict:
     """
-    Returns filtered and sorted master records for the Full OI Matrix.
+    Returns filtered and sorted master records for the Full OI Matrix (200 instruments).
     """
     records = get_futures_master()
 
     # Sector Filter
     if sector and sector.upper() != "ALL":
-        records = [r for r in records if r["sector"].upper() == sector.upper()]
+        sec_u = sector.upper()
+        if sec_u in ("INDICES", "INDEX"):
+            records = [r for r in records if r.get("isIndex")]
+        elif sec_u == "STOCKS":
+            records = [r for r in records if not r.get("isIndex")]
+        else:
+            records = [r for r in records if r["sector"].upper() == sec_u]
+
+    # Signal Filter
+    if signal and signal.upper() != "ALL":
+        sig_u = signal.upper()
+        if sig_u in ("LB", "LONG BUILDUP"):
+            records = [r for r in records if r["buildupCode"] == "LB"]
+        elif sig_u in ("SB", "SHORT BUILDUP"):
+            records = [r for r in records if r["buildupCode"] == "SB"]
+        elif sig_u in ("SC", "SHORT COVERING"):
+            records = [r for r in records if r["buildupCode"] == "SC"]
+        elif sig_u in ("LU", "LONG UNWINDING"):
+            records = [r for r in records if r["buildupCode"] == "LU"]
+        elif sig_u == "DISCOUNT":
+            records = [r for r in records if r["basis"] < 0]
+        elif sig_u == "PREMIUM":
+            records = [r for r in records if r["basisPct"] >= 0.3]
+        elif sig_u == "BAN":
+            records = [r for r in records if r["mwplStatus"] == "BANNED"]
+        elif sig_u == "ALERT":
+            records = [r for r in records if r["mwplStatus"] in ("ALERT", "BANNED")]
 
     # Search Filter
     if search:
@@ -479,6 +611,7 @@ def get_futures_screener(sector: str = "ALL", search: str = "", sort_by: str = "
     return {
         "ok": True,
         "count": len(records),
+        "totalCount": len(FO_UNIVERSE),
         "data": records,
     }
 

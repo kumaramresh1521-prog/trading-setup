@@ -762,189 +762,175 @@
       <!-- ================================================================
            ⚡ Institutional Futures Intelligence Desk (Kotak Neo Derivatives Engine)
            ================================================================ -->
+      <!-- ================================================================
+           ⚡ Institutional Futures Intelligence Desk (Kotak Neo Derivatives Engine)
+           ================================================================ -->
       <div id="panelFutures" class="tab-panel" style="display:none;">
         <div class="futures-desk">
 
-          <!-- Hero Banner -->
-          <div class="fut-hero-banner">
-            <div class="fut-hero-left">
-              <span class="fut-hero-icon">📈</span>
+          <!-- 1. Top Command Bar -->
+          <div class="fut-top-bar">
+            <div class="fut-title-group">
+              <span class="fut-brand-icon">⚡</span>
               <div>
-                <h2 class="fut-hero-title">
-                  <span>Institutional Futures Desk</span>
-                  <span class="p2-badge p2-badge-teal" style="font-size:10px; background:#ef4444; color:#ffffff; font-weight:800; padding:2px 8px; border-radius:4px;">KOTAK NEO DERIVATIVES</span>
-                  <span id="futAsOfBadge" style="font-size:11px; color:#94a3b8; font-weight:600; margin-left:8px;">Ready</span>
+                <h2 class="fut-heading">
+                  FUTURES INTELLIGENCE DESK
+                  <span class="fut-broker-tag">KOTAK NEO DERIVATIVES</span>
+                  <span id="futUniverseCountBadge" class="fut-count-pill">200 CONTRACTS</span>
                 </h2>
-                <p class="fut-hero-desc">Institutional open interest matrix, 4-quadrant buildup screener, market treemap heatmap &amp; MWPL ban/exit monitors for all 80+ F&amp;O stocks and indices.</p>
+                <p class="fut-subheading">Live institutional matrix, cash-futures spread, cost of carry &amp; 4-quadrant buildup for all NSE F&amp;O stocks and benchmark indices.</p>
               </div>
             </div>
-            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-              <select id="futSectorFilter" class="p2-select" style="min-width:140px; padding:7px 12px; font-size:12px; background:#0c1322; border:1px solid #1e293d; color:#f8fafc; border-radius:6px;">
-                <option value="ALL">All Sectors (80+)</option>
-                <option value="INDICES">Index Futures Only</option>
-                <option value="BANKING">Banking &amp; Financials</option>
-                <option value="IT">Information Technology</option>
-                <option value="AUTO">Automobiles</option>
-                <option value="ENERGY">Oil, Gas &amp; Energy</option>
-                <option value="METALS">Metals &amp; Mining</option>
-                <option value="PHARMA">Pharma &amp; Healthcare</option>
-                <option value="FMCG">FMCG &amp; Retail</option>
-              </select>
 
-              <input type="text" id="futSearchInput" placeholder="🔍 Search F&amp;O symbol..." style="padding:7px 12px; font-size:12px; background:#0c1322; border:1px solid #1e293d; color:#f8fafc; border-radius:6px; min-width:160px; font-family:'JetBrains Mono',monospace;" />
+            <div class="fut-controls-group">
+              <!-- Search Input -->
+              <div class="fut-search-box">
+                <span class="fut-search-icon">🔍</span>
+                <input type="text" id="futSearchInput" placeholder="Filter symbol (e.g. NIFTY, RELIANCE, SBIN)..." autocomplete="off" />
+              </div>
 
-              <div id="futAutoRefreshBadge" class="fut-pulse-pill" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; padding:6px 10px; border-radius:6px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25); font-weight:700; font-family:'JetBrains Mono',monospace;">
+              <!-- Pulse Badge -->
+              <div id="futAutoRefreshBadge" class="fut-pulse-pill" title="Live Polling Status">
                 <span class="pulse-dot"></span> LIVE <span id="futCountdownText">5s</span>
               </div>
 
-              <select id="futAutoRefreshSelect" class="p2-select" style="padding:7px 10px; font-size:12px; background:#0c1322; border:1px solid #1e293d; color:#f8fafc; border-radius:6px;">
+              <!-- Refresh Interval Select -->
+              <select id="futAutoRefreshSelect" class="p2-select fut-refresh-select">
                 <option value="5" selected>Auto: 5s (Live)</option>
                 <option value="10">Auto: 10s</option>
                 <option value="30">Auto: 30s</option>
                 <option value="0">Auto: OFF</option>
               </select>
 
-              <button type="button" id="futBtnRefresh" class="btn-adm-primary" style="background:#ef4444; padding:7px 14px; font-size:12px; border-radius:6px; font-weight:700;">🔄 Refresh</button>
+              <button type="button" id="futBtnRefresh" class="fut-refresh-btn" title="Force Refresh">🔄 Refresh</button>
             </div>
           </div>
 
-          <!-- Subtabs Bar -->
-          <div class="fut-subtabs-bar">
-            <button type="button" class="fut-subtab-btn active" data-tab="dashboard">📊 Futures Dashboard</button>
-            <button type="button" class="fut-subtab-btn" data-tab="screener">📋 Future Open Interest</button>
-            <button type="button" class="fut-subtab-btn" data-tab="buildup">⚡ Future Buildup Quadrant</button>
-            <button type="button" class="fut-subtab-btn" data-tab="heatmap">🗺️ F&amp;O Heatmap</button>
-            <button type="button" class="fut-subtab-btn" data-tab="mwpl">🚫 MWPL &amp; Ban Tracker</button>
-          </div>
-
-          <!-- SUBTAB 1: FUTURES DASHBOARD -->
-          <div id="futView_dashboard" class="fut-view-panel">
-            <!-- Row 1: Macro KPIs -->
-            <div class="fut-kpi-grid">
-              <div class="fut-kpi-card">
-                <span class="fut-kpi-label">Total F&amp;O Turnover</span>
-                <span class="fut-kpi-val" id="futKpiTurnover" style="color:#60a5fa;">--</span>
-                <span class="fut-kpi-sub">Total traded futures notional</span>
-              </div>
-              <div class="fut-kpi-card">
-                <span class="fut-kpi-label">Market Open Interest</span>
-                <span class="fut-kpi-val" id="futKpiOi" style="color:#f8fafc;">--</span>
-                <span class="fut-kpi-sub">Cumulative outstanding positions</span>
-              </div>
-              <div class="fut-kpi-card">
-                <span class="fut-kpi-label">Institutional Buildup Ratio</span>
-                <div id="futBuildupRatioBar" style="display:flex; height:8px; border-radius:4px; overflow:hidden; margin:8px 0 4px 0; background:#1e293b;"></div>
-                <div id="futBuildupCountText" style="font-size:11px;"></div>
-              </div>
-              <div class="fut-kpi-card">
-                <span class="fut-kpi-label">Active F&amp;O Universe</span>
-                <span class="fut-kpi-val" id="futKpiUniverse" style="color:#34d399;">80+ Contracts</span>
-                <span class="fut-kpi-sub">Kotak Neo Derivatives stream</span>
-              </div>
+          <!-- 2. Benchmark Index Futures Strip (Prominent Live Cards) -->
+          <div class="fut-index-strip-wrapper">
+            <div class="fut-index-strip-header">
+              <span>⚡ BENCHMARK INDEX FUTURES &amp; CASH BASIS SPREAD</span>
+              <span style="font-size:11px; color:#64748b;">Live Exchange Quotes &bull; Click to filter matrix</span>
             </div>
-
-            <!-- Row 2: Major Index Futures Strip -->
-            <div style="margin-top:14px;">
-              <h4 style="margin:0 0 10px 0; font-size:13px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">⚡ Benchmark Index Futures (Current Expiry)</h4>
-              <div class="fut-index-grid" id="futIndexCardsGrid">
-                <!-- Dynamically populated -->
-              </div>
-            </div>
-
-            <!-- Row 3: Institutional Screeners (4 Columns: Top Gainers, Losers, OI Additions, OI Shedding) -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; margin-top:14px;">
-              <!-- Top Gainers -->
-              <div class="adm-card" style="margin:0; padding:12px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #1a2336; padding-bottom:6px;">
-                  <strong style="color:#10b981; font-size:12.5px;">🟢 Top Futures Gainers</strong>
-                  <span style="font-size:10px; color:#64748b;">PRICE GAIN %</span>
-                </div>
-                <div id="futTopGainersList"></div>
-              </div>
-
-              <!-- Top Losers -->
-              <div class="adm-card" style="margin:0; padding:12px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #1a2336; padding-bottom:6px;">
-                  <strong style="color:#ef4444; font-size:12.5px;">🔴 Top Futures Losers</strong>
-                  <span style="font-size:10px; color:#64748b;">PRICE DROP %</span>
-                </div>
-                <div id="futTopLosersList"></div>
-              </div>
-
-              <!-- Top OI Additions -->
-              <div class="adm-card" style="margin:0; padding:12px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #1a2336; padding-bottom:6px;">
-                  <strong style="color:#38bdf8; font-size:12.5px;">📈 Top OI Additions</strong>
-                  <span style="font-size:10px; color:#64748b;">FRESH POSITIONS</span>
-                </div>
-                <div id="futTopOiAddList"></div>
-              </div>
-
-              <!-- Top OI Shedding -->
-              <div class="adm-card" style="margin:0; padding:12px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #1a2336; padding-bottom:6px;">
-                  <strong style="color:#f59e0b; font-size:12.5px;">📉 Top OI Shedding</strong>
-                  <span style="font-size:10px; color:#64748b;">POSITION UNWINDING</span>
-                </div>
-                <div id="futTopOiShedList"></div>
-              </div>
+            <div class="fut-index-grid" id="futIndexCardsGrid">
+              <!-- Dynamically populated with high-fidelity index cards -->
             </div>
           </div>
 
-          <!-- SUBTAB 2: FUTURE OPEN INTEREST SCREENER -->
-          <div id="futView_screener" class="fut-view-panel" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-              <div>
-                <h4 style="margin:0; font-size:14px; font-weight:800; color:#f8fafc;">📋 Security-Wise F&amp;O Open Interest &amp; Spread Matrix</h4>
-                <small style="color:#94a3b8;">Detailed institutional positioning with Basis / Cost of Carry and dynamic Buildup identification.</small>
-              </div>
-              <span id="futScreenerCountBadge" class="badge" style="background:#1e293b; color:#94a3b8; padding:4px 8px; border-radius:4px; font-weight:700;">0 Contracts</span>
+          <!-- 3. Sub-Tabs & Filtering Controls -->
+          <div class="fut-nav-container">
+            <div class="fut-primary-tabs">
+              <button type="button" class="fut-tab-btn active" data-tab="matrix">
+                ⚡ All F&amp;O Market Watch <span class="fut-tab-counter" id="tabCountMatrix">200</span>
+              </button>
+              <button type="button" class="fut-tab-btn" data-tab="buildup">
+                🎯 Buildup Quadrants &amp; Heatmap
+              </button>
+              <button type="button" class="fut-tab-btn" data-tab="indices">
+                📈 Index Term Structure &amp; Basis
+              </button>
+              <button type="button" class="fut-tab-btn" data-tab="mwpl">
+                🚫 MWPL &amp; Ban Radar
+              </button>
             </div>
 
+            <!-- Sector Filter Pills -->
+            <div class="fut-filter-ribbon" id="futSectorPills">
+              <button type="button" class="fut-sec-pill active" data-sector="ALL">🌐 All Universe (200)</button>
+              <button type="button" class="fut-sec-pill highlight" data-sector="INDICES">📊 Indices (7)</button>
+              <button type="button" class="fut-sec-pill" data-sector="Banking">🏦 Banking (15)</button>
+              <button type="button" class="fut-sec-pill" data-sector="Financials">💳 Financials (18)</button>
+              <button type="button" class="fut-sec-pill" data-sector="IT">💻 IT &amp; Tech (14)</button>
+              <button type="button" class="fut-sec-pill" data-sector="Auto">🚗 Auto (16)</button>
+              <button type="button" class="fut-sec-pill" data-sector="Energy">⚡ Energy &amp; Power (22)</button>
+              <button type="button" class="fut-sec-pill" data-sector="Metals">🏗️ Metals (12)</button>
+              <button type="button" class="fut-sec-pill" data-sector="Pharma">💊 Pharma (18)</button>
+              <button type="button" class="fut-sec-pill" data-sector="FMCG">🛒 FMCG (15)</button>
+              <button type="button" class="fut-sec-pill" data-sector="Capital Goods">🛡️ Defence &amp; Infra (16)</button>
+              <button type="button" class="fut-sec-pill" data-sector="Realty">🏢 Realty (7)</button>
+              <button type="button" class="fut-sec-pill" data-sector="Chemicals">🧪 Chemicals (10)</button>
+              <button type="button" class="fut-sec-pill" data-sector="Services">📦 Retail &amp; Services (14)</button>
+            </div>
+
+            <!-- Flow / Signal Presets -->
+            <div class="fut-signal-ribbon" id="futSignalPills">
+              <span class="fut-sig-label">Institutional Flow:</span>
+              <button type="button" class="fut-sig-pill active" data-signal="ALL">All Flows</button>
+              <button type="button" class="fut-sig-pill lb" data-signal="LB">🟢 Long Buildup (<span id="countLb">--</span>)</button>
+              <button type="button" class="fut-sig-pill sb" data-signal="SB">🔴 Short Buildup (<span id="countSb">--</span>)</button>
+              <button type="button" class="fut-sig-pill sc" data-signal="SC">🔵 Short Covering (<span id="countSc">--</span>)</button>
+              <button type="button" class="fut-sig-pill lu" data-signal="LU">🟡 Long Unwinding (<span id="countLu">--</span>)</button>
+              <button type="button" class="fut-sig-pill prem" data-signal="PREMIUM">💎 High Premium</button>
+              <button type="button" class="fut-sig-pill disc" data-signal="DISCOUNT">📉 Discount / Arbitrage</button>
+            </div>
+          </div>
+
+          <!-- ================================================================
+               TAB 1: ALL F&O MARKET WATCH MATRIX
+               ================================================================ -->
+          <div id="futView_matrix" class="fut-view-panel">
+            <!-- Macro Summary Ribbon -->
+            <div class="fut-macro-bar">
+              <div class="fut-mb-item">
+                <span class="fmb-lbl">F&amp;O Turnover</span>
+                <span class="fmb-val" id="futKpiTurnover" style="color:#60a5fa;">--</span>
+              </div>
+              <div class="fut-mb-sep"></div>
+              <div class="fut-mb-item">
+                <span class="fmb-lbl">Total Market OI</span>
+                <span class="fmb-val" id="futKpiOi" style="color:#f8fafc;">--</span>
+              </div>
+              <div class="fut-mb-sep"></div>
+              <div class="fut-mb-item" style="flex:1; min-width:240px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+                  <span class="fmb-lbl">Institutional Sentiment Bar</span>
+                  <span id="futBuildupCountText"></span>
+                </div>
+                <div id="futBuildupRatioBar" class="fut-ratio-bar"></div>
+              </div>
+            </div>
+
+            <!-- Master Table -->
             <div class="fut-table-wrap">
-              <table class="fut-table">
+              <table class="fut-table" id="futMatrixTable">
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Symbol</th>
+                    <th class="sortable" data-sort="symbol">Symbol</th>
                     <th>Sector</th>
-                    <th>Expiry</th>
-                    <th style="text-align:right;">LTP (₹)</th>
-                    <th style="text-align:right;">Chg %</th>
-                    <th style="text-align:right;">Open Interest</th>
-                    <th style="text-align:right;">OI Chg %</th>
-                    <th style="text-align:right;">OI Value (₹ Cr)</th>
-                    <th style="text-align:right;">Basis (Spread)</th>
-                    <th style="text-align:right;">Turnover (₹ Cr)</th>
-                    <th style="text-align:center;">Institutional Buildup</th>
+                    <th style="text-align:right;" class="sortable" data-sort="spotPrice">Spot (₹)</th>
+                    <th style="text-align:right;" class="sortable" data-sort="futPrice">Futures LTP (₹)</th>
+                    <th style="text-align:right;" class="sortable" data-sort="priceChangePct">Chg %</th>
+                    <th style="text-align:right;" class="sortable" data-sort="basis">Basis Spread</th>
+                    <th style="text-align:right;" class="sortable" data-sort="coc">CoC % p.a.</th>
+                    <th style="text-align:right;" class="sortable" data-sort="oiContracts">Open Interest</th>
+                    <th style="text-align:right;" class="sortable" data-sort="oiChangePct">OI Chg %</th>
+                    <th style="text-align:right;" class="sortable" data-sort="oiValueCr">OI Value (₹ Cr)</th>
+                    <th style="text-align:center;">Day Range (L - H)</th>
+                    <th style="text-align:center;" class="sortable" data-sort="buildupCode">Institutional Buildup</th>
+                    <th style="text-align:right;" class="sortable" data-sort="mwplPct">MWPL %</th>
                   </tr>
                 </thead>
-                <tbody id="futScreenerTableBody">
-                  <!-- Populated dynamically -->
+                <tbody id="futMatrixTableBody">
+                  <!-- Populated dynamically with all 200 contracts -->
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- SUBTAB 3: FUTURE BUILDUP QUADRANTS -->
+          <!-- ================================================================
+               TAB 2: BUILDUP QUADRANTS & HEATMAP
+               ================================================================ -->
           <div id="futView_buildup" class="fut-view-panel" style="display:none;">
-            <div style="margin-bottom:12px;">
-              <h4 style="margin:0; font-size:14px; font-weight:800; color:#f8fafc;">⚡ Institutional 4-Quadrant Buildup Screener</h4>
-              <small style="color:#94a3b8;">Classifies every F&amp;O stock into actionable institutional flow: Long Buildup, Short Buildup, Short Covering, and Long Unwinding.</small>
-            </div>
-
             <div class="fut-quad-grid">
               <!-- QUADRANT 1: LONG BUILDUP -->
               <div class="fut-quad-card lb">
                 <div class="fut-quad-header">
                   <div>
-                    <h5 class="fut-quad-title" style="color:#34d399;">🟢 Long Buildup (Bullish Aggression)</h5>
-                    <p class="fut-quad-sub">Price Up ▲ + Open Interest Up ▲ (Fresh Buyers Entering)</p>
+                    <h5 class="fut-quad-title" style="color:#10b981;">🟢 Long Buildup (Bullish Accumulation)</h5>
+                    <p class="fut-quad-sub">Price Up ▲ + OI Up ▲ (Aggressive Institutional Buying)</p>
                   </div>
-                  <div style="text-align:right;">
-                    <span id="futQuadLbCount" style="font-size:12px; font-weight:800; color:#34d399; font-family:'JetBrains Mono',monospace;">--</span>
-                    <div id="futQuadLbOi" style="font-size:10.5px; color:#64748b;">--</div>
-                  </div>
+                  <span id="futQuadLbCount" class="quad-count-badge">--</span>
                 </div>
                 <div class="fut-quad-list" id="futQuadLbList"></div>
               </div>
@@ -953,13 +939,10 @@
               <div class="fut-quad-card sb">
                 <div class="fut-quad-header">
                   <div>
-                    <h5 class="fut-quad-title" style="color:#f87171;">🔴 Short Buildup (Bearish Pressure)</h5>
-                    <p class="fut-quad-sub">Price Down ▼ + Open Interest Up ▲ (Fresh Sellers Entering)</p>
+                    <h5 class="fut-quad-title" style="color:#ef4444;">🔴 Short Buildup (Bearish Pressure)</h5>
+                    <p class="fut-quad-sub">Price Down ▼ + OI Up ▲ (Aggressive Fresh Shorting)</p>
                   </div>
-                  <div style="text-align:right;">
-                    <span id="futQuadSbCount" style="font-size:12px; font-weight:800; color:#f87171; font-family:'JetBrains Mono',monospace;">--</span>
-                    <div id="futQuadSbOi" style="font-size:10.5px; color:#64748b;">--</div>
-                  </div>
+                  <span id="futQuadSbCount" class="quad-count-badge">--</span>
                 </div>
                 <div class="fut-quad-list" id="futQuadSbList"></div>
               </div>
@@ -968,13 +951,10 @@
               <div class="fut-quad-card sc">
                 <div class="fut-quad-header">
                   <div>
-                    <h5 class="fut-quad-title" style="color:#60a5fa;">🔵 Short Covering (Bear Squeeze)</h5>
-                    <p class="fut-quad-sub">Price Up ▲ + Open Interest Down ▼ (Sellers Booking / Trapped)</p>
+                    <h5 class="fut-quad-title" style="color:#3b82f6;">🔵 Short Covering (Bear Squeeze)</h5>
+                    <p class="fut-quad-sub">Price Up ▲ + OI Down ▼ (Sellers Liquidating / Trapped)</p>
                   </div>
-                  <div style="text-align:right;">
-                    <span id="futQuadScCount" style="font-size:12px; font-weight:800; color:#60a5fa; font-family:'JetBrains Mono',monospace;">--</span>
-                    <div id="futQuadScOi" style="font-size:10.5px; color:#64748b;">--</div>
-                  </div>
+                  <span id="futQuadScCount" class="quad-count-badge">--</span>
                 </div>
                 <div class="fut-quad-list" id="futQuadScList"></div>
               </div>
@@ -983,50 +963,53 @@
               <div class="fut-quad-card lu">
                 <div class="fut-quad-header">
                   <div>
-                    <h5 class="fut-quad-title" style="color:#fbbf24;">🟡 Long Unwinding (Profit Booking)</h5>
-                    <p class="fut-quad-sub">Price Down ▼ + Open Interest Down ▼ (Buyers Exiting)</p>
+                    <h5 class="fut-quad-title" style="color:#f59e0b;">🟡 Long Unwinding (Profit Booking)</h5>
+                    <p class="fut-quad-sub">Price Down ▼ + OI Down ▼ (Longs Cashing Out)</p>
                   </div>
-                  <div style="text-align:right;">
-                    <span id="futQuadLuCount" style="font-size:12px; font-weight:800; color:#fbbf24; font-family:'JetBrains Mono',monospace;">--</span>
-                    <div id="futQuadLuOi" style="font-size:10.5px; color:#64748b;">--</div>
-                  </div>
+                  <span id="futQuadLuCount" class="quad-count-badge">--</span>
                 </div>
                 <div class="fut-quad-list" id="futQuadLuList"></div>
               </div>
             </div>
-          </div>
 
-          <!-- SUBTAB 4: F&O HEATMAP -->
-          <div id="futView_heatmap" class="fut-view-panel" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-              <div>
-                <h4 style="margin:0; font-size:14px; font-weight:800; color:#f8fafc;">🗺️ F&amp;O Open Interest &amp; Performance Heatmap</h4>
-                <small style="color:#94a3b8;">Tile size represents Open Interest volume; color depth represents Price Change %.</small>
+            <!-- Sector Treemap Heatmap -->
+            <div style="margin-top:20px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h4 style="margin:0; font-size:13px; font-weight:800; color:#f8fafc; text-transform:uppercase;">🗺️ F&amp;O Open Interest &amp; Flow Heatmap</h4>
+                <div style="display:flex; gap:12px; font-size:11px; color:#94a3b8;">
+                  <span><span style="display:inline-block; width:10px; height:10px; background:#10b981; border-radius:2px;"></span> Gainers &gt; +1%</span>
+                  <span><span style="display:inline-block; width:10px; height:10px; background:#1e293b; border-radius:2px;"></span> Neutral</span>
+                  <span><span style="display:inline-block; width:10px; height:10px; background:#ef4444; border-radius:2px;"></span> Losers &lt; -1%</span>
+                </div>
               </div>
-              <div style="display:flex; gap:12px; align-items:center; font-size:11px; color:#94a3b8;">
-                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#10b981; border-radius:2px;"></span> &gt; +1.5%</span>
-                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#334155; border-radius:2px;"></span> Flat (-0.5% to +0.5%)</span>
-                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#ef4444; border-radius:2px;"></span> &lt; -1.5%</span>
-              </div>
-            </div>
-
-            <div class="fut-heatmap-grid" id="futHeatmapGrid">
-              <!-- Heatmap tiles dynamically injected -->
+              <div class="fut-heatmap-grid" id="futHeatmapGrid"></div>
             </div>
           </div>
 
-          <!-- SUBTAB 5: MWPL & BAN TRACKER -->
+          <!-- ================================================================
+               TAB 3: INDEX TERM STRUCTURE & BASIS
+               ================================================================ -->
+          <div id="futView_indices" class="fut-view-panel" style="display:none;">
+            <div style="margin-bottom:12px;">
+              <h4 style="margin:0 0 4px 0; font-size:14px; font-weight:800; color:#f8fafc;">📈 Major Index Futures &amp; Term Structure Hub</h4>
+              <p style="margin:0; font-size:12px; color:#94a3b8;">Comprehensive Cash-Futures Basis, Cost of Carry, and Rollover analysis for all benchmark indices.</p>
+            </div>
+            <div class="fut-indices-detail-container" id="futIndicesDetailGrid">
+              <!-- Detailed Index Term Structure Cards -->
+            </div>
+          </div>
+
+          <!-- ================================================================
+               TAB 4: MWPL & BAN RADAR
+               ================================================================ -->
           <div id="futView_mwpl" class="fut-view-panel" style="display:none;">
-            <!-- Active Ban Period Alert -->
             <div id="futMwplBanBanner" style="margin-bottom:14px;"></div>
 
-            <!-- Danger Zone (80% - 95%) -->
             <div style="margin-bottom:14px;">
               <h4 style="margin:0 0 8px 0; font-size:13px; font-weight:800; color:#fbbf24; text-transform:uppercase; letter-spacing:0.5px;">⚠️ Alert Warning Zone (80% - 95% MWPL Limit)</h4>
               <div id="futMwplAlertList" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px;"></div>
             </div>
 
-            <!-- Full MWPL Matrix Table -->
             <div style="margin-top:14px;">
               <h4 style="margin:0 0 8px 0; font-size:13px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">📋 Market-Wide Position Limit (MWPL) Monitoring Table</h4>
               <div class="fut-table-wrap">
@@ -1044,9 +1027,7 @@
                       <th style="text-align:center;">Status</th>
                     </tr>
                   </thead>
-                  <tbody id="futMwplTableBody">
-                    <!-- Populated dynamically -->
-                  </tbody>
+                  <tbody id="futMwplTableBody"></tbody>
                 </table>
               </div>
             </div>

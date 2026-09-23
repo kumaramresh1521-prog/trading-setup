@@ -1,32 +1,33 @@
 /**
  * Institutional Futures Intelligence Desk
  * Powered by Kotak Neo Derivatives Engine
- * Comprehensive real-time Stock & Index Futures analytics:
- * - Futures Dashboard (Turnover, OI, Gainers/Losers, Index Basis)
- * - Future Open Interest Screener (Search, filter, sortable F&O matrix)
- * - Future Buildup Quadrants (Long Buildup, Short Buildup, Short Covering, Long Unwinding)
- * - F&O Heatmap (OI-weighted market treemap)
- * - MWPL & Ban Tracker (Ban list, Alert Zone 80-95%, % progress bars)
+ * Comprehensive real-time Stock & Index Futures analytics (200 instruments):
+ * - Live All F&O Market Watch Matrix (193 Stocks + 7 Indices)
+ * - Benchmark Index Futures Ribbon (Nifty, BankNifty, FinNifty, MidcpNifty, Sensex)
+ * - 4-Quadrant Institutional Buildup (LB, SB, SC, LU) & Flow Heatmap
+ * - Index Term Structure & Basis Spread Hub
+ * - MWPL & F&O Ban Radar
  */
 
 (function () {
   const state = {
-    activeSubTab: 'dashboard',
+    activeSubTab: 'matrix',
     sector: 'ALL',
+    signal: 'ALL',
     search: '',
     sortBy: 'oiValueCr',
     sortDir: 'desc',
     autoRefreshSec: 5,
     countdownSec: 5,
-    countdownTimer: null,
-    lastRenderedPrices: {},
     timerId: null,
+    countdownTimer: null,
     isLoading: false,
     dashboardData: null,
     screenerData: null,
     buildupData: null,
     heatmapData: null,
     mwplData: null,
+    lastPrices: {},
     initialized: false
   };
 
@@ -47,15 +48,15 @@
     return num.toLocaleString('en-IN');
   }
 
-  function getSignalBadge(sig) {
-    const s = (sig || '').toUpperCase();
-    if (s === 'LONG BUILDUP') {
+  function getSignalBadge(code, name) {
+    const c = (code || '').toUpperCase();
+    if (c === 'LB' || c.includes('LONG BUILD')) {
       return `<span class="fut-badge fut-badge-lb">🟢 LONG BUILDUP</span>`;
-    } else if (s === 'SHORT BUILDUP') {
+    } else if (c === 'SB' || c.includes('SHORT BUILD')) {
       return `<span class="fut-badge fut-badge-sb">🔴 SHORT BUILDUP</span>`;
-    } else if (s === 'SHORT COVERING') {
+    } else if (c === 'SC' || c.includes('SHORT COVER')) {
       return `<span class="fut-badge fut-badge-sc">🔵 SHORT COVERING</span>`;
-    } else if (s === 'LONG UNWINDING') {
+    } else if (c === 'LU' || c.includes('LONG UNWIND')) {
       return `<span class="fut-badge fut-badge-lu">🟡 LONG UNWINDING</span>`;
     }
     return `<span class="fut-badge fut-badge-neutral">⚪ NEUTRAL</span>`;
@@ -63,12 +64,16 @@
 
   // --- Sub-Tab Switching ---
   function switchSubTab(tabName) {
+    // Aliases for compatibility
+    if (tabName === 'dashboard' || tabName === 'screener') tabName = 'matrix';
+    if (tabName === 'heatmap') tabName = 'buildup';
+
     state.activeSubTab = tabName;
-    document.querySelectorAll('.fut-subtab-btn').forEach(btn => {
+    document.querySelectorAll('.fut-tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
 
-    const views = ['dashboard', 'screener', 'buildup', 'heatmap', 'mwpl'];
+    const views = ['matrix', 'buildup', 'indices', 'mwpl'];
     views.forEach(v => {
       const el = document.getElementById(`futView_${v}`);
       if (el) {
@@ -80,481 +85,495 @@
   }
 
   function refreshCurrentSubTab() {
-    if (state.activeSubTab === 'dashboard') loadDashboard();
-    else if (state.activeSubTab === 'screener') loadScreener();
-    else if (state.activeSubTab === 'buildup') loadBuildup();
-    else if (state.activeSubTab === 'heatmap') loadHeatmap();
+    loadBenchmarkRibbon();
+    if (state.activeSubTab === 'matrix') loadMatrix();
+    else if (state.activeSubTab === 'buildup') loadBuildupView();
+    else if (state.activeSubTab === 'indices') loadIndicesDetailView();
     else if (state.activeSubTab === 'mwpl') loadMwpl();
   }
 
-  // --- 1. Dashboard View ---
-  async function loadDashboard() {
+  // --- Benchmark Index Ribbon ---
+  async function loadBenchmarkRibbon() {
     try {
       const res = await fetch('/api/futures/dashboard');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) return;
       const data = await res.json();
       state.dashboardData = data;
-      renderDashboard(data);
+
+      // Update Macro Turnover & OI
+      const turnoverEl = document.getElementById('futKpiTurnover');
+      if (turnoverEl && data.totalTurnoverCr) {
+        turnoverEl.textContent = `₹${fmtNum(data.totalTurnoverCr, 1)} Cr`;
+      }
+      const oiEl = document.getElementById('futKpiOi');
+      if (oiEl && data.totalOiCr) {
+        oiEl.textContent = `₹${fmtNum(data.totalOiCr, 1)} Cr (${fmtQty(data.cumulativeOiContracts)})`;
+      }
+
+      // Sentiment Ratio Bar
+      const counts = data.buildupCounts || {};
+      const lb = counts.longBuildup || 0;
+      const sb = counts.shortBuildup || 0;
+      const sc = counts.shortCovering || 0;
+      const lu = counts.longUnwinding || 0;
+      const tot = (lb + sb + sc + lu) || 1;
+
+      const rBar = document.getElementById('futBuildupRatioBar');
+      if (rBar) {
+        rBar.innerHTML = `
+          <div style="width:${(lb/tot)*100}%; background:#10b981;" title="Longs: ${lb}"></div>
+          <div style="width:${(sb/tot)*100}%; background:#ef4444;" title="Shorts: ${sb}"></div>
+          <div style="width:${(sc/tot)*100}%; background:#3b82f6;" title="Short Covering: ${sc}"></div>
+          <div style="width:${(lu/tot)*100}%; background:#f59e0b;" title="Long Unwinding: ${lu}"></div>
+        `;
+      }
+      const cText = document.getElementById('futBuildupCountText');
+      if (cText) {
+        cText.innerHTML = `
+          <span style="color:#10b981; font-weight:700;">🟢 ${lb}L</span> &bull; 
+          <span style="color:#ef4444; font-weight:700;">🔴 ${sb}S</span> &bull; 
+          <span style="color:#3b82f6; font-weight:700;">🔵 ${sc}SC</span> &bull; 
+          <span style="color:#f59e0b; font-weight:700;">🟡 ${lu}LU</span>
+        `;
+      }
+
+      // Signal Pill Counts
+      const elLb = document.getElementById('countLb'); if (elLb) elLb.textContent = lb;
+      const elSb = document.getElementById('countSb'); if (elSb) elSb.textContent = sb;
+      const elSc = document.getElementById('countSc'); if (elSc) elSc.textContent = sc;
+      const elLu = document.getElementById('countLu'); if (elLu) elLu.textContent = lu;
+
+      // Render Ribbon Cards (7 Major Indices)
+      const grid = document.getElementById('futIndexCardsGrid');
+      if (grid && data.indices) {
+        grid.innerHTML = data.indices.map(idx => {
+          const isPos = (idx.priceChangePct ?? idx.changePct ?? 0) >= 0;
+          const color = isPos ? '#10b981' : '#ef4444';
+          const sign = isPos ? '+' : '';
+          const basisVal = idx.basis ?? 0;
+          const basisSign = basisVal >= 0 ? '+' : '';
+          const basisColor = basisVal >= 0 ? '#10b981' : '#ef4444';
+          const basisType = basisVal >= 0 ? 'PREMIUM' : 'DISCOUNT';
+          const prevLtp = state.lastPrices[idx.symbol];
+          const changed = prevLtp !== undefined && prevLtp !== idx.futPrice;
+          const flashCls = changed ? (idx.futPrice >= prevLtp ? 'tick-flash-up' : 'tick-flash-down') : '';
+          state.lastPrices[idx.symbol] = idx.futPrice;
+
+          return `
+            <div class="fut-index-card ${flashCls}" onclick="window.futuresDesk.filterBySymbol('${idx.symbol}')" title="Click to filter matrix">
+              <div class="fut-ic-top">
+                <div>
+                  <span class="fut-ic-sym">${idx.symbol} FUT</span>
+                  <span class="fut-ic-exp">${idx.expiry || '26-Mar'}</span>
+                </div>
+                <span class="fut-badge ${isPos ? 'fut-badge-lb' : 'fut-badge-sb'}">${idx.buildupCode || (isPos ? 'LB' : 'SB')}</span>
+              </div>
+              <div class="fut-ic-ltp-row">
+                <span class="fut-ic-ltp" style="color:${color}">₹${fmtNum(idx.futPrice || idx.ltp)}</span>
+                <span class="fut-ic-chg" style="color:${color}">${sign}${fmtNum(idx.priceChange || idx.change)} (${sign}${fmtNum(idx.priceChangePct || idx.changePct)}%)</span>
+              </div>
+              <div class="fut-ic-stats">
+                <div class="fut-ic-stat-item">
+                  <span>Spot:</span>
+                  <span class="fut-ic-stat-val">₹${fmtNum(idx.spotPrice)}</span>
+                </div>
+                <div class="fut-ic-stat-item">
+                  <span>Spread:</span>
+                  <span class="fut-ic-stat-val" style="color:${basisColor}">${basisSign}${fmtNum(basisVal, 1)} pts</span>
+                </div>
+                <div class="fut-ic-stat-item">
+                  <span>Carry (CoC):</span>
+                  <span class="fut-ic-stat-val" style="color:${basisColor}">${basisSign}${fmtNum(idx.coc || 7.2, 1)}%</span>
+                </div>
+                <div class="fut-ic-stat-item">
+                  <span>Open Int:</span>
+                  <span class="fut-ic-stat-val">${fmtQty(idx.oiContracts || idx.openInterest)}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
     } catch (err) {
-      console.error('Error loading futures dashboard:', err);
+      console.warn('Futures ribbon load error:', err);
     }
   }
 
-  function renderDashboard(data) {
-    if (!data) return;
+  // --- Sub-Tab 1: All F&O Market Watch Matrix ---
+  async function loadMatrix() {
+    try {
+      const q = new URLSearchParams({
+        sector: state.sector,
+        signal: state.signal,
+        search: state.search,
+        sortBy: state.sortBy,
+        sortDir: state.sortDir
+      });
 
-    // Macro KPIs
-    const turnoverEl = document.getElementById('futKpiTurnover');
-    if (turnoverEl) turnoverEl.textContent = `₹${fmtNum(data.totalTurnoverCr, 2)} Cr`;
+      const res = await fetch(`/api/futures/screener?${q.toString()}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      state.screenerData = json;
 
-    const oiEl = document.getElementById('futKpiOi');
-    if (oiEl) oiEl.textContent = `${fmtQty(data.cumulativeOiContracts)} (${fmtNum(data.totalOiValueCr, 1)} Cr)`;
+      const tb = document.getElementById('futMatrixTableBody');
+      const countBadge = document.getElementById('tabCountMatrix');
+      if (countBadge) countBadge.textContent = json.count || (json.data ? json.data.length : 0);
 
-    const countEl = document.getElementById('futKpiUniverse');
-    if (countEl) countEl.textContent = `${data.universeCount || 80} Contracts`;
+      if (!tb || !json.data) return;
 
-    // Buildup Ratio
-    const lbCount = data.longBuildupCount || 0;
-    const sbCount = data.shortBuildupCount || 0;
-    const scCount = data.shortCoveringCount || 0;
-    const luCount = data.longUnwindingCount || 0;
-    const totB = (lbCount + sbCount + scCount + luCount) || 1;
+      if (!json.data.length) {
+        tb.innerHTML = `<tr><td colspan="14" style="text-align:center; padding:32px; color:#64748b; font-size:13px;">No F&O contracts matching filter criteria.</td></tr>`;
+        return;
+      }
 
-    const lbPct = Math.round((lbCount / totB) * 100);
-    const sbPct = Math.round((sbCount / totB) * 100);
-    const scPct = Math.round((scCount / totB) * 100);
-    const luPct = 100 - (lbPct + sbPct + scPct);
-
-    const bRatioEl = document.getElementById('futBuildupRatioBar');
-    if (bRatioEl) {
-      bRatioEl.innerHTML = `
-        <div style="width:${lbPct}%; background:#10b981;" title="Long Buildup: ${lbCount}"></div>
-        <div style="width:${sbPct}%; background:#ef4444;" title="Short Buildup: ${sbCount}"></div>
-        <div style="width:${scPct}%; background:#3b82f6;" title="Short Covering: ${scCount}"></div>
-        <div style="width:${luPct}%; background:#f59e0b;" title="Long Unwinding: ${luCount}"></div>
-      `;
-    }
-
-    const bCountText = document.getElementById('futBuildupCountText');
-    if (bCountText) {
-      bCountText.innerHTML = `
-        <span style="color:#10b981; font-weight:700;">🟢 ${lbCount} Longs</span> &bull; 
-        <span style="color:#ef4444; font-weight:700;">🔴 ${sbCount} Shorts</span> &bull; 
-        <span style="color:#3b82f6; font-weight:700;">🔵 ${scCount} Covering</span> &bull; 
-        <span style="color:#f59e0b; font-weight:700;">🟡 ${luCount} Unwinding</span>
-      `;
-    }
-
-    // Render Index Futures Cards
-    const idxGrid = document.getElementById('futIndexCardsGrid');
-    if (idxGrid && data.indices) {
-      idxGrid.innerHTML = data.indices.map(idx => {
-        const isPos = idx.changePct >= 0;
+      tb.innerHTML = json.data.map((r, i) => {
+        const isPos = (r.priceChangePct ?? 0) >= 0;
         const color = isPos ? '#10b981' : '#ef4444';
         const sign = isPos ? '+' : '';
-        const basisSign = idx.basis >= 0 ? '+' : '';
+
+        const oiChg = r.oiChangePct ?? 0;
+        const oiIsPos = oiChg >= 0;
+        const oiColor = oiIsPos ? '#38bdf8' : '#f59e0b';
+        const oiSign = oiIsPos ? '+' : '';
+
+        const basisVal = r.basis ?? 0;
+        const basisSign = basisVal >= 0 ? '+' : '';
+        const basisColor = basisVal >= 0 ? '#10b981' : '#ef4444';
+
+        const cocVal = r.coc ?? (r.basisPct ? r.basisPct * 24.3 : 0);
+        const cocSign = cocVal >= 0 ? '+' : '';
+
+        const prevPrice = state.lastPrices[r.symbol];
+        const changed = prevPrice !== undefined && prevPrice !== r.futPrice;
+        const flashCls = changed ? (r.futPrice >= prevPrice ? 'tick-flash-up' : 'tick-flash-down') : '';
+        state.lastPrices[r.symbol] = r.futPrice;
+
+        const tickArrow = r.tickDir === 'UP' ? '▲' : '▼';
+        const tickColor = r.tickDir === 'UP' ? '#10b981' : '#ef4444';
+
+        // Day range marker %
+        const dLow = r.dayLow || (r.futPrice * 0.985);
+        const dHigh = r.dayHigh || (r.futPrice * 1.015);
+        const rangeSpan = Math.max(1, dHigh - dLow);
+        const posPct = Math.min(100, Math.max(0, ((r.futPrice - dLow) / rangeSpan) * 100));
+
+        // MWPL Bar
+        const mwpl = r.mwplPct ?? 45.0;
+        const mwplColor = mwpl >= 95 ? '#ef4444' : (mwpl >= 80 ? '#f59e0b' : '#10b981');
+
         return `
-          <div class="fut-index-card">
-            <div class="fut-index-header">
-              <div>
-                <span class="fut-index-sym">${idx.symbol} FUT</span>
-                <span class="fut-index-exp">${idx.expiry}</span>
+          <tr class="${flashCls}" onclick="window.futuresDesk.inspectContract('${r.symbol}')">
+            <td style="color:#64748b; font-size:11px;">${i + 1}</td>
+            <td>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <strong style="color:#f8fafc; font-size:12.5px;">${r.symbol}</strong>
+                ${r.isIndex ? '<span style="font-size:9px; background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4); padding:1px 4px; border-radius:3px; font-weight:800;">INDEX</span>' : ''}
+                <span style="font-size:10px; color:#64748b;">${r.expiry || '26-Mar'}</span>
               </div>
-              <span class="fut-badge ${isPos ? 'fut-badge-lb' : 'fut-badge-sb'}">${idx.buildup}</span>
+              <div style="font-size:10px; color:#94a3b8; font-family:-apple-system,BlinkMacSystemFont,sans-serif;">${r.name || r.symbol}</div>
+            </td>
+            <td><span style="font-size:11px; color:#94a3b8; background:#0c1424; padding:2px 6px; border-radius:3px;">${r.sector}</span></td>
+            <td style="text-align:right; color:#94a3b8;">₹${fmtNum(r.spotPrice)}</td>
+            <td style="text-align:right;">
+              <span style="color:${color}; font-weight:800;">₹${fmtNum(r.futPrice)}</span>
+              <span style="color:${tickColor}; font-size:9px; margin-left:2px;">${tickArrow}</span>
+            </td>
+            <td style="text-align:right; color:${color}; font-weight:700;">
+              ${sign}${fmtNum(r.priceChangePct)}%
+            </td>
+            <td style="text-align:right; color:${basisColor}; font-weight:700;">
+              ${basisSign}${fmtNum(basisVal, 1)} <span style="font-size:10px; opacity:0.8;">(${basisSign}${fmtNum(r.basisPct, 2)}%)</span>
+            </td>
+            <td style="text-align:right; color:${basisColor}; font-weight:700;">
+              ${cocSign}${fmtNum(cocVal, 1)}%
+            </td>
+            <td style="text-align:right;">
+              <span style="color:#f8fafc; font-weight:700;">${fmtQty(r.oiContracts)}</span>
+              <span style="font-size:10px; color:#64748b; display:block;">${fmtNum(r.oiContracts)} lots</span>
+            </td>
+            <td style="text-align:right; color:${oiColor}; font-weight:700;">
+              ${oiSign}${fmtNum(oiChg)}%
+            </td>
+            <td style="text-align:right; color:#cbd5e1; font-weight:700;">
+              ₹${fmtNum(r.oiValueCr, 1)} Cr
+            </td>
+            <td style="text-align:center;">
+              <div class="fut-day-range" style="margin:0 auto;">
+                <span>${fmtNum(dLow, 0)}</span>
+                <div class="fut-dr-bar-wrap">
+                  <div class="fut-dr-marker" style="left:${posPct}%;"></div>
+                </div>
+                <span>${fmtNum(dHigh, 0)}</span>
+              </div>
+            </td>
+            <td style="text-align:center;">
+              ${getSignalBadge(r.buildupCode, r.buildup)}
+            </td>
+            <td style="text-align:right;">
+              <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+                <span style="color:${mwplColor}; font-weight:700;">${fmtNum(mwpl, 1)}%</span>
+                <div class="fut-mwpl-pbar" style="width:45px;">
+                  <div class="fut-mwpl-pfill" style="width:${Math.min(100, mwpl)}%; background:${mwplColor};"></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+    } catch (err) {
+      console.warn('Matrix load error:', err);
+    }
+  }
+
+  // --- Sub-Tab 2: Buildup Quadrants & Heatmap ---
+  async function loadBuildupView() {
+    try {
+      const [resB, resH] = await Promise.all([
+        fetch('/api/futures/buildup'),
+        fetch(`/api/futures/heatmap?sector=${state.sector}`)
+      ]);
+
+      if (resB.ok) {
+        const dataB = await resB.json();
+        renderQuadrants(dataB);
+      }
+      if (resH.ok) {
+        const dataH = await resH.json();
+        renderHeatmap(dataH);
+      }
+    } catch (err) {
+      console.warn('Buildup view load error:', err);
+    }
+  }
+
+  function renderQuadrants(data) {
+    if (!data) return;
+
+    const renderList = (elId, list, badgeCls) => {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      if (!list || !list.length) {
+        el.innerHTML = '<div style="padding:14px; text-align:center; color:#64748b; font-size:11px;">No stocks in this quadrant</div>';
+        return;
+      }
+      el.innerHTML = list.slice(0, 15).map(s => {
+        const isPos = s.priceChangePct >= 0;
+        const sign = isPos ? '+' : '';
+        const color = isPos ? '#10b981' : '#ef4444';
+        return `
+          <div class="fut-quad-item" onclick="window.futuresDesk.inspectContract('${s.symbol}')">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <strong style="color:#f8fafc; font-size:12px;">${s.symbol}</strong>
+              <span style="font-size:9.5px; color:#64748b;">${s.sector}</span>
             </div>
-            <div class="fut-index-price-row">
-              <span class="fut-index-ltp" style="color:${color}">₹${fmtNum(idx.ltp)}</span>
-              <span class="fut-index-chg" style="color:${color}">${sign}${fmtNum(idx.change)} (${sign}${fmtNum(idx.changePct)}%)</span>
-            </div>
-            <div class="fut-index-metrics">
-              <div class="fut-im-item">
-                <span class="fim-label">Spot Price</span>
-                <span class="fim-val">₹${fmtNum(idx.spotPrice)}</span>
-              </div>
-              <div class="fut-im-item">
-                <span class="fim-label">Basis (Spread)</span>
-                <span class="fim-val" style="color:${idx.basis >= 0 ? '#10b981' : '#ef4444'}">${basisSign}${fmtNum(idx.basis, 1)} pts</span>
-              </div>
-              <div class="fut-im-item">
-                <span class="fim-label">Open Interest</span>
-                <span class="fim-val">${fmtQty(idx.openInterest)}</span>
-              </div>
-              <div class="fut-im-item">
-                <span class="fim-label">OI Chg</span>
-                <span class="fim-val" style="color:${idx.oiChangePct >= 0 ? '#10b981' : '#ef4444'}">${idx.oiChangePct >= 0 ? '+' : ''}${fmtNum(idx.oiChangePct)}%</span>
-              </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="color:${color}; font-weight:700;">₹${fmtNum(s.futPrice)} (${sign}${fmtNum(s.priceChangePct)}%)</span>
+              <span style="font-size:10.5px; color:#38bdf8; font-weight:700;">OI: +${fmtNum(s.oiChangePct)}%</span>
             </div>
           </div>
         `;
       }).join('');
-    }
+    };
 
-    // Top Gainers / Losers
-    renderMiniList('futTopGainersList', data.topGainers || [], 'gain');
-    renderMiniList('futTopLosersList', data.topLosers || [], 'loss');
-    renderMiniList('futTopOiAddList', data.topOiAdditions || [], 'oiAdd');
-    renderMiniList('futTopOiShedList', data.topOiShedding || [], 'oiShed');
+    renderList('futQuadLbList', data.longBuildup, 'fut-badge-lb');
+    renderList('futQuadSbList', data.shortBuildup, 'fut-badge-sb');
+    renderList('futQuadScList', data.shortCovering, 'fut-badge-sc');
+    renderList('futQuadLuList', data.longUnwinding, 'fut-badge-lu');
 
-    // As of badge
-    const asOf = document.getElementById('futAsOfBadge');
-    if (asOf && data.asOf) asOf.textContent = `As of ${data.asOf}`;
-  }
-
-  function renderMiniList(containerId, list, type) {
-    const el = document.getElementById(containerId);
-    if (!el) return;
-    if (!list || !list.length) {
-      el.innerHTML = `<div style="padding:12px; color:var(--text-muted); font-size:12px;">No contracts found</div>`;
-      return;
-    }
-    el.innerHTML = list.map(item => {
-      const isPos = item.changePct >= 0;
-      const color = isPos ? '#10b981' : '#ef4444';
-      const sign = isPos ? '+' : '';
-      let secondaryText = '';
-
-      if (type === 'oiAdd' || type === 'oiShed') {
-        const oiPos = item.oiChangePct >= 0;
-        secondaryText = `<span style="color:${oiPos ? '#10b981' : '#ef4444'}; font-weight:700;">OI: ${oiPos ? '+' : ''}${fmtNum(item.oiChangePct)}%</span>`;
-      } else {
-        secondaryText = `<span style="color:var(--text-muted); font-size:11px;">OI: ${fmtNum(item.oiValueCr, 1)} Cr</span>`;
-      }
-
-      return `
-        <div class="fut-mini-row" onclick="window.futuresDesk.inspectContract('${item.symbol}')">
-          <div class="fm-sym-col">
-            <span class="fm-sym">${item.symbol}</span>
-            <span class="fm-sec">${item.sector || 'F&O'}</span>
-          </div>
-          <div class="fm-price-col">
-            <span class="fm-ltp">₹${fmtNum(item.ltp)}</span>
-            <span class="fm-chg" style="color:${color}">${sign}${fmtNum(item.changePct)}%</span>
-          </div>
-          <div class="fm-sec-col">
-            ${secondaryText}
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  // --- 2. Screener View ---
-  async function loadScreener() {
-    try {
-      const url = `/api/futures/screener?sector=${encodeURIComponent(state.sector)}&search=${encodeURIComponent(state.search)}&sortBy=${state.sortBy}&sortDir=${state.sortDir}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      state.screenerData = data;
-      renderScreener(data);
-    } catch (err) {
-      console.error('Error loading futures screener:', err);
-    }
-  }
-
-  function renderScreener(data) {
-    if (!data) return;
-    const countBadge = document.getElementById('futScreenerCountBadge');
-    if (countBadge) countBadge.textContent = `${data.count || 0} Contracts`;
-
-    const tbody = document.getElementById('futScreenerTableBody');
-    if (!tbody) return;
-
-    const list = data.results || [];
-    if (!list.length) {
-      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:24px; color:var(--text-muted);">No matching futures contracts found.</td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = list.map((item, idx) => {
-      const isPos = item.changePct >= 0;
-      const color = isPos ? '#10b981' : '#ef4444';
-      const sign = isPos ? '+' : '';
-      const oiPos = item.oiChangePct >= 0;
-      const oiColor = oiPos ? '#10b981' : '#ef4444';
-      const basisColor = item.basis >= 0 ? '#10b981' : '#ef4444';
-      const basisSign = item.basis >= 0 ? '+' : '';
-
-      return `
-        <tr class="fut-row" onclick="window.futuresDesk.inspectContract('${item.symbol}')">
-          <td style="font-weight:700; color:var(--text-muted); font-size:11px;">#${idx + 1}</td>
-          <td>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <strong style="color:#60a5fa; font-size:13px;">${item.symbol}</strong>
-              <span class="badge" style="font-size:10px; background:#1e293b; color:#94a3b8; padding:2px 5px; border-radius:3px;">${item.type}</span>
-            </div>
-          </td>
-          <td><span style="font-size:11.5px; color:var(--text-muted);">${item.sector || 'F&O'}</span></td>
-          <td style="font-size:11.5px; font-family:'JetBrains Mono',monospace;">${item.expiry}</td>
-          <td style="text-align:right; font-weight:700; font-family:'JetBrains Mono',monospace;">₹${fmtNum(item.ltp)}</td>
-          <td style="text-align:right; font-weight:700; color:${color}; font-family:'JetBrains Mono',monospace;">${sign}${fmtNum(item.changePct)}%</td>
-          <td style="text-align:right; font-family:'JetBrains Mono',monospace;">${fmtQty(item.openInterest)}</td>
-          <td style="text-align:right; font-family:'JetBrains Mono',monospace; color:${oiColor}; font-weight:700;">${oiPos ? '+' : ''}${fmtNum(item.oiChangePct)}%</td>
-          <td style="text-align:right; font-family:'JetBrains Mono',monospace;">₹${fmtNum(item.oiValueCr, 1)}</td>
-          <td style="text-align:right; font-family:'JetBrains Mono',monospace; color:${basisColor};">${basisSign}${fmtNum(item.basis, 1)}</td>
-          <td style="text-align:right; font-family:'JetBrains Mono',monospace; color:var(--text-muted);">₹${fmtNum(item.turnoverCr, 1)}</td>
-          <td style="text-align:center;">${getSignalBadge(item.buildup)}</td>
-        </tr>
-      `;
-    }).join('');
-  }
-
-  // --- 3. Buildup Quadrant View ---
-  async function loadBuildup() {
-    try {
-      const res = await fetch('/api/futures/buildup');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      state.buildupData = data;
-      renderBuildup(data);
-    } catch (err) {
-      console.error('Error loading buildup quadrants:', err);
-    }
-  }
-
-  function renderBuildup(data) {
-    if (!data) return;
-
-    renderQuadrantBox('futQuadLbList', 'futQuadLbCount', 'futQuadLbOi', data.longBuildup || [], '#10b981');
-    renderQuadrantBox('futQuadSbList', 'futQuadSbCount', 'futQuadSbOi', data.shortBuildup || [], '#ef4444');
-    renderQuadrantBox('futQuadScList', 'futQuadScCount', 'futQuadScOi', data.shortCovering || [], '#3b82f6');
-    renderQuadrantBox('futQuadLuList', 'futQuadLuCount', 'futQuadLuOi', data.longUnwinding || [], '#f59e0b');
-  }
-
-  function renderQuadrantBox(listId, countId, oiId, items, accentColor) {
-    const countEl = document.getElementById(countId);
-    if (countEl) countEl.textContent = `${items.length} Stocks`;
-
-    const totalOiCr = items.reduce((acc, curr) => acc + (curr.oiValueCr || 0), 0);
-    const oiEl = document.getElementById(oiId);
-    if (oiEl) oiEl.textContent = `₹${fmtNum(totalOiCr, 1)} Cr`;
-
-    const listEl = document.getElementById(listId);
-    if (!listEl) return;
-
-    if (!items.length) {
-      listEl.innerHTML = `<div style="padding:16px; text-align:center; color:var(--text-muted); font-size:12px;">No contracts in this quadrant today.</div>`;
-      return;
-    }
-
-    listEl.innerHTML = items.map(item => {
-      const isPos = item.changePct >= 0;
-      const sign = isPos ? '+' : '';
-      const oiPos = item.oiChangePct >= 0;
-
-      return `
-        <div class="fut-quad-item" onclick="window.futuresDesk.inspectContract('${item.symbol}')">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <strong style="color:#f8fafc; font-size:13px;">${item.symbol}</strong>
-              <small style="color:var(--text-muted); font-size:10px;">${item.sector || ''}</small>
-            </div>
-            <span style="font-weight:700; color:${item.changePct >= 0 ? '#10b981' : '#ef4444'}; font-family:'JetBrains Mono',monospace;">${sign}${fmtNum(item.changePct)}%</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; font-size:11px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">
-            <span>LTP: ₹${fmtNum(item.ltp)}</span>
-            <span style="color:${accentColor}; font-weight:700;">OI: ${oiPos ? '+' : ''}${fmtNum(item.oiChangePct)}% (₹${fmtNum(item.oiValueCr, 1)} Cr)</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  // --- 4. F&O Heatmap View ---
-  async function loadHeatmap() {
-    try {
-      const res = await fetch(`/api/futures/heatmap?sector=${encodeURIComponent(state.sector)}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      state.heatmapData = data;
-      renderHeatmap(data);
-    } catch (err) {
-      console.error('Error loading futures heatmap:', err);
-    }
-  }
-
-  function getHeatmapBg(pct) {
-    if (pct >= 3.0) return 'linear-gradient(135deg, rgba(16, 185, 129, 0.85), rgba(5, 150, 105, 0.95))';
-    if (pct >= 1.5) return 'linear-gradient(135deg, rgba(16, 185, 129, 0.65), rgba(5, 150, 105, 0.75))';
-    if (pct >= 0.5) return 'linear-gradient(135deg, rgba(16, 185, 129, 0.40), rgba(5, 150, 105, 0.50))';
-    if (pct > -0.5) return 'linear-gradient(135deg, rgba(51, 65, 85, 0.50), rgba(30, 41, 59, 0.60))';
-    if (pct > -1.5) return 'linear-gradient(135deg, rgba(239, 68, 68, 0.40), rgba(220, 38, 38, 0.50))';
-    if (pct > -3.0) return 'linear-gradient(135deg, rgba(239, 68, 68, 0.65), rgba(220, 38, 38, 0.75))';
-    return 'linear-gradient(135deg, rgba(239, 68, 68, 0.85), rgba(220, 38, 38, 0.95))';
+    const cLb = document.getElementById('futQuadLbCount'); if (cLb) cLb.textContent = (data.longBuildup || []).length;
+    const cSb = document.getElementById('futQuadSbCount'); if (cSb) cSb.textContent = (data.shortBuildup || []).length;
+    const cSc = document.getElementById('futQuadScCount'); if (cSc) cSc.textContent = (data.shortCovering || []).length;
+    const cLu = document.getElementById('futQuadLuCount'); if (cLu) cLu.textContent = (data.longUnwinding || []).length;
   }
 
   function renderHeatmap(data) {
-    if (!data) return;
     const grid = document.getElementById('futHeatmapGrid');
-    if (!grid) return;
+    if (!grid || !data || !data.tiles) return;
 
-    const tiles = data.tiles || [];
-    if (!tiles.length) {
-      grid.innerHTML = `<div style="grid-column: 1 / -1; padding:32px; text-align:center; color:var(--text-muted);">No heatmap data available for this sector filter.</div>`;
-      return;
-    }
-
-    grid.innerHTML = tiles.map(tile => {
-      const bg = getHeatmapBg(tile.changePct);
+    grid.innerHTML = data.tiles.map(tile => {
       const isPos = tile.changePct >= 0;
-      const sign = isPos ? '+' : '';
-      const sizeClass = tile.sizeTier || 'tile-medium'; // 'tile-large', 'tile-medium', 'tile-small'
+      const absChg = Math.abs(tile.changePct);
+      let bg = '#1e293b';
+      let border = '#334155';
+      if (tile.changePct >= 1.5) { bg = 'rgba(16, 185, 129, 0.4)'; border = '#10b981'; }
+      else if (tile.changePct > 0.2) { bg = 'rgba(16, 185, 129, 0.2)'; border = '#059669'; }
+      else if (tile.changePct <= -1.5) { bg = 'rgba(239, 68, 68, 0.4)'; border = '#ef4444'; }
+      else if (tile.changePct < -0.2) { bg = 'rgba(239, 68, 68, 0.2)'; border = '#dc2626'; }
 
       return `
-        <div class="fut-heatmap-tile ${sizeClass}" style="background:${bg};" onclick="window.futuresDesk.inspectContract('${tile.symbol}')">
-          <div class="fht-top">
-            <span class="fht-symbol">${tile.symbol}</span>
-            <span class="fht-chg">${sign}${fmtNum(tile.changePct)}%</span>
+        <div class="fut-heatmap-tile" style="background:${bg}; border:1px solid ${border};" onclick="window.futuresDesk.inspectContract('${tile.symbol}')">
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
+            <strong style="font-size:11.5px; color:#ffffff;">${tile.symbol}</strong>
+            <span style="font-size:10px; color:${isPos ? '#34d399' : '#f87171'}; font-weight:800;">${isPos ? '+' : ''}${tile.changePct.toFixed(1)}%</span>
           </div>
-          <div class="fht-bottom">
-            <span class="fht-ltp">₹${fmtNum(tile.ltp)}</span>
-            <span class="fht-oi">OI: ₹${fmtNum(tile.oiValueCr, 1)} Cr</span>
-          </div>
-          <div class="fht-tooltip">
-            <strong>${tile.symbol}</strong> • ${tile.sector || ''}<br/>
-            LTP: ₹${fmtNum(tile.ltp)} (${sign}${fmtNum(tile.changePct)}%)<br/>
-            Total OI: ${fmtQty(tile.openInterest)} (₹${fmtNum(tile.oiValueCr, 1)} Cr)<br/>
-            OI Change: ${tile.oiChangePct >= 0 ? '+' : ''}${fmtNum(tile.oiChangePct)}%<br/>
-            Buildup: ${tile.buildup}
+          <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:10px; color:#cbd5e1; margin-top:4px;">
+            <span>₹${fmtNum(tile.price, 0)}</span>
+            <span style="color:#94a3b8;">OI: ${fmtQty(tile.oi)}</span>
           </div>
         </div>
       `;
     }).join('');
   }
 
-  // --- 5. MWPL & Ban Tracker View ---
+  // --- Sub-Tab 3: Index Term Structure & Basis ---
+  async function loadIndicesDetailView() {
+    try {
+      const res = await fetch('/api/futures/screener?sector=INDICES');
+      if (!res.ok) return;
+      const json = await res.json();
+      const container = document.getElementById('futIndicesDetailGrid');
+      if (!container || !json.data) return;
+
+      container.innerHTML = `
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:14px;">
+          ${json.data.map(idx => {
+            const isPos = idx.priceChangePct >= 0;
+            const sign = isPos ? '+' : '';
+            const color = isPos ? '#10b981' : '#ef4444';
+            const basisSign = idx.basis >= 0 ? '+' : '';
+            const basisColor = idx.basis >= 0 ? '#10b981' : '#ef4444';
+
+            return `
+              <div class="fut-index-card" style="padding:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <div>
+                    <h3 style="margin:0; font-size:16px; font-weight:800; color:#f8fafc;">${idx.symbol} FUTURES</h3>
+                    <span style="font-size:11px; color:#94a3b8;">${idx.name} &bull; Lot: ${idx.lot}</span>
+                  </div>
+                  <span class="fut-badge ${isPos ? 'fut-badge-lb' : 'fut-badge-sb'}" style="font-size:11px;">${idx.buildup}</span>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; background:#080c14; padding:10px 14px; border-radius:6px; border:1px solid #1a2538;">
+                  <div>
+                    <span style="font-size:10px; color:#64748b; display:block; text-transform:uppercase;">Futures LTP</span>
+                    <strong style="font-size:20px; color:${color}; font-family:'JetBrains Mono',monospace;">₹${fmtNum(idx.futPrice)}</strong>
+                  </div>
+                  <div style="text-align:right;">
+                    <span style="font-size:10px; color:#64748b; display:block; text-transform:uppercase;">Spot Price</span>
+                    <strong style="font-size:16px; color:#cbd5e1; font-family:'JetBrains Mono',monospace;">₹${fmtNum(idx.spotPrice)}</strong>
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:11.5px; border-top:1px solid #1a2538; padding-top:12px;">
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#94a3b8;">Cash-Fut Basis:</span>
+                    <strong style="color:${basisColor}; font-family:'JetBrains Mono',monospace;">${basisSign}${fmtNum(idx.basis, 1)} pts (${basisSign}${fmtNum(idx.basisPct, 2)}%)</strong>
+                  </div>
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#94a3b8;">Cost of Carry:</span>
+                    <strong style="color:${basisColor}; font-family:'JetBrains Mono',monospace;">${basisSign}${fmtNum(idx.coc, 1)}% p.a.</strong>
+                  </div>
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#94a3b8;">Open Interest:</span>
+                    <strong style="color:#f8fafc; font-family:'JetBrains Mono',monospace;">${fmtQty(idx.oiContracts)} (${fmtNum(idx.oiContracts)} lots)</strong>
+                  </div>
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#94a3b8;">OI Change:</span>
+                    <strong style="color:${idx.oiChangePct >= 0 ? '#38bdf8' : '#f59e0b'}; font-family:'JetBrains Mono',monospace;">${idx.oiChangePct >= 0 ? '+' : ''}${fmtNum(idx.oiChangePct)}%</strong>
+                  </div>
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#94a3b8;">Rollover %:</span>
+                    <strong style="color:#a855f7; font-family:'JetBrains Mono',monospace;">${fmtNum(idx.rolloverPct, 1)}%</strong>
+                  </div>
+                  <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#94a3b8;">VWAP:</span>
+                    <strong style="color:#cbd5e1; font-family:'JetBrains Mono',monospace;">₹${fmtNum(idx.vwap)}</strong>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    } catch (err) {
+      console.warn('Indices detail load error:', err);
+    }
+  }
+
+  // --- Sub-Tab 4: MWPL & Ban Radar ---
   async function loadMwpl() {
     try {
       const res = await fetch('/api/futures/mwpl');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) return;
       const data = await res.json();
       state.mwplData = data;
-      renderMwpl(data);
-    } catch (err) {
-      console.error('Error loading MWPL data:', err);
-    }
-  }
 
-  function renderMwpl(data) {
-    if (!data) return;
-
-    // Banned Stocks Banner
-    const banBanner = document.getElementById('futMwplBanBanner');
-    const banList = data.bannedStocks || [];
-    if (banBanner) {
-      if (banList.length > 0) {
-        banBanner.style.display = 'block';
-        banBanner.innerHTML = `
-          <div class="fut-ban-alert-inner">
-            <span style="font-size:22px;">🚫</span>
-            <div style="flex:1;">
-              <h4 style="margin:0; color:#f87171; font-size:14px; font-weight:800;">CURRENT F&O BAN PERIOD (${banList.length} STOCKS &gt; 95% MWPL)</h4>
-              <p style="margin:4px 0 0 0; color:#fca5a5; font-size:12px;">Fresh positions strictly prohibited by exchange. Only squaring off permitted.</p>
-              <div class="fut-ban-chips-wrap" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
-                ${banList.map(s => `
-                  <div class="fut-ban-chip">
-                    <strong>${s.symbol}</strong>
-                    <span>${fmtNum(s.mwplPct, 1)}% MWPL</span>
-                  </div>
+      // Ban Banner
+      const banBox = document.getElementById('futMwplBanBanner');
+      if (banBox) {
+        if (data.bannedCount > 0) {
+          banBox.innerHTML = `
+            <div style="background:rgba(239,68,68,0.15); border:1px solid #ef4444; border-radius:8px; padding:12px 16px;">
+              <strong style="color:#ef4444; font-size:13px;">🚫 ${data.bannedCount} Securities in Official F&O Ban Period (&gt;95% Limit)</strong>
+              <p style="margin:4px 0 8px 0; font-size:11.5px; color:#fca5a5;">Exchange prohibited fresh position creation. Intraday squaring-off permitted only.</p>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                ${data.bannedStocks.map(s => `
+                  <span class="fut-badge fut-badge-sb" style="font-size:11px; padding:4px 9px;">${s.symbol}: ${s.mwplPct}% MWPL</span>
                 `).join('')}
               </div>
             </div>
-          </div>
-        `;
-      } else {
-        banBanner.style.display = 'block';
-        banBanner.innerHTML = `
-          <div class="fut-ban-alert-inner" style="background:rgba(16, 185, 129, 0.12); border:1px solid rgba(16, 185, 129, 0.3);">
-            <span style="font-size:22px;">✅</span>
-            <div>
-              <h4 style="margin:0; color:#34d399; font-size:14px; font-weight:700;">NO SECURITIES IN F&O BAN TODAY</h4>
-              <p style="margin:2px 0 0 0; color:#a7f3d0; font-size:12px;">All derivative securities are currently trading below the 95% threshold.</p>
+          `;
+        } else {
+          banBox.innerHTML = `
+            <div style="background:rgba(16,185,129,0.1); border:1px solid #10b981; border-radius:8px; padding:10px 14px; font-size:12px; color:#34d399;">
+              ✅ Zero Securities currently in F&O Ban. All 200 contracts open for fresh trading.
             </div>
-          </div>
-        `;
+          `;
+        }
       }
-    }
 
-    // Alert Zone (80% - 95%)
-    const alertBox = document.getElementById('futMwplAlertList');
-    const alertList = data.alertStocks || [];
-    if (alertBox) {
-      if (alertList.length > 0) {
-        alertBox.innerHTML = alertList.map(s => `
-          <div class="fut-mwpl-alert-card">
+      // Warning Alert List
+      const alertBox = document.getElementById('futMwplAlertList');
+      if (alertBox && data.alertStocks) {
+        alertBox.innerHTML = data.alertStocks.map(s => `
+          <div style="background:#0c1322; border:1px solid #f59e0b; border-radius:6px; padding:10px 12px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong style="color:#fbbf24; font-size:13px;">${s.symbol}</strong>
-              <span class="fut-badge fut-badge-sb" style="background:rgba(245, 158, 11, 0.2); color:#fbbf24; border-color:rgba(245, 158, 11, 0.4);">
-                ${fmtNum(s.mwplPct, 1)}%
-              </span>
+              <strong style="color:#f8fafc; font-size:13px;">${s.symbol}</strong>
+              <span style="color:#f59e0b; font-weight:800; font-family:'JetBrains Mono',monospace;">${s.mwplPct}%</span>
             </div>
+            <div style="font-size:10.5px; color:#94a3b8; margin:4px 0;">Lot: ${s.lot} &bull; Headroom: ~${Math.max(50, Math.round((95 - s.mwplPct) * 120))} lots</div>
             <div class="fut-mwpl-pbar" style="margin-top:6px;">
-              <div class="fut-mwpl-pfill" style="width:${Math.min(100, s.mwplPct)}%; background:#f59e0b;"></div>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); margin-top:4px;">
-              <span>Distance to Ban: <strong>${fmtNum(95 - s.mwplPct, 1)}%</strong></span>
-              <span>OI: ${fmtQty(s.openInterest)}</span>
+              <div class="fut-mwpl-pfill" style="width:${s.mwplPct}%; background:#f59e0b;"></div>
             </div>
           </div>
         `).join('');
-      } else {
-        alertBox.innerHTML = `<div style="grid-column: 1 / -1; padding:16px; color:var(--text-muted); font-size:12px;">No stocks currently in the 80%-95% warning zone.</div>`;
       }
+
+      // Full MWPL Table
+      const tb = document.getElementById('futMwplTableBody');
+      if (tb && data.allStocks) {
+        tb.innerHTML = data.allStocks.map((s, i) => {
+          const col = s.mwplPct >= 95 ? '#ef4444' : (s.mwplPct >= 80 ? '#f59e0b' : '#10b981');
+          return `
+            <tr>
+              <td style="color:#64748b;">${i + 1}</td>
+              <td><strong style="color:#f8fafc;">${s.symbol}</strong></td>
+              <td><span style="color:#94a3b8; font-size:11px;">${s.sector}</span></td>
+              <td style="text-align:right;">₹${fmtNum(s.price)}</td>
+              <td style="text-align:right;">${fmtQty(s.currentOi)}</td>
+              <td style="text-align:right; color:#94a3b8;">${fmtQty(s.limitOi)}</td>
+              <td style="text-align:right; color:${col}; font-weight:800;">${fmtNum(s.mwplPct, 1)}%</td>
+              <td>
+                <div class="fut-mwpl-pbar">
+                  <div class="fut-mwpl-pfill" style="width:${Math.min(100, s.mwplPct)}%; background:${col};"></div>
+                </div>
+              </td>
+              <td style="text-align:center;">
+                <span class="fut-badge ${s.status === 'BANNED' ? 'fut-badge-sb' : (s.status === 'ALERT' ? 'fut-badge-lu' : 'fut-badge-lb')}">${s.status}</span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+    } catch (err) {
+      console.warn('MWPL load error:', err);
     }
-
-    // MWPL Full Matrix Table
-    const tbody = document.getElementById('futMwplTableBody');
-    if (!tbody) return;
-
-    const allStocks = data.allStocks || [];
-    tbody.innerHTML = allStocks.map((s, idx) => {
-      let statusBadge = '';
-      let barColor = '#10b981';
-
-      if (s.mwplPct >= 95) {
-        statusBadge = `<span class="fut-badge fut-badge-sb">🚫 BANNED</span>`;
-        barColor = '#ef4444';
-      } else if (s.mwplPct >= 80) {
-        statusBadge = `<span class="fut-badge" style="background:rgba(245, 158, 11, 0.2); color:#fbbf24; border:1px solid rgba(245, 158, 11, 0.4);">⚠️ ALERT</span>`;
-        barColor = '#f59e0b';
-      } else {
-        statusBadge = `<span class="fut-badge fut-badge-lb">NORMAL</span>`;
-        barColor = '#10b981';
-      }
-
-      return `
-        <tr class="fut-row" onclick="window.futuresDesk.inspectContract('${s.symbol}')">
-          <td style="color:var(--text-muted); font-size:11px;">#${idx + 1}</td>
-          <td><strong style="color:#60a5fa;">${s.symbol}</strong></td>
-          <td><span style="font-size:11.5px; color:var(--text-muted);">${s.sector || 'F&O'}</span></td>
-          <td style="text-align:right; font-family:'JetBrains Mono',monospace;">₹${fmtNum(s.ltp)}</td>
-          <td style="text-align:right; font-family:'JetBrains Mono',monospace;">${fmtQty(s.openInterest)}</td>
-          <td style="text-align:right; font-family:'JetBrains Mono',monospace; color:var(--text-muted);">${fmtQty(s.mwplLimit)}</td>
-          <td style="text-align:right; font-weight:700; font-family:'JetBrains Mono',monospace; color:${barColor};">
-            ${fmtNum(s.mwplPct, 1)}%
-          </td>
-          <td style="min-width:140px;">
-            <div class="fut-mwpl-pbar">
-              <div class="fut-mwpl-pfill" style="width:${Math.min(100, s.mwplPct)}%; background:${barColor};"></div>
-            </div>
-          </td>
-          <td style="text-align:center;">${statusBadge}</td>
-        </tr>
-      `;
-    }).join('');
   }
 
-  // --- Contract Inspection / Jump ---
-  function inspectContract(symbol) {
-    if (!symbol) return;
-    // Highlight in screener or jump to options chain if requested
-    state.search = symbol;
-    const searchInput = document.getElementById('futSearchInput');
-    if (searchInput) searchInput.value = symbol;
-    switchSubTab('screener');
-  }
-
-  // --- Auto-Refresh Timer ---
+  // --- Auto-Refresh Engine ---
   function setAutoRefresh(seconds) {
     state.autoRefreshSec = seconds;
     if (state.timerId) {
@@ -604,6 +623,20 @@
     }, 1000);
   }
 
+  function filterBySymbol(sym) {
+    const sInput = document.getElementById('futSearchInput');
+    if (sInput) {
+      sInput.value = sym;
+      state.search = sym.toUpperCase();
+      switchSubTab('matrix');
+    }
+  }
+
+  function inspectContract(sym) {
+    // Quick search focus or popup
+    filterBySymbol(sym);
+  }
+
   // --- Initialization ---
   function init() {
     if (state.initialized) {
@@ -612,30 +645,41 @@
     }
     state.initialized = true;
 
-    // Attach Subtab Click Listeners
-    document.querySelectorAll('.fut-subtab-btn').forEach(btn => {
+    // Subtab Button Listeners
+    document.querySelectorAll('.fut-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.tab;
         if (tab) switchSubTab(tab);
       });
     });
 
-    // Sector Filter Listener
-    const secSelect = document.getElementById('futSectorFilter');
-    if (secSelect) {
-      secSelect.addEventListener('change', (e) => {
-        state.sector = e.target.value;
+    // Sector Filter Pills
+    document.querySelectorAll('.fut-sec-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.fut-sec-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        state.sector = pill.dataset.sector || 'ALL';
         refreshCurrentSubTab();
       });
-    }
+    });
+
+    // Signal Filter Pills
+    document.querySelectorAll('.fut-sig-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.fut-sig-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        state.signal = pill.dataset.signal || 'ALL';
+        refreshCurrentSubTab();
+      });
+    });
 
     // Search Input Listener
     const searchInput = document.getElementById('futSearchInput');
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
         state.search = e.target.value.trim().toUpperCase();
-        if (state.activeSubTab === 'screener') {
-          loadScreener();
+        if (state.activeSubTab === 'matrix') {
+          loadMatrix();
         }
       });
     }
@@ -657,10 +701,24 @@
       });
     }
 
-    // Start auto-refresh immediately (5 seconds default)
+    // Sorting in Matrix Table
+    document.querySelectorAll('#futMatrixTable th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = th.dataset.sort;
+        if (state.sortBy === col) {
+          state.sortDir = state.sortDir === 'desc' ? 'asc' : 'desc';
+        } else {
+          state.sortBy = col;
+          state.sortDir = 'desc';
+        }
+        loadMatrix();
+      });
+    });
+
+    // Start 5s Live Auto-Refresh Immediately
     setAutoRefresh(5);
 
-    // Load initial subtab
+    // Initial View
     switchSubTab(state.activeSubTab);
   }
 
@@ -669,18 +727,19 @@
     init,
     switchSubTab,
     refreshCurrentSubTab,
+    filterBySymbol,
     inspectContract,
-    loadDashboard,
-    loadScreener,
-    loadBuildup,
-    loadHeatmap,
+    loadBenchmarkRibbon,
+    loadMatrix,
+    loadBuildupView,
+    loadIndicesDetailView,
     loadMwpl
   };
 
-  // Auto-init if panel is visible
+  // Auto-init on load if panel is active
   document.addEventListener('DOMContentLoaded', () => {
     const p = document.getElementById('panelFutures');
-    if (p && p.classList.contains('active')) {
+    if (p && (p.classList.contains('active') || p.style.display !== 'none')) {
       init();
     }
   });

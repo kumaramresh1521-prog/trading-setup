@@ -7776,7 +7776,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             search = query.get("search", [""])[0]
             sort_by = query.get("sortBy", ["oiValueCr"])[0]
             sort_dir = query.get("sortDir", ["desc"])[0]
-            return self.send_json(200, futures_engine.get_futures_screener(sector, search, sort_by, sort_dir))
+            signal = query.get("signal", ["ALL"])[0]
+            return self.send_json(200, futures_engine.get_futures_screener(sector, search, sort_by, sort_dir, signal))
 
         if path == "/api/futures/buildup":
             return self.send_json(200, futures_engine.get_futures_buildup())
@@ -8238,7 +8239,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 search = payload.get("search", "")
                 sort_by = payload.get("sortBy", "oiValueCr")
                 sort_dir = payload.get("sortDir", "desc")
-                return self.send_json(200, futures_engine.get_futures_screener(sector, search, sort_by, sort_dir))
+                signal = payload.get("signal", "ALL")
+                return self.send_json(200, futures_engine.get_futures_screener(sector, search, sort_by, sort_dir, signal))
 
             if parsed.path == "/api/futures/buildup":
                 return self.send_json(200, futures_engine.get_futures_buildup())
