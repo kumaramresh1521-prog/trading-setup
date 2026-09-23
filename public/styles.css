@@ -12281,3 +12281,27 @@ html, body {
 .fut-row:hover td {
   background: rgba(255, 255, 255, 0.04) !important;
 }
+
+/* ==============================================================================
+   Institutional Real-Time Pulse & Cell Flash Animations
+   ============================================================================== */
+.tick-flash-up {
+  animation: tickFlashGreen 1.1s ease-out forwards !important;
+}
+.tick-flash-down {
+  animation: tickFlashRed 1.1s ease-out forwards !important;
+}
+@keyframes tickFlashGreen {
+  0% { background-color: rgba(16, 185, 129, 0.45) !important; color: #10b981 !important; text-shadow: 0 0 8px rgba(16, 185, 129, 0.7); }
+  100% { background-color: transparent; }
+}
+@keyframes tickFlashRed {
+  0% { background-color: rgba(239, 68, 68, 0.45) !important; color: #ef4444 !important; text-shadow: 0 0 8px rgba(239, 68, 68, 0.7); }
+  100% { background-color: transparent; }
+}
+.fut-pulse-pill {
+  transition: all 0.2s ease;
+}
+.fut-pulse-pill:hover {
+  background: rgba(16, 185, 129, 0.25) !important;
+}

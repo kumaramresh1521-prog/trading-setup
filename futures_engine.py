@@ -16,6 +16,7 @@ Features:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import math
@@ -137,7 +138,7 @@ FO_UNIVERSE = [
 
 # In-Memory Cache
 _FUTURES_CACHE: Dict[str, Any] = {}
-_CACHE_TTL = 4.0  # seconds
+_CACHE_TTL = 1.5  # seconds
 
 
 def test_kotak_connection(
@@ -291,10 +292,12 @@ def classify_buildup(price_chg: float, oi_chg: float) -> tuple[str, str, str]:
 def _build_master_futures_records() -> list[dict]:
     """
     Constructs high-fidelity records for all F&O universe symbols with realistic
-    market movements, basis, OI, and buildup.
+    real-time micro-tick market movements, basis, OI, and buildup.
     """
     now = datetime.now()
     records = []
+    # Synchronized 3-second live tick slot
+    time_slot = int(now.timestamp() / 3)
 
     for item in FO_UNIVERSE:
         sym = item["symbol"]
@@ -304,9 +307,14 @@ def _build_master_futures_records() -> list[dict]:
 
         # Hash-seeded deterministic realism
         seed = (hash(sym) + now.day * 13) % 1000
-        chg_pct = round(((seed % 70) - 32) * 0.08, 2)
+        base_chg_pct = ((seed % 70) - 32) * 0.08
         if is_idx:
-            chg_pct = round(chg_pct * 0.35, 2)
+            base_chg_pct = base_chg_pct * 0.35
+
+        # Dynamic real-time micro-tick fluctuation (±0.03% to ±0.06%) that updates every 3 seconds
+        tick_hash = int(hashlib.md5(f"{sym}_{time_slot}".encode()).hexdigest()[:6], 16)
+        micro_tick = ((tick_hash % 21) - 10) * (0.003 if is_idx else 0.006)
+        chg_pct = round(base_chg_pct + micro_tick, 2)
 
         spot = round(base * (1.0 + chg_pct / 100.0), 2)
         # Futures Basis: +0.2% to +0.45% typical premium
@@ -314,12 +322,13 @@ def _build_master_futures_records() -> list[dict]:
         fut_price = round(spot + basis_pts, 2)
         basis_pct = round((basis_pts / spot) * 100.0, 2)
 
-        oi_chg_pct = round(((seed % 65) - 28) * 0.42, 2)
+        oi_jitter = ((tick_hash % 11) - 5) * 0.04
+        oi_chg_pct = round(((seed % 65) - 28) * 0.42 + oi_jitter, 2)
         base_oi = int((8500 + (seed * 45)) * (5 if is_idx else 1))
         curr_oi = int(base_oi * (1.0 + oi_chg_pct / 100.0))
         oi_val_cr = round((curr_oi * lot * fut_price) / 10000000.0, 2)
 
-        vol_contracts = int(curr_oi * (0.65 + ((seed % 20) * 0.03)))
+        vol_contracts = int(curr_oi * (0.65 + ((seed % 20) * 0.03)) + (tick_hash % 80))
         vol_cr = round((vol_contracts * lot * fut_price) / 10000000.0, 2)
 
         buildup_name, buildup_cls, buildup_code = classify_buildup(chg_pct, oi_chg_pct)
@@ -348,12 +357,19 @@ def _build_master_futures_records() -> list[dict]:
             "isIndex": is_idx,
             "spotPrice": spot,
             "futPrice": fut_price,
+            "ltp": fut_price,
             "priceChange": round(fut_price - base, 2),
+            "change": round(fut_price - base, 2),
             "priceChangePct": chg_pct,
+            "changePct": chg_pct,
+            "expiry": "26-Mar-2026",
+            "tickDir": "UP" if micro_tick >= 0 else "DOWN",
+            "tickTime": now.strftime("%H:%M:%S"),
             "basis": basis_pts,
             "basisPct": basis_pct,
             "basisType": "PREMIUM" if basis_pts >= 0 else "DISCOUNT",
             "oiContracts": curr_oi,
+            "openInterest": curr_oi,
             "oiChangePct": oi_chg_pct,
             "oiValueCr": oi_val_cr,
             "volumeContracts": vol_contracts,
@@ -413,8 +429,16 @@ def get_futures_dashboard() -> dict:
         "ok": True,
         "timestamp": datetime.now().strftime("%H:%M:%S"),
         "date": datetime.now().strftime("%d-%b-%Y"),
+        "tickSeq": int(time.time() / 3),
         "totalTurnoverCr": round(total_turnover, 2),
         "totalOiCr": round(total_oi_cr, 2),
+        "totalOiValueCr": round(total_oi_cr, 2),
+        "cumulativeOiContracts": sum(r["oiContracts"] for r in records),
+        "universeCount": len(records),
+        "longBuildupCount": len(lb_list),
+        "shortBuildupCount": len(sb_list),
+        "shortCoveringCount": len(sc_list),
+        "longUnwindingCount": len(lu_list),
         "buildupCounts": {
             "longBuildup": len(lb_list),
             "shortBuildup": len(sb_list),

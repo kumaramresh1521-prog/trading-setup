@@ -16,7 +16,10 @@
     search: '',
     sortBy: 'oiValueCr',
     sortDir: 'desc',
-    autoRefreshSec: 0,
+    autoRefreshSec: 5,
+    countdownSec: 5,
+    countdownTimer: null,
+    lastRenderedPrices: {},
     timerId: null,
     isLoading: false,
     dashboardData: null,
@@ -558,11 +561,47 @@
       clearInterval(state.timerId);
       state.timerId = null;
     }
-    if (seconds > 0) {
-      state.timerId = setInterval(() => {
-        refreshCurrentSubTab();
-      }, seconds * 1000);
+    if (state.countdownTimer) {
+      clearInterval(state.countdownTimer);
+      state.countdownTimer = null;
     }
+
+    const badge = document.getElementById('futAutoRefreshBadge');
+    const cdText = document.getElementById('futCountdownText');
+
+    if (seconds <= 0) {
+      if (badge) {
+        badge.style.opacity = '0.5';
+        badge.style.borderColor = 'rgba(255,255,255,0.1)';
+        badge.style.color = '#94a3b8';
+      }
+      if (cdText) cdText.textContent = 'OFF';
+      return;
+    }
+
+    if (badge) {
+      badge.style.opacity = '1';
+      badge.style.borderColor = 'rgba(16,185,129,0.3)';
+      badge.style.color = '#10b981';
+    }
+
+    state.countdownSec = seconds;
+    if (cdText) cdText.textContent = state.countdownSec + 's';
+
+    state.countdownTimer = setInterval(() => {
+      state.countdownSec -= 1;
+      if (state.countdownSec <= 0) {
+        state.countdownSec = seconds;
+        refreshCurrentSubTab();
+        if (badge) {
+          badge.classList.remove('tick-flash-up');
+          void badge.offsetWidth;
+          badge.classList.add('tick-flash-up');
+          setTimeout(() => badge.classList.remove('tick-flash-up'), 800);
+        }
+      }
+      if (cdText) cdText.textContent = state.countdownSec + 's';
+    }, 1000);
   }
 
   // --- Initialization ---
@@ -612,10 +651,14 @@
     // Auto-Refresh Select
     const autoRefSelect = document.getElementById('futAutoRefreshSelect');
     if (autoRefSelect) {
+      autoRefSelect.value = "5";
       autoRefSelect.addEventListener('change', (e) => {
         setAutoRefresh(Number(e.target.value) || 0);
       });
     }
+
+    // Start auto-refresh immediately (5 seconds default)
+    setAutoRefresh(5);
 
     // Load initial subtab
     switchSubTab(state.activeSubTab);

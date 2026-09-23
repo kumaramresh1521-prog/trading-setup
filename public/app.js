@@ -8508,202 +8508,6 @@ function initFiiDiiCashControls() {
 }
 
 
-
-// ==============================================================================
-// ⚡ Clickable Live Market Ticker Tape Event Listeners & Real-Time Updater
-// ==============================================================================
-function initMarketTickerTape() {
-  const chips = document.querySelectorAll(".ticker-chip.clickable");
-  chips.forEach(chip => {
-    chip.addEventListener("click", () => {
-      const tabTarget = chip.getAttribute("data-tab");
-      if (tabTarget && typeof switchTab === "function") {
-        switchTab(tabTarget);
-        // Scroll smoothly to top of active panel
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    });
-    const diiNet = row.diiNet || 0;
-    
-    const fmt = val => (val >= 0 ? `+${val.toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : val.toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-
-    html += `
-      <tr style="border-bottom: 1px solid #162032;">
-        <td style="padding:10px 14px; font-weight:700; color:#f8fafc;">${period}</td>
-        <td style="padding:10px 14px; text-align:right; font-weight:800; font-family:'JetBrains Mono', monospace; color:${totalNet >= 0 ? '#10b981' : '#ef4444'};">${fmt(totalNet)}</td>
-        <td style="padding:10px 14px; text-align:right; font-weight:700; font-family:'JetBrains Mono', monospace; color:${fiiNet >= 0 ? '#10b981' : '#ef4444'};">${fmt(fiiNet)}</td>
-        <td style="padding:10px 14px; text-align:right; font-weight:700; font-family:'JetBrains Mono', monospace; color:${diiNet >= 0 ? '#10b981' : '#ef4444'};">${fmt(diiNet)}</td>
-      </tr>
-    `;
-  });
-  tbody.innerHTML = html;
-}
-
-function drawFiiDiiCashChart(items, view) {
-  const canvas = document.getElementById("fiiDiiCashCanvas");
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  const scale = window.devicePixelRatio || 1;
-  
-  const rect = canvas.getBoundingClientRect();
-  const w = rect.width > 50 ? rect.width : (canvas.parentElement?.clientWidth || 800);
-  const h = rect.height > 50 ? rect.height : 280;
-  if (canvas.width !== Math.round(w * scale) || canvas.height !== Math.round(h * scale)) {
-    canvas.width = Math.round(w * scale);
-    canvas.height = Math.round(h * scale);
-  }
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
-
-  const width = canvas.width / scale;
-  const height = canvas.height / scale;
-
-  ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
-  ctx.fillRect(0, 0, width, height);
-
-  if (!items || !items.length) {
-    ctx.fillStyle = "#94a3b8";
-    ctx.textAlign = "center";
-    ctx.font = "11px 'JetBrains Mono', monospace";
-    ctx.fillText("No FII/DII Chart Data Available", width / 2, height / 2);
-    return;
-  }
-
-  // Reverse items so oldest is on left, newest on right for chart
-  const chartItems = [...items].reverse();
-
-  const pad = { left: 65, right: 20, top: 25, bottom: 35 };
-  const plotW = width - pad.left - pad.right;
-  const plotH = height - pad.top - pad.bottom;
-
-  // Compute values according to view
-  const vals = chartItems.map(item => {
-    if (view === "fii") return item.fiiNet || 0;
-    if (view === "dii") return item.diiNet || 0;
-    return item.totalNet !== undefined ? item.totalNet : ((item.fiiNet || 0) + (item.diiNet || 0));
-  });
-
-  let maxVal = Math.max(...vals.map(v => Math.abs(v)), 100);
-  maxVal *= 1.15;
-
-  const yZero = pad.top + plotH / 2;
-  const yForVal = val => pad.top + plotH / 2 - (val / maxVal) * (plotH / 2);
-
-  // Draw Gridlines & Zero Axis
-  ctx.strokeStyle = "#1e293d";
-  ctx.lineWidth = 1;
-  ctx.setLineDash([3, 3]);
-
-  // Upper gridline
-  ctx.beginPath();
-  ctx.moveTo(pad.left, pad.top);
-  ctx.lineTo(width - pad.right, pad.top);
-  ctx.stroke();
-
-  // Zero gridline (solid line)
-  ctx.strokeStyle = "#334155";
-  ctx.setLineDash([]);
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(pad.left, yZero);
-  ctx.lineTo(width - pad.right, yZero);
-  ctx.stroke();
-
-  // Lower gridline
-  ctx.strokeStyle = "#1e293d";
-  ctx.setLineDash([3, 3]);
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(pad.left, pad.top + plotH);
-  ctx.lineTo(width - pad.right, pad.top + plotH);
-  ctx.stroke();
-
-  // Axis Labels
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "10px 'JetBrains Mono', monospace";
-  ctx.textAlign = "right";
-  ctx.textBaseline = "middle";
-  ctx.fillText(`+${Math.round(maxVal).toLocaleString()} Cr`, pad.left - 8, pad.top);
-  ctx.fillText("0 Cr", pad.left - 8, yZero);
-  ctx.fillText(`-${Math.round(maxVal).toLocaleString()} Cr`, pad.left - 8, pad.top + plotH);
-
-  // Draw Bars
-  const count = chartItems.length;
-  const barSlotW = plotW / count;
-  const barW = Math.max(4, Math.min(26, barSlotW - 8));
-
-  chartItems.forEach((item, i) => {
-    const val = vals[i];
-    const x = pad.left + i * barSlotW + (barSlotW - barW) / 2;
-    const yVal = yForVal(val);
-    const barH = Math.abs(yVal - yZero);
-
-    // Color gradient
-    const gradient = ctx.createLinearGradient(0, Math.min(yVal, yZero), 0, Math.max(yVal, yZero));
-    if (val >= 0) {
-      gradient.addColorStop(0, "#10b981");
-      gradient.addColorStop(1, "#059669");
-    } else {
-      gradient.addColorStop(0, "#f43f5e");
-      gradient.addColorStop(1, "#dc2626");
-    }
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(x, Math.min(yVal, yZero), barW, Math.max(barH, 2));
-
-    // Period label on bottom axis
-    ctx.fillStyle = "#cbd5e1";
-    ctx.font = "9px 'JetBrains Mono', monospace";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    const lbl = String(item.period || item.date || "").slice(-4);
-    ctx.fillText(lbl, x + barW / 2, pad.top + plotH + 8);
-  });
-}
-
-function initFiiDiiCashControls() {
-  const pDaily = document.getElementById("fiiDiiPeriodDaily");
-  const pMonthly = document.getElementById("fiiDiiPeriodMonthly");
-  const pYearly = document.getElementById("fiiDiiPeriodYearly");
-  
-  const vNet = document.getElementById("fiiDiiViewNet");
-  const vFii = document.getElementById("fiiDiiViewFii");
-  const vDii = document.getElementById("fiiDiiViewDii");
-
-  const setPeriod = (period, activeBtn) => {
-    fiiDiiActivePeriod = period;
-    [pDaily, pMonthly, pYearly].forEach(btn => btn?.classList.remove("active"));
-    activeBtn?.classList.add("active");
-    renderFiiDiiCashSection();
-  };
-
-  const setView = (view, activeBtn) => {
-    fiiDiiActiveView = view;
-    [vNet, vFii, vDii].forEach(btn => btn?.classList.remove("active"));
-    activeBtn?.classList.add("active");
-    renderFiiDiiCashSection();
-  };
-
-  pDaily?.addEventListener("click", () => setPeriod("daily", pDaily));
-  pMonthly?.addEventListener("click", () => setPeriod("monthly", pMonthly));
-  pYearly?.addEventListener("click", () => setPeriod("yearly", pYearly));
-
-  vNet?.addEventListener("click", () => setView("net", vNet));
-  vFii?.addEventListener("click", () => setView("fii", vFii));
-  vDii?.addEventListener("click", () => setView("dii", vDii));
-
-  const searchInput = document.getElementById("fiiDiiSearchInput");
-  const sessSelect = document.getElementById("fiiDiiSessionSelect");
-  const refreshBtn = document.getElementById("fiiDiiRefreshBtn");
-
-  searchInput?.addEventListener("input", () => renderFiiDiiCashSection());
-  sessSelect?.addEventListener("change", () => renderFiiDiiCashSection());
-  refreshBtn?.addEventListener("click", () => loadFiiDiiCashData());
-
-}
-
-
-
 // ==============================================================================
 // ⚡ Clickable Live Market Ticker Tape Event Listeners & Real-Time Updater
 // ==============================================================================
@@ -9936,3 +9740,198 @@ function initInstNavState() {
 window.instNav = instNav;
 window.loadDashboardData = loadDashboardData;
 window.updateDashboardIndices = updateDashboardIndices;
+
+
+/* ==============================================================================
+
+/* ==============================================================================
+   Institutional Real-Time Market Pulse Heartbeat & Dynamic Auto-Refresh
+   ============================================================================== */
+let _lastPulseSpots = {};
+let _pulseSecondsRemaining = 3;
+let _dashboardAutoRefreshCounter = 0;
+let _globalPulseTimer = null;
+
+function flashPulseElement(el, isUp) {
+  if (!el) return;
+  const cls = isUp ? 'tick-flash-up' : 'tick-flash-down';
+  el.classList.remove('tick-flash-up', 'tick-flash-down');
+  void el.offsetWidth;
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), 1200);
+}
+
+async function fetchGlobalMarketPulse() {
+  try {
+    const res = await fetch('/api/market-pulse');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok || !data.indices) return;
+
+    const indices = data.indices;
+
+    // 1. NIFTY 50
+    const n50 = indices.nifty50;
+    if (n50) {
+      const pNifty = document.getElementById('pulseNiftyVal');
+      const dSpot = document.getElementById('dashNiftySpot');
+      const dChg = document.getElementById('dashNiftyChg');
+      const isUp = n50.tickDir === 'UP' || n50.isPositive;
+      const prev = _lastPulseSpots['nifty50'];
+      const changed = prev !== undefined && prev !== n50.spot;
+
+      if (pNifty) {
+        pNifty.textContent = n50.formattedSpot + ' (' + n50.formattedChange + ')';
+        pNifty.style.color = n50.isPositive ? '#10b981' : '#ef4444';
+        if (changed) flashPulseElement(pNifty, isUp);
+      }
+      if (dSpot) {
+        dSpot.textContent = n50.formattedSpot;
+        if (changed) flashPulseElement(dSpot, isUp);
+      }
+      if (dChg) {
+        dChg.textContent = n50.formattedChange;
+        dChg.className = 'idx-chg ' + (n50.isPositive ? 'positive' : 'negative');
+      }
+      _lastPulseSpots['nifty50'] = n50.spot;
+    }
+
+    // 2. BANK NIFTY
+    const bnf = indices.banknifty;
+    if (bnf) {
+      const pBnf = document.getElementById('pulseBankNiftyVal');
+      const dSpot = document.getElementById('dashBankNiftySpot');
+      const dChg = document.getElementById('dashBankNiftyChg');
+      const isUp = bnf.tickDir === 'UP' || bnf.isPositive;
+      const prev = _lastPulseSpots['banknifty'];
+      const changed = prev !== undefined && prev !== bnf.spot;
+
+      if (pBnf) {
+        pBnf.textContent = bnf.formattedSpot + ' (' + bnf.formattedChange + ')';
+        pBnf.style.color = bnf.isPositive ? '#10b981' : '#ef4444';
+        if (changed) flashPulseElement(pBnf, isUp);
+      }
+      if (dSpot) {
+        dSpot.textContent = bnf.formattedSpot;
+        if (changed) flashPulseElement(dSpot, isUp);
+      }
+      if (dChg) {
+        dChg.textContent = bnf.formattedChange;
+        dChg.className = 'idx-chg ' + (bnf.isPositive ? 'positive' : 'negative');
+      }
+      _lastPulseSpots['banknifty'] = bnf.spot;
+    }
+
+    // 3. BSE SENSEX
+    const snx = indices.sensex;
+    if (snx) {
+      const pSnx = document.getElementById('pulseSensexVal');
+      const dSpot = document.getElementById('dashSensexSpot');
+      const dChg = document.getElementById('dashSensexChg');
+      const isUp = snx.tickDir === 'UP' || snx.isPositive;
+      const prev = _lastPulseSpots['sensex'];
+      const changed = prev !== undefined && prev !== snx.spot;
+
+      if (pSnx) {
+        pSnx.textContent = snx.formattedSpot + ' (' + snx.formattedChange + ')';
+        pSnx.style.color = snx.isPositive ? '#10b981' : '#ef4444';
+        if (changed) flashPulseElement(pSnx, isUp);
+      }
+      if (dSpot) {
+        dSpot.textContent = snx.formattedSpot;
+        if (changed) flashPulseElement(dSpot, isUp);
+      }
+      if (dChg) {
+        dChg.textContent = snx.formattedChange;
+        dChg.className = 'idx-chg ' + (snx.isPositive ? 'positive' : 'negative');
+      }
+      _lastPulseSpots['sensex'] = snx.spot;
+    }
+
+    // 4. FIN NIFTY
+    const fnf = indices.finnifty;
+    if (fnf) {
+      const dSpot = document.getElementById('dashFinNiftySpot');
+      const dChg = document.getElementById('dashFinNiftyChg');
+      const isUp = fnf.tickDir === 'UP' || fnf.isPositive;
+      const prev = _lastPulseSpots['finnifty'];
+      const changed = prev !== undefined && prev !== fnf.spot;
+
+      if (dSpot) {
+        dSpot.textContent = fnf.formattedSpot;
+        if (changed) flashPulseElement(dSpot, isUp);
+      }
+      if (dChg) {
+        dChg.textContent = fnf.formattedChange;
+        dChg.className = 'idx-chg ' + (fnf.isPositive ? 'positive' : 'negative');
+      }
+      _lastPulseSpots['finnifty'] = fnf.spot;
+    }
+
+    // 5. INDIA VIX
+    const vix = indices.indiavix;
+    if (vix) {
+      const pVix = document.getElementById('pulseVixVal');
+      const dVix = document.getElementById('dashKpiVix');
+      const isUp = vix.tickDir === 'UP' || vix.isPositive;
+      const prev = _lastPulseSpots['indiavix'];
+      const changed = prev !== undefined && prev !== vix.spot;
+
+      if (pVix) {
+        pVix.textContent = vix.spot.toFixed(2) + ' (' + vix.formattedChange + ')';
+        pVix.style.color = vix.isPositive ? '#ef4444' : '#10b981';
+        if (changed) flashPulseElement(pVix, isUp);
+      }
+      if (dVix) {
+        dVix.textContent = vix.spot.toFixed(2);
+        if (changed) flashPulseElement(dVix, isUp);
+      }
+      _lastPulseSpots['indiavix'] = vix.spot;
+    }
+
+    // Update status badge
+    const apiStat = document.getElementById('apiStatus');
+    if (apiStat) {
+      apiStat.textContent = '● Live Feed';
+      apiStat.style.color = '#10b981';
+    }
+
+    _pulseSecondsRemaining = 3;
+  } catch (err) {
+    console.debug('Market pulse poll error:', err);
+  }
+}
+
+function startGlobalMarketPulse() {
+  if (_globalPulseTimer) return;
+
+  fetchGlobalMarketPulse();
+
+  _globalPulseTimer = setInterval(() => {
+    _pulseSecondsRemaining -= 1;
+    const cdEl = document.getElementById('pulseCountdown');
+    if (cdEl) {
+      cdEl.textContent = Math.max(1, _pulseSecondsRemaining) + 's';
+    }
+
+    if (_pulseSecondsRemaining <= 0) {
+      fetchGlobalMarketPulse();
+    }
+
+    const pDash = document.getElementById('panelDashboard');
+    if (pDash && (pDash.classList.contains('active') || pDash.style.display === 'block')) {
+      _dashboardAutoRefreshCounter += 1;
+      if (_dashboardAutoRefreshCounter >= 12) {
+        _dashboardAutoRefreshCounter = 0;
+        if (typeof loadDashboardData === 'function') {
+          loadDashboardData();
+        }
+      }
+    }
+  }, 1000);
+}
+
+// Auto-start global market pulse immediately
+startGlobalMarketPulse();
+window.startGlobalMarketPulse = startGlobalMarketPulse;
+window.fetchGlobalMarketPulse = fetchGlobalMarketPulse;
