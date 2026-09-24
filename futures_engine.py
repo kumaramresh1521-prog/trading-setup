@@ -262,6 +262,33 @@ def generate_totp_code(secret: str, interval: int = 30, digits: int = 6) -> str:
     return str(code % (10**digits)).zfill(digits)
 
 
+def _safe_parse_kotak_response(raw_bytes: bytes) -> tuple[Optional[Any], Optional[str]]:
+    """
+    Safely parses responses from Kotak Neo endpoints.
+    Catches HTML responses, KS-WebSec WAF blocks, and malformed bodies gracefully.
+    """
+    try:
+        text = raw_bytes.decode("utf-8", errors="ignore").strip()
+    except Exception as e:
+        return None, f"Decoding error: {str(e)}"
+
+    if not text:
+        return None, "Empty response received from Kotak server"
+
+    # Detect HTML or WAF blocking
+    text_lower = text.lower()
+    if text.startswith("<") or "<html" in text_lower or "ks-websec" in text_lower or "<!doctype" in text_lower:
+        if "ks-websec" in text_lower or "unauthorized request blocked" in text_lower:
+            return None, "Kotak Neo WAF Blocked (KS-WebSec: Unauthorized Request Blocked). The Access Token or Consumer Key is invalid/expired."
+        return None, "Kotak server returned an unexpected HTML error page instead of JSON."
+
+    try:
+        data = json.loads(text)
+        return data, None
+    except Exception as err:
+        return None, f"JSON parse error: {str(err)}"
+
+
 def test_kotak_connection(
     token: str = "",
     consumer_key: str = "",
@@ -278,6 +305,7 @@ def test_kotak_connection(
     - UCC (Client Code)
     - Mobile Number & 6-digit MPIN
     - TOTP Secret Key (Auto 30s rotation) or 6-digit Live TOTP
+    - Optional Bearer Access Token (session verification)
     """
     tok = (token or os.getenv("KOTAK_ACCESS_TOKEN") or "").strip()
     ckey = (consumer_key or os.getenv("KOTAK_CONSUMER_KEY") or "").strip()
@@ -304,46 +332,51 @@ def test_kotak_connection(
             "configured": False,
         }
 
-    # If direct Bearer access token is provided, verify session
+    # 1. If direct Bearer access token is provided, verify session against user profile
+    token_verified = False
     if tok:
         headers = {
             "Authorization": f"Bearer {tok}" if not tok.lower().startswith("bearer ") else tok,
             "neo-fin-key": "neotradeapi",
             "Content-Type": "application/json",
             "Accept": "application/json",
+            "User-Agent": "neo-api-client/2.0.0",
         }
         url = "https://tradeapi.kotaksecurities.com/Orders/2.0/quick/user/profile"
         req = urllib.request.Request(url, headers=headers)
+        token_err = ""
         try:
             with urllib.request.urlopen(req, timeout=8) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                user_name = (data.get("data") or {}).get("clientName") or (data.get("data") or {}).get("clientId") or "Authorized Kotak Neo Trader"
-                return {
-                    "ok": True,
-                    "message": f"[OK] Kotak Neo API Session Verified! Connected to account of {user_name}.",
-                    "configured": True,
-                    "user": data.get("data"),
-                }
+                data, parse_err = _safe_parse_kotak_response(resp.read())
+                if data and isinstance(data, dict) and data.get("data"):
+                    user_name = (data.get("data") or {}).get("clientName") or (data.get("data") or {}).get("clientId") or "Authorized Kotak Neo Trader"
+                    return {
+                        "ok": True,
+                        "message": f"[OK] Kotak Neo API Session Verified! Connected to account of {user_name}.",
+                        "configured": True,
+                        "user": data.get("data"),
+                    }
+                else:
+                    token_err = parse_err or "Invalid profile response from Kotak"
         except urllib.error.HTTPError as e:
             try:
-                body = e.read().decode("utf-8")
-                err_j = json.loads(body)
-                msg = err_j.get("message") or err_j.get("error") or str(e)
+                body = e.read()
+                err_j, _ = _safe_parse_kotak_response(body)
+                token_err = (err_j.get("message") or err_j.get("error")) if (err_j and isinstance(err_j, dict)) else f"HTTP {e.code}: {e.reason}"
             except Exception:
-                msg = f"HTTP {e.code}: {e.reason}"
-            return {
-                "ok": False,
-                "message": f"Kotak Neo Authorization Failed ({e.code}): {msg}",
-                "configured": False,
-            }
+                token_err = f"HTTP {e.code}: {e.reason}"
         except Exception as exc:
+            token_err = str(exc)
+
+        # If token failed, but user did NOT provide TOTP credentials to re-login, report clearly
+        if not (ckey and (mob or u_code)):
             return {
                 "ok": False,
-                "message": f"Kotak connection error: {str(exc)}",
+                "message": f"Kotak Access Token verification failed: {token_err}. Please enter fresh TOTP credentials or a new Bearer token.",
                 "configured": False,
             }
 
-    # If TOTP authentication credentials are provided
+    # 2. If TOTP authentication credentials are provided (Auto-Login / Re-Login)
     if ckey and (mob or u_code):
         mob_clean = mob.replace("+", "").replace("-", "").strip()
         mob_formatted = f"+91{mob_clean[-10:]}" if len(mob_clean) >= 10 else mob
@@ -377,10 +410,24 @@ def test_kotak_connection(
                 method="POST",
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
-                l_data = json.loads(resp.read().decode("utf-8"))
+                l_data, parse_err = _safe_parse_kotak_response(resp.read())
+                if not l_data or not isinstance(l_data, dict):
+                    return {
+                        "ok": False,
+                        "message": f"[ERROR] Kotak Neo Login Failed: {parse_err or 'Unexpected response'}",
+                        "configured": False,
+                    }
+
                 tok_data = l_data.get("data") or {}
                 view_token = tok_data.get("token")
                 sid = tok_data.get("sid")
+
+                if view_token:
+                    os.environ["KOTAK_VIEW_TOKEN"] = view_token
+                    _FUTURES_CACHE["kotak_view_token"] = view_token
+                if sid:
+                    os.environ["KOTAK_SID"] = sid
+                    _FUTURES_CACHE["kotak_sid"] = sid
 
                 if view_token and mp:
                     # Step 2: Validate MPIN
@@ -401,12 +448,17 @@ def test_kotak_connection(
                         method="POST",
                     )
                     with urllib.request.urlopen(val_req, timeout=10) as v_resp:
-                        v_data = json.loads(v_resp.read().decode("utf-8"))
+                        v_data, v_err = _safe_parse_kotak_response(v_resp.read())
+                        if not v_data or not isinstance(v_data, dict):
+                            return {
+                                "ok": False,
+                                "message": f"[ERROR] Kotak MPIN Validation Failed: {v_err or 'Unexpected response'}",
+                                "configured": False,
+                            }
                         t_data = v_data.get("data") or {}
                         trade_tok = t_data.get("token")
                         base_url = t_data.get("baseUrl")
                         if trade_tok:
-                            # Save active token to cache & environment
                             os.environ["KOTAK_ACCESS_TOKEN"] = trade_tok
                             _FUTURES_CACHE["kotak_token"] = trade_tok
                             _FUTURES_CACHE["kotak_base_url"] = base_url
@@ -420,19 +472,22 @@ def test_kotak_connection(
 
                 return {
                     "ok": True,
-                    "message": f"[OK] Kotak Neo TOTP Verified! Step 1 complete for {id_display}.",
+                    "message": f"[OK] Kotak Neo TOTP Verified! Step 1 complete for {id_display} (View token active).",
                     "configured": True,
                     "currentTotp": active_totp,
                 }
         except urllib.error.HTTPError as e:
             try:
-                body = e.read().decode("utf-8")
-                err_j = json.loads(body)
-                err_list = err_j.get("error") or []
-                if isinstance(err_list, list) and len(err_list) > 0:
-                    err_msg = err_list[0].get("message") or str(err_list[0])
+                body = e.read()
+                err_j, _ = _safe_parse_kotak_response(body)
+                if err_j and isinstance(err_j, dict):
+                    err_list = err_j.get("error") or []
+                    if isinstance(err_list, list) and len(err_list) > 0:
+                        err_msg = err_list[0].get("message") or str(err_list[0])
+                    else:
+                        err_msg = err_j.get("message") or str(err_j)
                 else:
-                    err_msg = err_j.get("message") or str(err_j)
+                    err_msg = f"HTTP {e.code}: {e.reason}"
             except Exception:
                 err_msg = f"HTTP {e.code}: {e.reason}"
 
@@ -442,47 +497,15 @@ def test_kotak_connection(
                     "message": f"[WARN] Kotak Error: TOTP is not yet registered for UCC '{u_code}' in Kotak Neo Trade API. Please open Kotak Neo: Invest > Trade API and click 'Register TOTP' first.",
                     "configured": False,
                 }
+            if "10506" in str(err_msg) or "invalid totp" in str(err_msg).lower():
+                return {
+                    "ok": False,
+                    "message": f"[ERROR] Invalid TOTP code entered for UCC '{id_display}'. Please enter the current 6-digit TOTP from your authenticator app.",
+                    "configured": False,
+                }
             return {
                 "ok": False,
                 "message": f"[ERROR] Kotak Neo Login Failed ({e.code}): {err_msg}",
-                "configured": False,
-            }
-        except Exception as exc:
-            return {
-                "ok": False,
-                "message": f"Kotak connection error: {str(exc)}",
-                "configured": False,
-            }
-
-    if tok:
-        headers = {
-            "Authorization": f"Bearer {tok}" if not tok.lower().startswith("bearer ") else tok,
-            "neo-fin-key": "neotradeapi",
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        }
-        url = "https://tradeapi.kotaksecurities.com/Orders/2.0/quick/user/profile"
-        req = urllib.request.Request(url, headers=headers)
-        try:
-            with urllib.request.urlopen(req, timeout=8) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                user_name = (data.get("data") or {}).get("clientName") or (data.get("data") or {}).get("clientId") or "Authorized Kotak Neo Trader"
-                return {
-                    "ok": True,
-                    "message": f"Kotak Neo API Session Verified! Connected to account of {user_name}.",
-                    "configured": True,
-                    "user": data.get("data"),
-                }
-        except urllib.error.HTTPError as e:
-            try:
-                body = e.read().decode("utf-8")
-                err_j = json.loads(body)
-                msg = err_j.get("message") or err_j.get("error") or str(e)
-            except Exception:
-                msg = f"HTTP {e.code}: {e.reason}"
-            return {
-                "ok": False,
-                "message": f"Kotak Neo Authorization Failed ({e.code}): {msg}",
                 "configured": False,
             }
         except Exception as exc:
@@ -630,7 +653,7 @@ def get_live_kotak_quotes_map() -> dict[str, dict]:
             try:
                 req = urllib.request.Request(url, headers=headers)
                 with urllib.request.urlopen(req, timeout=6) as r:
-                    d = json.loads(r.read().decode("utf-8"))
+                    d, _ = _safe_parse_kotak_response(r.read())
                     return d if isinstance(d, list) else []
             except Exception:
                 return []
