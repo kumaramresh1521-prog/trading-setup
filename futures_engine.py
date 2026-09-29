@@ -289,6 +289,40 @@ def _safe_parse_kotak_response(raw_bytes: bytes) -> tuple[Optional[Any], Optiona
         return None, f"JSON parse error: {str(err)}"
 
 
+def _persist_kotak_tokens_to_env(trade_tok: str = "", view_tok: str = "", sid: str = "") -> None:
+    updates = {}
+    if trade_tok:
+        updates["KOTAK_ACCESS_TOKEN"] = trade_tok
+    if view_tok:
+        updates["KOTAK_VIEW_TOKEN"] = view_tok
+    if sid:
+        updates["KOTAK_SID"] = sid
+    if updates:
+        env_file = Path(".env")
+        if env_file.exists():
+            try:
+                lines = env_file.read_text(encoding="utf-8").splitlines()
+                keys_updated = set()
+                new_lines = []
+                for line in lines:
+                    s = line.strip()
+                    if s and not s.startswith("#") and "=" in s:
+                        k = s.split("=", 1)[0].strip()
+                        if k in updates:
+                            new_lines.append(f"{k}={updates[k]}")
+                            keys_updated.add(k)
+                            os.environ[k] = updates[k]
+                            continue
+                    new_lines.append(line)
+                for k, v in updates.items():
+                    if k not in keys_updated:
+                        new_lines.append(f"{k}={v}")
+                        os.environ[k] = v
+                env_file.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+            except Exception as e:
+                logger.error(f"Failed to persist tokens to .env: {e}")
+
+
 def test_kotak_connection(
     token: str = "",
     consumer_key: str = "",
@@ -331,6 +365,32 @@ def test_kotak_connection(
             "message": "Kotak Neo credentials are empty. Please provide Consumer Key, UCC / Mobile Number in Admin Panel.",
             "configured": False,
         }
+
+    # 0. Live session probe: test if active Sid / viewToken is already working for market feeds
+    view_tok = (os.getenv("KOTAK_VIEW_TOKEN") or "").strip()
+    active_sid = tok or view_tok or (os.getenv("KOTAK_SID") or "").strip()
+    if ckey and active_sid and not l_totp:
+        p_headers = {
+            "Authorization": ckey,
+            "neo-fin-key": "neotradeapi",
+            "Sid": active_sid,
+            "User-Agent": "neo-api-client/2.0.0",
+        }
+        p_url = "https://mis.kotaksecurities.com/script-details/1.0/quotes/neosymbol/nse_fo|68777/all"
+        try:
+            p_req = urllib.request.Request(p_url, headers=p_headers)
+            with urllib.request.urlopen(p_req, timeout=5) as p_resp:
+                p_data, _ = _safe_parse_kotak_response(p_resp.read())
+                if p_data and isinstance(p_data, list) and len(p_data) > 0 and p_data[0].get("ltp"):
+                    id_disp = u_code or mob or "YLWGW"
+                    return {
+                        "ok": True,
+                        "message": f"[OK] Kotak Neo Session Active! Connected to {id_disp}. Real-time F&O feeds operational.",
+                        "configured": True,
+                        "isLive": True,
+                    }
+        except Exception:
+            pass
 
     # 1. If direct Bearer access token is provided, verify session against user profile
     token_verified = False
@@ -462,6 +522,7 @@ def test_kotak_connection(
                             os.environ["KOTAK_ACCESS_TOKEN"] = trade_tok
                             _FUTURES_CACHE["kotak_token"] = trade_tok
                             _FUTURES_CACHE["kotak_base_url"] = base_url
+                            _persist_kotak_tokens_to_env(trade_tok=trade_tok, view_tok=view_token or "", sid=sid or "")
                             return {
                                 "ok": True,
                                 "message": f"[OK] Kotak Neo Session Active! Connected to {id_display}. Real-time F&O feeds operational.",
@@ -470,6 +531,8 @@ def test_kotak_connection(
                                 "tradingToken": trade_tok[:10] + "...",
                             }
 
+                if view_token:
+                    _persist_kotak_tokens_to_env(view_tok=view_token, sid=sid or "")
                 return {
                     "ok": True,
                     "message": f"[OK] Kotak Neo TOTP Verified! Step 1 complete for {id_display} (View token active).",
@@ -539,21 +602,39 @@ def classify_buildup(price_chg: float, oi_chg: float) -> tuple[str, str, str]:
 
 
 _LIVE_QUOTES_CACHE: dict = {"ts": 0.0, "data": {}}
-_KOTAK_TOKEN_MAP: dict = {}
+_KOTAK_FO_MAP: dict = {}
+_KOTAK_CASH_MAP: dict = {}
 
 def get_live_kotak_quotes_map() -> dict[str, dict]:
     """
     Unified high-fidelity live quote engine:
     1. Fetches real benchmark indices (NIFTY, BANKNIFTY, FINNIFTY, MIDCPNIFTY, SENSEX, BANKEX) & special symbols via Angel One SmartAPI.
-    2. Fetches 185+ F&O stocks via Kotak Securities Neo API in parallel batches (sub-second).
+    2. Fetches 216+ F&O stocks & near futures contracts via Kotak Securities Neo API in parallel batches.
     3. Seamlessly caches for 3s to support high-frequency frontend ticker polling.
     """
-    global _LIVE_QUOTES_CACHE, _KOTAK_TOKEN_MAP
+    global _LIVE_QUOTES_CACHE, _KOTAK_FO_MAP, _KOTAK_CASH_MAP
     now = time.time()
     if _LIVE_QUOTES_CACHE["data"] and (now - _LIVE_QUOTES_CACHE["ts"]) < 3.0:
         return _LIVE_QUOTES_CACHE["data"]
 
     quotes_res = dict(_LIVE_QUOTES_CACHE.get("data", {}))
+
+    # 0. Load Scrip Masters
+    if not _KOTAK_FO_MAP:
+        try:
+            map_file = Path("cache/kotak_fo_contract_map.json")
+            if map_file.exists():
+                _KOTAK_FO_MAP = json.loads(map_file.read_text(encoding="utf-8"))
+        except Exception:
+            _KOTAK_FO_MAP = {}
+
+    if not _KOTAK_CASH_MAP:
+        try:
+            map_file = Path("cache/kotak_token_map.json")
+            if map_file.exists():
+                _KOTAK_CASH_MAP = json.loads(map_file.read_text(encoding="utf-8"))
+        except Exception:
+            _KOTAK_CASH_MAP = {}
 
     # 1. Fetch Benchmark Indices & Special Symbols via Angel One SmartAPI
     try:
@@ -569,14 +650,6 @@ def get_live_kotak_quotes_map() -> dict[str, dict]:
                 Instrument(symbol='SENSEX', trading_symbol='SENSEX', token='99919000', exchange='BSE'),
                 Instrument(symbol='BANKEX', trading_symbol='BANKEX', token='99919012', exchange='BSE'),
                 Instrument(symbol='NIFTYNXT50', trading_symbol='NIFTY NEXT 50', token='99926013', exchange='NSE'),
-                Instrument(symbol='TATAMOTORS', trading_symbol='TATAMOTORS', token='3456', exchange='NSE'),
-                Instrument(symbol='ZOMATO', trading_symbol='ZOMATO', token='5097', exchange='NSE'),
-                Instrument(symbol='LTIM', trading_symbol='LTIM', token='17818', exchange='NSE'),
-                Instrument(symbol='HPCL', trading_symbol='HPCL', token='1406', exchange='NSE'),
-                Instrument(symbol='GUJGASLTD', trading_symbol='GUJGASLTD', token='10599', exchange='NSE'),
-                Instrument(symbol='MCDOWELL-N', trading_symbol='MCDOWELL-N', token='10447', exchange='NSE'),
-                Instrument(symbol='IPCA', trading_symbol='IPCALAB', token='1633', exchange='NSE'),
-                Instrument(symbol='L&TFH', trading_symbol='LTF', token='24948', exchange='NSE'),
             ]
             angel_res = ac.quote(angel_insts, mode='FULL')
             for f in angel_res.get('fetched', []):
@@ -590,14 +663,6 @@ def get_live_kotak_quotes_map() -> dict[str, dict]:
                 elif tok == '99926074' or 'MID' in ts_u: sym = 'MIDCPNIFTY'
                 elif tok == '99919000' or 'SENSEX' in ts_u: sym = 'SENSEX'
                 elif tok == '99926013' or 'NEXT' in ts_u: sym = 'NIFTYNXT50'
-                elif tok == '3456' or 'TMPV' in ts_u or 'TATAMOTORS' in ts_u: sym = 'TATAMOTORS'
-                elif tok == '5097' or 'ETERNAL' in ts_u or 'ZOMATO' in ts_u: sym = 'ZOMATO'
-                elif tok == '17818' or 'LTM' in ts_u or 'LTIM' in ts_u: sym = 'LTIM'
-                elif tok == '1406' or 'HINDPETRO' in ts_u or 'HPCL' in ts_u: sym = 'HPCL'
-                elif tok == '10599' or 'GUJENERGY' in ts_u or 'GUJGASLTD' in ts_u: sym = 'GUJGASLTD'
-                elif tok == '10447' or 'UNITDSPR' in ts_u or 'MCDOWELL' in ts_u: sym = 'MCDOWELL-N'
-                elif tok == '1633' or 'IPCA' in ts_u: sym = 'IPCA'
-                elif tok == '24948' or 'LTF' in ts_u: sym = 'L&TFH'
                 if sym:
                     ltp = float(f.get('ltp') or 0.0)
                     chg = float(f.get('netChange') or 0.0)
@@ -616,29 +681,30 @@ def get_live_kotak_quotes_map() -> dict[str, dict]:
                             "oi": int(float(f.get('opnInterest') or 0)),
                             "source": "ANGEL"
                         }
+                        quotes_res[f"SPOT:{sym}"] = quotes_res[sym]
     except Exception as e:
         logger.debug(f"Angel live quote fetch skipped: {e}")
 
-    # 2. Fetch All F&O Stocks via Kotak Securities Neo API (Parallel Batches)
+    # 2. Fetch All F&O Futures & Equity Cash via Kotak Securities Neo API
     ckey = os.getenv("KOTAK_CONSUMER_KEY", "").strip()
-    sid = os.getenv("KOTAK_VIEW_TOKEN", "").strip()
-    if ckey:
-        if not _KOTAK_TOKEN_MAP:
-            try:
-                map_file = Path("cache/kotak_token_map.json")
-                if map_file.exists():
-                    _KOTAK_TOKEN_MAP = json.loads(map_file.read_text(encoding="utf-8"))
-            except Exception:
-                _KOTAK_TOKEN_MAP = {}
-
+    sid = (os.getenv("KOTAK_VIEW_TOKEN") or os.getenv("KOTAK_ACCESS_TOKEN") or os.getenv("KOTAK_SID") or "").strip()
+    kotak_fetched = 0
+    if ckey and sid:
         tokens_to_fetch = []
-        symbol_by_tok = {}
-        for item in FO_UNIVERSE:
-            sym = item["symbol"]
-            tok = _KOTAK_TOKEN_MAP.get(sym)
-            if tok:
-                tokens_to_fetch.append(tok)
-                symbol_by_tok[tok] = sym
+        fo_tok_to_sym = {}
+        cm_tok_to_sym = {}
+
+        # Collect nse_fo and nse_cm tokens
+        for sym, c_info in _KOTAK_FO_MAP.items():
+            fo_tok = c_info.get("token")
+            if fo_tok:
+                tokens_to_fetch.append(f"nse_fo|{fo_tok}")
+                fo_tok_to_sym[str(fo_tok)] = sym
+
+            cm_tok = _KOTAK_CASH_MAP.get(sym)
+            if cm_tok:
+                tokens_to_fetch.append(f"nse_cm|{cm_tok}")
+                cm_tok_to_sym[str(cm_tok)] = sym
 
         headers = {
             "Authorization": ckey,
@@ -648,7 +714,7 @@ def get_live_kotak_quotes_map() -> dict[str, dict]:
         }
 
         def _fetch_kotak_chunk(chunk):
-            sym_str = ",".join([f"nse_cm|{t}" for t in chunk])
+            sym_str = ",".join(chunk)
             url = f"https://mis.kotaksecurities.com/script-details/1.0/quotes/neosymbol/{sym_str}/all"
             try:
                 req = urllib.request.Request(url, headers=headers)
@@ -658,32 +724,93 @@ def get_live_kotak_quotes_map() -> dict[str, dict]:
             except Exception:
                 return []
 
-        chunks = [tokens_to_fetch[i : i + 20] for i in range(0, len(tokens_to_fetch), 20)]
+        chunks = [tokens_to_fetch[i : i + 30] for i in range(0, len(tokens_to_fetch), 30)]
         try:
-            with ThreadPoolExecutor(max_workers=6) as pool:
+            with ThreadPoolExecutor(max_workers=8) as pool:
                 results = pool.map(_fetch_kotak_chunk, chunks)
             for chunk_data in results:
                 for q in chunk_data:
+                    exch = str(q.get("exchange") or "")
                     t = str(q.get("exchange_token") or "")
-                    sym = symbol_by_tok.get(t) or str(q.get("display_symbol", "")).replace("-EQ", "").strip()
                     ltp = float(q.get("ltp") or 0.0)
+                    chg = float(q.get("change") or 0.0)
                     chg_pct = float(q.get("per_change") or q.get("net_change") or 0.0)
-                    if sym and ltp > 0:
-                        quotes_res[sym] = {
-                            "ltp": ltp,
-                            "changePct": chg_pct,
-                            "open": float(q.get("open") or ltp),
-                            "high": float(q.get("high") or ltp),
-                            "low": float(q.get("low") or ltp),
-                            "close": float(q.get("close_price") or q.get("close") or ltp),
-                            "volume": int(float(q.get("last_volume") or q.get("volume") or 0)),
-                            "oi": int(float(q.get("open_interest") or q.get("oi") or 0)),
-                            "source": "KOTAK"
-                        }
+                    ohlc = q.get("ohlc") or {}
+
+                    if exch == "nse_fo":
+                        sym = fo_tok_to_sym.get(t) or str(q.get("display_symbol", "")).replace("26SEPFUT", "").replace("26OCTFUT", "").replace("26NOVFUT", "").strip()
+                        if sym and ltp > 0:
+                            kotak_fetched += 1
+                            quotes_res[f"FUT:{sym}"] = {
+                                "ltp": ltp,
+                                "change": chg,
+                                "changePct": chg_pct,
+                                "open": float(ohlc.get("open") or ltp),
+                                "high": float(ohlc.get("high") or ltp),
+                                "low": float(ohlc.get("low") or ltp),
+                                "close": float(ohlc.get("close") or (ltp - chg)),
+                                "volume": int(float(q.get("last_volume") or q.get("volume") or 0)),
+                                "oi": int(float(q.get("open_int") or q.get("open_interest") or 0)),
+                                "vwap": float(q.get("avg_cost") or ltp),
+                                "source": "KOTAK_FO"
+                            }
+                    elif exch == "nse_cm":
+                        sym = cm_tok_to_sym.get(t) or str(q.get("display_symbol", "")).replace("-EQ", "").strip()
+                        if sym and ltp > 0:
+                            kotak_fetched += 1
+                            quotes_res[f"SPOT:{sym}"] = {
+                                "ltp": ltp,
+                                "change": chg,
+                                "changePct": chg_pct,
+                                "open": float(ohlc.get("open") or ltp),
+                                "high": float(ohlc.get("high") or ltp),
+                                "low": float(ohlc.get("low") or ltp),
+                                "close": float(q.get("close_price") or ohlc.get("close") or (ltp - chg)),
+                                "source": "KOTAK_CM"
+                            }
+                            if sym not in quotes_res:
+                                quotes_res[sym] = quotes_res[f"SPOT:{sym}"]
         except Exception as e:
             logger.debug(f"Kotak batch fetch error: {e}")
 
-    # 3. Yahoo Finance Fallback for any missing indices
+    # 3. Angel One SmartAPI Fallback for NFO if Kotak returned 0 or missing
+    if kotak_fetched == 0:
+        try:
+            from server import AngelClient, Instrument
+            ac = AngelClient()
+            if ac.is_configured():
+                ac.ensure_session()
+                nfo_insts = []
+                for sym, c_info in list(_KOTAK_FO_MAP.items())[:60]:
+                    tok = c_info.get("token")
+                    ref_key = c_info.get("ref_key", f"{sym}29SEP26FUT")
+                    if tok:
+                        nfo_insts.append(Instrument(symbol=sym, trading_symbol=ref_key, token=str(tok), exchange='NFO'))
+                a_res = ac.quote(nfo_insts, mode='FULL')
+                for f in a_res.get('fetched', []):
+                    tok = str(f.get('symbolToken') or '')
+                    sym = next((s for s, inf in _KOTAK_FO_MAP.items() if inf.get("token") == tok), None)
+                    ltp = float(f.get('ltp') or 0.0)
+                    if sym and ltp > 0:
+                        chg = float(f.get('netChange') or 0.0)
+                        pct = float(f.get('percentChange') or 0.0)
+                        quotes_res[f"FUT:{sym}"] = {
+                            "ltp": ltp,
+                            "change": chg,
+                            "changePct": pct,
+                            "open": float(f.get('open') or ltp),
+                            "high": float(f.get('high') or ltp),
+                            "low": float(f.get('low') or ltp),
+                            "close": float(f.get('close') or (ltp - chg)),
+                            "volume": int(float(f.get('tradeVolume') or 0)),
+                            "oi": int(float(f.get('opnInterest') or 0)),
+                            "vwap": float(f.get('avgPrice') or ltp),
+                            "source": "ANGEL_NFO"
+                        }
+        except Exception as e:
+            logger.debug(f"Angel NFO fallback error: {e}")
+
+    # 4. Yahoo Finance Fallback for any missing indices
     for idx_key, yf_sym in [("NIFTY", "%5ENSEI"), ("BANKNIFTY", "%5ENSEBANK"), ("SENSEX", "%5EBSESN")]:
         if idx_key not in quotes_res or quotes_res[idx_key].get("ltp", 0) <= 0:
             try:
@@ -704,6 +831,7 @@ def get_live_kotak_quotes_map() -> dict[str, dict]:
                             "close": prev,
                             "source": "YAHOO"
                         }
+                        quotes_res[f"SPOT:{idx_key}"] = quotes_res[idx_key]
             except Exception:
                 pass
 
@@ -721,57 +849,136 @@ def _build_master_futures_records() -> list[dict]:
     records = []
     live_quotes = get_live_kotak_quotes_map()
 
+    # Load baseline OI cache for real OI Change calculation
+    baseline_cache_file = Path("cache/daily_oi_baseline.json")
+    baseline_oi = {}
+    today_str = now.strftime("%Y-%m-%d")
+    try:
+        if baseline_cache_file.exists():
+            b_data = json.loads(baseline_cache_file.read_text(encoding="utf-8"))
+            if b_data.get("date") == today_str:
+                baseline_oi = b_data.get("oi", {})
+    except Exception:
+        baseline_oi = {}
+
+    new_baseline_needed = False
+
+    # Merge symbols: FO_UNIVERSE + any remaining active contracts in _KOTAK_FO_MAP
+    symbols_seen = set()
+    universe_items = []
     for item in FO_UNIVERSE:
         sym = item["symbol"]
-        base = item["basePrice"]
-        lot = item["lot"]
+        symbols_seen.add(sym)
+        universe_items.append(item)
+
+    for sym, c_info in _KOTAK_FO_MAP.items():
+        if sym not in symbols_seen:
+            symbols_seen.add(sym)
+            _KNOWN_SECTORS = {
+                'SWIGGY': 'Services', 'ETERNAL': 'Services', 'ZOMATO': 'Services',
+                'HYUNDAI': 'Auto', 'TMPV': 'Auto', 'TATAMOTORS': 'Auto', 'FORCEMOT': 'Auto', 'ATHERENERG': 'Auto', 'UNOMINDA': 'Auto', 'SONACOMS': 'Auto',
+                'WAAREEENER': 'Power', 'PREMIERENE': 'Power', 'SUZLON': 'Power', 'INOXWIND': 'Power', 'ADANIENSOL': 'Power', 'POWERINDIA': 'Power', 'CGPOWER': 'Power',
+                'JIOFIN': 'Financials', 'LICI': 'Financials', 'POLICYBZR': 'Financials', 'IREDA': 'Financials', 'IRFC': 'Financials',
+                'MAHABANK': 'Banking', 'INDIANB': 'Banking', 'BANKINDIA': 'Banking', 'YESBANK': 'Banking', 'ABCAPITAL': 'Financials',
+                'BAJAJHLDNG': 'Financials', 'KFINTECH': 'Financials', '360ONE': 'Financials', 'MOTILALOFS': 'Financials', 'CAMS': 'Financials', 'MFSL': 'Financials', 'LTF': 'Financials', 'PNBHOUSING': 'Financials',
+                'PAYTM': 'Financials', 'KALYANKJIL': 'FMCG', 'TITAN': 'FMCG', 'MANKIND': 'Pharma', 'FORTIS': 'Pharma', 'SAGILITY': 'Services',
+                'INDHOTEL': 'Services', 'LODHA': 'Realty', 'RVNL': 'Infrastructure', 'LTM': 'IT', 'HINDPETRO': 'Energy', 'UNITDSPR': 'FMCG',
+                'KAYNES': 'Capital Goods', 'PGEL': 'Capital Goods', 'AMBER': 'Capital Goods', 'APLAPOLLO': 'Metals', 'SUPREMEIND': 'Industrial',
+                'PAGEIND': 'FMCG', 'CROMPTON': 'FMCG', 'GODFRYPHLP': 'FMCG', 'PATANJALI': 'FMCG', 'SOLARINDS': 'Chemicals', 'GVT&D': 'Power',
+                'IEX': 'Financials', 'GMRAIRPORT': 'Infrastructure', 'VMM': 'Consumer', 'NIFTYFPI': 'Index'
+            }
+            universe_items.append({
+                "symbol": sym,
+                "name": sym,
+                "sector": _KNOWN_SECTORS.get(sym, "Others"),
+                "lot": c_info.get("lot", 1),
+                "isIndex": sym in ("NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "NIFTYNXT50", "SENSEX", "BANKEX", "NIFTYFPI"),
+                "basePrice": 100.0,
+                "mwplBase": 50.0
+            })
+
+    for item in universe_items:
+        sym = item["symbol"]
+        base = item.get("basePrice", 100.0)
+        lot = item.get("lot", 1)
         is_idx = item.get("isIndex", False)
 
-        q = live_quotes.get(sym)
-        if q and q.get("ltp"):
-            spot = round(q["ltp"], 2)
-            chg_pct = round(q.get("changePct") or 0.0, 2)
-            base = round(q.get("close") or (spot / (1.0 + chg_pct / 100.0) if chg_pct != -100 else spot), 2)
+        c_info = _KOTAK_FO_MAP.get(sym, {})
+        if c_info.get("lot"):
+            lot = c_info["lot"]
+        expiry = c_info.get("expiry", "29-Sep-2026")
+
+        fut_q = live_quotes.get(f"FUT:{sym}")
+        spot_q = live_quotes.get(f"SPOT:{sym}") or live_quotes.get(sym)
+
+        is_live_broker = False
+        if fut_q and fut_q.get("ltp"):
             is_live_broker = True
+            fut_price = float(fut_q["ltp"])
+            fut_chg = float(fut_q.get("change") or 0.0)
+            fut_chg_pct = float(fut_q.get("changePct") or 0.0)
+            curr_oi = int(float(fut_q.get("oi") or 0))
+            raw_vol = int(float(fut_q.get("volume") or 0))
+            vwap = float(fut_q.get("vwap") or fut_price)
+            day_high = float(fut_q.get("high") or fut_price)
+            day_low = float(fut_q.get("low") or fut_price)
+            prev_close = float(fut_q.get("close") or (fut_price - fut_chg))
         else:
-            spot = round(base, 2)
-            chg_pct = 0.0
-            is_live_broker = False
+            fut_price = round(base, 2)
+            fut_chg = 0.0
+            fut_chg_pct = 0.0
+            curr_oi = 0
+            raw_vol = 0
+            vwap = fut_price
+            day_high = fut_price
+            day_low = fut_price
+            prev_close = base
 
-        seed = (hash(sym) + now.day * 13) % 1000
-
-        # Futures Basis: Realistic +0.15% to +0.35% premium over spot
-        basis_pts = round(spot * (0.0022 + ((seed % 10) * 0.0001)), 2)
-        fut_price = round(spot + basis_pts, 2)
-        basis_pct = round((basis_pts / spot) * 100.0, 2) if spot > 0 else 0.0
-
-        # Open Interest and Volume from exchange feed when present
-        raw_oi = q.get("oi") if q else 0
-        raw_vol = q.get("volume") if q else 0
-        oi_chg_pct = round(((seed % 40) - 18) * 0.35, 2)
-
-        if raw_oi and raw_oi > 0:
-            curr_oi = int(raw_oi)
+        if spot_q and spot_q.get("ltp"):
+            spot_price = float(spot_q["ltp"])
+            spot_chg_pct = float(spot_q.get("changePct") or 0.0)
+            if not is_live_broker:
+                is_live_broker = True
         else:
-            base_oi = int((8500 + (seed * 45)) * (5 if is_idx else 1))
-            curr_oi = int(base_oi * (1.0 + oi_chg_pct / 100.0))
+            spot_price = fut_price if fut_price > 0 else base
+            spot_chg_pct = fut_chg_pct
 
-        oi_val_cr = round((curr_oi * lot * fut_price) / 10000000.0, 2)
+        # Real basis & carry
+        basis_pts = round(fut_price - spot_price, 2)
+        basis_pct = round((basis_pts / spot_price) * 100.0, 2) if spot_price > 0 else 0.0
 
-        if raw_vol and raw_vol > 0:
-            vol_contracts = int(raw_vol)
+        # Calculate real DTE
+        try:
+            exp_dt = datetime.strptime(expiry, "%d-%b-%Y").date()
+            dte = max(1, (exp_dt - now.date()).days)
+        except Exception:
+            dte = 5
+        coc = round(basis_pct * (365.0 / dte), 2)
+
+        # Real OI metrics
+        if curr_oi > 0:
+            if sym not in baseline_oi:
+                baseline_oi[sym] = curr_oi
+                new_baseline_needed = True
+            base_sym_oi = baseline_oi.get(sym, curr_oi)
+            if base_sym_oi > 0:
+                oi_chg_pct = round(((curr_oi - base_sym_oi) / base_sym_oi) * 100.0, 2)
+            else:
+                oi_chg_pct = 0.0
         else:
-            vol_contracts = int(curr_oi * (0.45 + ((seed % 15) * 0.02)))
+            oi_chg_pct = 0.0
+
+        oi_contracts = curr_oi // lot if (lot > 0 and curr_oi > 0) else curr_oi
+        oi_val_cr = round((curr_oi * fut_price) / 10000000.0, 2)
+
+        vol_contracts = raw_vol // lot if (lot > 0 and raw_vol > 0) else raw_vol
         vol_cr = round((vol_contracts * lot * fut_price) / 10000000.0, 2)
 
-        buildup_name, buildup_cls, buildup_code = classify_buildup(chg_pct, oi_chg_pct)
+        buildup_name, buildup_cls, buildup_code = classify_buildup(fut_chg_pct, oi_chg_pct)
 
-        # MWPL Calculation
+        # MWPL calculation
         mwpl_base = item.get("mwplBase", 55.0)
-        mwpl_cur = round(mwpl_base + (oi_chg_pct * 0.4) + ((seed % 7) - 3), 1)
-        mwpl_cur = max(15.0, min(99.0, mwpl_cur))
-
-        # Status
+        mwpl_cur = round(min(99.0, max(15.0, mwpl_base + (oi_chg_pct * 0.3))), 1)
         if mwpl_cur >= 95.0:
             mwpl_status = "BANNED"
             mwpl_badge = "status-banned"
@@ -782,34 +989,33 @@ def _build_master_futures_records() -> list[dict]:
             mwpl_status = "NORMAL"
             mwpl_badge = "status-normal"
 
-        price_diff = round(fut_price - base, 2)
-
         rec = {
             "symbol": sym,
-            "name": item["name"],
-            "sector": item["sector"],
+            "name": item.get("name", sym),
+            "sector": item.get("sector", "Others"),
             "lot": lot,
             "isIndex": is_idx,
-            "spotPrice": spot,
+            "spotPrice": spot_price,
             "futPrice": fut_price,
             "ltp": fut_price,
-            "priceChange": price_diff,
-            "change": price_diff,
-            "priceChangePct": chg_pct,
-            "changePct": chg_pct,
-            "expiry": "26-Mar-2026",
-            "tickDir": "UP" if chg_pct >= 0 else "DOWN",
+            "priceChange": fut_chg,
+            "change": fut_chg,
+            "priceChangePct": fut_chg_pct,
+            "changePct": fut_chg_pct,
+            "expiry": expiry,
+            "allExpiries": c_info.get("all_expiries", [expiry]),
+            "tickDir": "UP" if fut_chg >= 0 else "DOWN",
             "tickTime": now.strftime("%H:%M:%S"),
             "basis": basis_pts,
             "basisPct": basis_pct,
             "basisType": "PREMIUM" if basis_pts >= 0 else "DISCOUNT",
-            "coc": round(basis_pct * (365 / 15.0), 2),
-            "prevClose": base,
-            "dayHigh": round(fut_price * (1.0 + ((seed % 10) * 0.0015 + 0.002)), 2),
-            "dayLow": round(fut_price * (1.0 - ((seed % 12) * 0.0015 + 0.003)), 2),
-            "vwap": round(fut_price * (1.0 + ((seed % 6) - 3) * 0.0005), 2),
-            "rolloverPct": round(min(96.0, max(45.0, 68.0 + ((seed % 25) - 10) * 1.1)), 1),
-            "oiContracts": curr_oi,
+            "coc": coc,
+            "prevClose": prev_close,
+            "dayHigh": day_high,
+            "dayLow": day_low,
+            "vwap": vwap,
+            "rolloverPct": round(min(95.0, max(50.0, 72.0 + (basis_pct * 5.0))), 1),
+            "oiContracts": oi_contracts,
             "openInterest": curr_oi,
             "oiChangePct": oi_chg_pct,
             "oiValueCr": oi_val_cr,
@@ -823,11 +1029,17 @@ def _build_master_futures_records() -> list[dict]:
             "mwplBadge": mwpl_badge,
             "isLiveBroker": is_live_broker,
             "sparkline": [
-                round(base + (fut_price - base) * (i / 9.0), 2)
+                round(prev_close + (fut_price - prev_close) * (i / 9.0), 2)
                 for i in range(10)
             ],
         }
         records.append(rec)
+
+    if new_baseline_needed:
+        try:
+            baseline_cache_file.write_text(json.dumps({"date": today_str, "oi": baseline_oi}), encoding="utf-8")
+        except Exception:
+            pass
 
     return records
 
@@ -1053,3 +1265,244 @@ def get_mwpl_data() -> dict:
         "alertZone": alert,
         "allStocks": banned + alert + normal,
     }
+
+
+# =====================================================================
+# Historical & Monthly Futures Rollover Matrix Engine
+# =====================================================================
+ROLLOVER_MONTHS = [
+    "AUG 2026", "JUL 2026", "JUN 2026", "APR 2026", "MAR 2026", "FEB 2026",
+    "DEC 2025", "NOV 2025", "OCT 2025", "SEP 2025", "AUG 2025", "JUL 2025",
+    "JUN 2025", "MAY 2025", "APR 2025", "MAR 2025", "FEB 2025", "JAN 2025"
+]
+
+_OFFICIAL_ROLLOVER_FILE = Path("cache/futures_rollover_official.json")
+
+def _load_official_rollover_data() -> dict:
+    if _OFFICIAL_ROLLOVER_FILE.exists():
+        try:
+            with open(_OFFICIAL_ROLLOVER_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error loading official rollover data: {e}")
+    return {"months": [], "records": {}}
+
+_OFFICIAL_ROLLOVER_DATA = _load_official_rollover_data()
+if _OFFICIAL_ROLLOVER_DATA.get("months"):
+    ROLLOVER_MONTHS = _OFFICIAL_ROLLOVER_DATA["months"]
+
+
+_LIVE_ROLLOVER_MAP: dict[str, float] = {}
+
+def get_real_contract_rollover_map() -> dict[str, float]:
+    """
+    Computes exact real-time and EOD rollover % from:
+    1. Official Daily NSE F&O Bhavcopy (cache/latest_fo_bhav_rollover.json)
+    2. Actual exchange derivatives contracts (cache/nse_fo.csv)
+    Rollover % = (Next Month OI + Far Month OI) / Total Futures OI * 100
+    """
+    global _LIVE_ROLLOVER_MAP
+    if _LIVE_ROLLOVER_MAP:
+        return _LIVE_ROLLOVER_MAP
+
+    # 1. Start with latest official Bhavcopy EOD calculation
+    try:
+        import fo_bhavcopy_engine
+        bhav_map = fo_bhavcopy_engine.get_latest_fo_bhav_rollover_map()
+        if bhav_map:
+            _LIVE_ROLLOVER_MAP.update(bhav_map)
+    except Exception as e:
+        logger.debug(f"Error loading bhavcopy rollover map: {e}")
+
+    # 2. Overlay live contract feed if available
+    csv_path = Path("cache/nse_fo.csv")
+    if csv_path.exists():
+        from collections import defaultdict
+        import csv
+
+        contract_data = defaultdict(list)
+        try:
+            with open(csv_path, mode="r", encoding="utf-8", errors="ignore") as f:
+                r = csv.DictReader(f)
+                for row in r:
+                    if row.get("pInstType") in ("FUTSTK", "FUTIDX"):
+                        sym = row.get("pSymbolName")
+                        ts = row.get("pTrdSymbol")
+                        try:
+                            oi = float(row.get("dOpenInterest ") or row.get("dOpenInterest") or 0)
+                            exp = int(row.get("lExpiryDate ") or row.get("lExpiryDate") or 0)
+                            contract_data[sym].append((exp, ts, oi))
+                        except Exception:
+                            pass
+
+            for sym, c_list in contract_data.items():
+                sorted_c = sorted(c_list, key=lambda x: x[0])
+                if len(sorted_c) >= 2:
+                    total_oi = sum(c[2] for c in sorted_c)
+                    roll_oi = sum(c[2] for c in sorted_c[1:])
+                    if total_oi > 0:
+                        _LIVE_ROLLOVER_MAP[sym] = round((roll_oi / total_oi) * 100.0, 4)
+        except Exception as e:
+            logger.debug(f"Error computing live contract rollover: {e}")
+
+    return _LIVE_ROLLOVER_MAP
+
+
+def get_official_rollover(sym: str, month: str) -> str | float:
+    """
+    Returns the exact official historical rollover % for the given symbol and month.
+    No synthetic formula or random generation is used. If not present, returns '-'.
+    """
+    records = _OFFICIAL_ROLLOVER_DATA.get("records", {})
+    sym_u = sym.strip().upper()
+    if sym_u in records and month in records[sym_u]:
+        val = records[sym_u][month]
+        if val != "-" and val is not None:
+            try:
+                return float(val)
+            except Exception:
+                return "-"
+        return "-"
+    return "-"
+
+
+def get_futures_rollover_matrix(
+    sector: str = "ALL",
+    search: str = "",
+    sort_by: str = "symbol",
+    sort_dir: str = "asc"
+) -> dict:
+    """
+    Returns full Historical & Monthly Futures Rollover Matrix for all F&O universe symbols.
+    Uses official historical records from cache/futures_rollover_official.json and
+    real-time contract calculations from cache/nse_fo.csv.
+    """
+    records = get_futures_master()
+    rec_by_sym = {r["symbol"].upper(): r for r in records}
+
+    # Merge in any extra symbols from official records (e.g. historical F&O stocks)
+    official_records = _OFFICIAL_ROLLOVER_DATA.get("records", {})
+    all_syms = list(rec_by_sym.keys())
+    for off_sym in sorted(official_records.keys()):
+        if off_sym not in rec_by_sym:
+            all_syms.append(off_sym)
+
+    real_ro_map = get_real_contract_rollover_map()
+
+    rollover_rows = []
+    all_aug_vals = []
+
+    for sym in all_syms:
+        rec = rec_by_sym.get(sym)
+        if rec:
+            sec = rec.get("sector", "Others")
+            name = rec.get("name", sym)
+            is_index = rec.get("isIndex", False)
+            spot_price = rec.get("spotPrice", 0.0)
+            fut_price = rec.get("futPrice", 0.0)
+            basis = rec.get("basis", 0.0)
+            curr_ro = real_ro_map.get(sym) or round(rec.get("rolloverPct", 0.0), 4)
+        else:
+            is_index = sym in ("NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "NIFTYNXT50")
+            sec = "Indices" if is_index else "Others"
+            name = sym
+            spot_price = 0.0
+            fut_price = 0.0
+            basis = 0.0
+            curr_ro = real_ro_map.get(sym) or 0.0
+
+        # Build monthly rollover mapping from official data
+        monthly_map = {}
+        active_vals = []
+        for m in ROLLOVER_MONTHS:
+            v = get_official_rollover(sym, m)
+            monthly_map[m] = v
+            if isinstance(v, (int, float)):
+                active_vals.append(v)
+                if m == "AUG 2026":
+                    all_aug_vals.append(v)
+
+        # Calculate 3M Average (AUG 2026, JUL 2026, JUN 2026)
+        m3_vals = [
+            monthly_map[m] for m in ["AUG 2026", "JUL 2026", "JUN 2026"]
+            if isinstance(monthly_map.get(m), (int, float))
+        ]
+        avg_3m = round(sum(m3_vals) / len(m3_vals), 4) if m3_vals else 0.0
+
+        # Calculate 6M Average
+        avg_6m = round(sum(active_vals[:6]) / len(active_vals[:6]), 4) if len(active_vals) >= 6 else avg_3m
+
+        latest_ro = monthly_map.get("AUG 2026")
+        if isinstance(latest_ro, (int, float)) and avg_3m > 0:
+            trend = "UP" if latest_ro >= avg_3m else "DOWN"
+            diff_from_avg = round(latest_ro - avg_3m, 4)
+        else:
+            trend = "FLAT"
+            diff_from_avg = 0.0
+
+        rollover_rows.append({
+            "symbol": sym,
+            "name": name,
+            "sector": sec,
+            "isIndex": is_index,
+            "spotPrice": spot_price,
+            "futPrice": fut_price,
+            "basis": basis,
+            "currentRo": curr_ro,
+            "rollovers": monthly_map,
+            "avg3M": avg_3m,
+            "avg6M": avg_6m,
+            "diff3M": diff_from_avg,
+            "trend": trend,
+        })
+
+    # Sector Filter
+    if sector and sector.upper() != "ALL":
+        sec_u = sector.upper()
+        if sec_u in ("INDICES", "INDEX"):
+            rollover_rows = [r for r in rollover_rows if r.get("isIndex")]
+        elif sec_u == "STOCKS":
+            rollover_rows = [r for r in rollover_rows if not r.get("isIndex")]
+        else:
+            rollover_rows = [r for r in rollover_rows if r["sector"].upper() == sec_u]
+
+    # Search Filter
+    if search:
+        q = search.strip().upper()
+        rollover_rows = [r for r in rollover_rows if q in r["symbol"] or q in r["name"].upper()]
+
+    # Sorting
+    rev = sort_dir.lower() == "desc"
+    if sort_by == "symbol":
+        rollover_rows = sorted(rollover_rows, key=lambda x: x["symbol"], reverse=rev)
+    elif sort_by in ROLLOVER_MONTHS:
+        def _sort_key(x):
+            v = x["rollovers"].get(sort_by)
+            return float(v) if isinstance(v, (int, float)) else -1.0
+        rollover_rows = sorted(rollover_rows, key=_sort_key, reverse=rev)
+    elif sort_by in ("avg3M", "avg6M", "currentRo", "diff3M"):
+        rollover_rows = sorted(rollover_rows, key=lambda x: x.get(sort_by, 0.0), reverse=rev)
+    else:
+        rollover_rows = sorted(rollover_rows, key=lambda x: x["symbol"], reverse=rev)
+
+    # Market Macro Rollover Stats
+    avg_market_ro = round(sum(all_aug_vals) / len(all_aug_vals), 2) if all_aug_vals else 0.0
+    high_ro_count = sum(1 for v in all_aug_vals if v >= 90.0)
+    low_ro_count = sum(1 for v in all_aug_vals if v < 75.0)
+
+    return {
+        "ok": True,
+        "timestamp": datetime.now().strftime("%H:%M:%S"),
+        "date": datetime.now().strftime("%d-%b-%Y"),
+        "months": ROLLOVER_MONTHS,
+        "count": len(rollover_rows),
+        "totalUniverse": len(rollover_rows),
+        "stats": {
+            "avgMarketRollover": avg_market_ro,
+            "highRolloverCount": high_ro_count,
+            "lowRolloverCount": low_ro_count,
+            "totalTracked": len(rollover_rows)
+        },
+        "data": rollover_rows,
+    }
+

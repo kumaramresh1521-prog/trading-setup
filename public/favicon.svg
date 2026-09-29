@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e1726" />
+      <stop offset="100%" stop-color="#030712" />
+    </linearGradient>
+    <linearGradient id="glowArrow" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="2" />
+
+  <!-- "T" in Crisp White -->
+  <text x="10" y="44" font-family="'Inter', -apple-system, BlinkMacSystemFont, sans-serif" font-size="34" font-weight="900" fill="#f8fafc">T</text>
+
+  <!-- "D" in Electric Cyan -->
+  <text x="29" y="44" font-family="'Inter', -apple-system, BlinkMacSystemFont, sans-serif" font-size="34" font-weight="900" fill="#38bdf8">D</text>
+
+  <!-- Breakout Impulse Arrow (Cyan to Emerald) -->
+  <path d="M 37 26 L 53 10" stroke="url(#glowArrow)" stroke-width="4.5" stroke-linecap="round" />
+  <path d="M 43 9 L 54 9 L 54 20" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Tiny Green Market Pulse Dot -->
+  <circle cx="53" cy="51" r="3.5" fill="#10b981" />
+</svg>

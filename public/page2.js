@@ -15,6 +15,10 @@
   let ntPcrMode = "pcr"; // 'pcr' or 'chg'
   let isLightMode = false;
   let cachedNtSummary = null;
+  let ntIvTimeframe = "intraday"; // 'intraday' or 'eod'
+  let ntIvLookback = "1M";        // '1M', '3M', '6M', '1Y'
+  let ntIvView = "timeline";      // 'timeline' or 'smile'
+  let cachedNtIvData = null;
   let currentToolsSubView = "global"; // 'global' or 'straddle'
   let currentGmCategory = "all";
   let currentGmView = "cards"; // 'cards' or 'table'
@@ -236,6 +240,9 @@
     if (dlBtn) {
       dlBtn.addEventListener("click", downloadPcrCsv);
     }
+
+    // Initialize Implied Volatility (IV) Suite Controls
+    setupNiftyTraderIvEvents();
   }
 
   function setupGlobalControls() {
@@ -274,7 +281,7 @@
     } else if (currentSuite === "fiidii") {
       loadFiiDiiSuite();
     } else if (currentSuite === "contribution") {
-      loadBreadthContributionSuite(currentContribIndex);
+      loadBreadthContributionSuite(currentContribIndex, null, true);
     }
   }
 
@@ -293,7 +300,7 @@
     } else if (currentSuite === "fiidii") {
       loadFiiDiiSuite();
     } else if (currentSuite === "contribution") {
-      loadBreadthContributionSuite(currentContribIndex);
+      loadBreadthContributionSuite(currentContribIndex, null, true);
     }
   }
 
@@ -1108,8 +1115,7 @@
       const data = await fetchNtApi("option-chain", { exchange: currentExchange });
       if (data && data.ok) renderNtOptionChain(data);
     } else if (toolId === "ntViewIvSmile") {
-      const data = await fetchNtApi("iv");
-      if (data && data.ok) renderNtIvSmile(data);
+      await loadNtIvData();
     }
   }
 
@@ -1236,17 +1242,643 @@
     `).join("");
   }
 
-  function renderNtIvSmile(data) {
-    const strikes = data.strikes || [];
-    renderMultiLineChart(
-      "ntChartIvSmile",
-      strikes.map(s => s.strike),
-      [
-        { label: "Call IV (%)", data: strikes.map(s => s.ceIv), color: getThemeColors().red },
-        { label: "Put IV (%)", data: strikes.map(s => s.peIv), color: getThemeColors().green },
-        { label: "Avg IV (%)", data: strikes.map(s => s.avgIv), color: getThemeColors().teal }
-      ]
-    );
+  // ========================================================================
+  // NIFTYTRADER IMPLIED VOLATILITY (IV) SUITE CONTROLLER & RENDERERS
+  // Matching https://www.niftytrader.in/implied-volatility-chart
+  // ========================================================================
+  let ntIvEventsInitialized = false;
+
+  function setupNiftyTraderIvEvents() {
+    if (ntIvEventsInitialized) return;
+    ntIvEventsInitialized = true;
+
+    // Mode Toggle: Intraday vs EOD
+    const tfBtns = document.querySelectorAll("#ntIvTimeframeGroup .nt-pill-btn");
+    tfBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        tfBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        ntIvTimeframe = btn.getAttribute("data-tf") || "intraday";
+        const lbGroup = document.getElementById("ntIvLookbackGroup");
+        if (lbGroup) {
+          lbGroup.style.display = (ntIvTimeframe === "eod") ? "inline-flex" : "none";
+        }
+        loadNtIvData();
+      });
+    });
+
+    // Lookback selector (1M, 3M, 6M, 1Y)
+    const lbBtns = document.querySelectorAll("#ntIvLookbackGroup .nt-pill-btn");
+    lbBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        lbBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        ntIvLookback = btn.getAttribute("data-lookback") || "1M";
+        loadNtIvData();
+      });
+    });
+
+    // View Switch: Timeline vs Smile
+    const viewBtns = document.querySelectorAll("#ntIvViewGroup .nt-pill-btn");
+    viewBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        viewBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        ntIvView = btn.getAttribute("data-view") || "timeline";
+        if (cachedNtIvData) renderNtIv(cachedNtIvData);
+        else loadNtIvData();
+      });
+    });
+
+    // Refresh Button
+    const refreshBtn = document.getElementById("ntRefreshIvBtn");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", () => {
+        loadNtIvData();
+      });
+    }
+
+    // CSV Download Button
+    const csvBtn = document.getElementById("ntDownloadIvCsv");
+    if (csvBtn) {
+      csvBtn.addEventListener("click", downloadIvCsv);
+    }
+  }
+
+  async function loadNtIvData() {
+    const data = await fetchNtApi("iv", {
+      timeframe: ntIvTimeframe,
+      lookback: ntIvLookback
+    });
+    if (data && data.ok) {
+      cachedNtIvData = data;
+      renderNtIv(data);
+    }
+  }
+
+  function renderNtIv(data) {
+    if (!data) return;
+
+    // 1. KPI Cards
+    const curAtmEl = document.getElementById("ntIvCurrentAtmVal");
+    if (curAtmEl) curAtmEl.textContent = `${Number(data.currentAtmIv).toFixed(2)}%`;
+
+    const strikeBadge = document.getElementById("ntIvAtmStrikeBadge");
+    if (strikeBadge) strikeBadge.textContent = `ATM: ${Number(data.atmStrike).toLocaleString()}`;
+
+    const chgEl = document.getElementById("ntIvAtmChangeVal");
+    if (chgEl) {
+      const isPos = (data.ivChange || 0) >= 0;
+      chgEl.innerHTML = `<span class="${isPos ? 'text-green' : 'text-red'}">${isPos ? '+' : ''}${Number(data.ivChange || 0).toFixed(2)}% ${isPos ? '▲' : '▼'}</span> vs Prev Close`;
+    }
+
+    // IV Rank (IVR)
+    const ivrEl = document.getElementById("ntIvRankVal");
+    if (ivrEl) ivrEl.textContent = `${Number(data.ivRank).toFixed(1)}%`;
+
+    const ivrFill = document.getElementById("ntIvRankFill");
+    if (ivrFill) ivrFill.style.width = `${Math.min(100, Math.max(0, data.ivRank))}%`;
+
+    const ivrBadge = document.getElementById("ntIvRankBadge");
+    if (ivrBadge) {
+      if (data.ivRank < 25) {
+        ivrBadge.className = "p2-badge p2-badge-green";
+        ivrBadge.textContent = `Low (${data.ivRank}%)`;
+      } else if (data.ivRank > 70) {
+        ivrBadge.className = "p2-badge p2-badge-red";
+        ivrBadge.textContent = `High (${data.ivRank}%)`;
+      } else {
+        ivrBadge.className = "p2-badge p2-badge-teal";
+        ivrBadge.textContent = `Normal (${data.ivRank}%)`;
+      }
+    }
+
+    const ivrContext = document.getElementById("ntIvRankContext");
+    if (ivrContext) ivrContext.textContent = `52W High: ${data.high52wIv}% | Low: ${data.low52wIv}%`;
+
+    // IV Percentile (IVP)
+    const ivpEl = document.getElementById("ntIvPercentileVal");
+    if (ivpEl) ivpEl.textContent = `${Number(data.ivPercentile).toFixed(1)}%`;
+
+    const ivpBadge = document.getElementById("ntIvPercentileBadge");
+    if (ivpBadge) ivpBadge.textContent = `${data.ivPercentile}%`;
+
+    const ivpContext = document.getElementById("ntIvPercentileContext");
+    if (ivpContext) ivpContext.textContent = `Days below IV: ~${Math.round(data.ivPercentile * 2.5)} / 250 (${data.ivPercentile}%)`;
+
+    // India VIX
+    const vixEl = document.getElementById("ntIvVixVal");
+    if (vixEl) vixEl.textContent = Number(data.indiaVix).toFixed(2);
+
+    const vixDeltaEl = document.getElementById("ntIvVixDeltaVal");
+    if (vixDeltaEl) {
+      const isUp = (data.vixChange || 0) >= 0;
+      vixDeltaEl.innerHTML = `<span class="${isUp ? 'text-red' : 'text-green'}">${isUp ? '+' : ''}${data.vixChange} ${isUp ? '▲' : '▼'}</span> ${isUp ? 'Volatility Elevated' : 'Volatility Cooling'}`;
+    }
+
+    // IV Skew (PE IV - CE IV)
+    const skewEl = document.getElementById("ntIvSkewVal");
+    if (skewEl) skewEl.textContent = `${data.ivSkew >= 0 ? '+' : ''}${Number(data.ivSkew).toFixed(2)}%`;
+
+    const skewBadge = document.getElementById("ntIvSkewBadge");
+    if (skewBadge) {
+      skewBadge.textContent = data.ivSkew >= 0 ? "Put Skew" : "Call Skew";
+      skewBadge.className = data.ivSkew >= 0 ? "p2-badge p2-badge-amber" : "p2-badge p2-badge-teal";
+    }
+
+    const skewContext = document.getElementById("ntIvSkewContext");
+    if (skewContext) skewContext.textContent = `PE IV ${Number(data.putIv).toFixed(2)}% vs CE IV ${Number(data.callIv).toFixed(2)}%`;
+
+    // Regime Card
+    const regVal = document.getElementById("ntIvRegimeVal");
+    if (regVal) {
+      regVal.textContent = data.regime ? data.regime.split(" ")[0] : "Normal";
+      regVal.className = `nt-kpi-val ${data.regimeType === 'low' ? 'text-green' : (data.regimeType === 'high' ? 'text-red' : 'text-teal')}`;
+    }
+
+    const regBadgePill = document.getElementById("ntIvRegimeBadgePill");
+    if (regBadgePill) {
+      regBadgePill.textContent = data.regimeType === 'low' ? 'Low Vol' : (data.regimeType === 'high' ? 'High Vol' : 'Normal');
+      regBadgePill.className = `p2-badge ${data.regimeType === 'low' ? 'p2-badge-green' : (data.regimeType === 'high' ? 'p2-badge-red' : 'p2-badge-teal')}`;
+    }
+
+    const regSub = document.getElementById("ntIvRegimeSub");
+    if (regSub) {
+      regSub.textContent = data.regimeType === 'low' ? '< 12.0% Historical Band' : (data.regimeType === 'high' ? '> 18.0% Elevated Band' : '12.0% - 18.0% Equilibrium');
+    }
+
+    // 2. Strategy Banner
+    const bannerRegTag = document.getElementById("ntIvStrategyRegimeTag");
+    if (bannerRegTag) {
+      bannerRegTag.textContent = data.regime;
+      bannerRegTag.className = `p2-badge ${data.regimeType === 'low' ? 'p2-badge-green' : (data.regimeType === 'high' ? 'p2-badge-red' : 'p2-badge-teal')}`;
+    }
+
+    const bannerBiasTag = document.getElementById("ntIvStrategyBiasTag");
+    if (bannerBiasTag) {
+      bannerBiasTag.textContent = data.regimeType === 'low' ? 'Long Option Edge' : (data.regimeType === 'high' ? 'Short Option Edge' : 'Balanced Spreads');
+      bannerBiasTag.className = `p2-badge ${data.regimeType === 'low' ? 'p2-badge-green' : (data.regimeType === 'high' ? 'p2-badge-red' : 'p2-badge-teal')}`;
+    }
+
+    const stratText = document.getElementById("ntIvStrategyText");
+    if (stratText) stratText.textContent = data.strategyRecommendation;
+
+    // 3. Views switching
+    const timelineCard = document.getElementById("ntIvTimelineCard");
+    const smileCard = document.getElementById("ntIvSmileCard");
+    const historyContainer = document.getElementById("ntTableIvHistoryContainer");
+    const strikesContainer = document.getElementById("ntTableIvStrikesContainer");
+
+    if (ntIvView === "timeline") {
+      if (timelineCard) timelineCard.style.display = "block";
+      if (smileCard) smileCard.style.display = "none";
+      if (historyContainer) historyContainer.style.display = "block";
+      if (strikesContainer) strikesContainer.style.display = "none";
+
+      const series = (ntIvTimeframe === "eod") ? (data.eodSeries || []) : (data.intradaySeries || []);
+      const titleEl = document.getElementById("ntIvChartTitle");
+      const subEl = document.getElementById("ntIvChartSubtitle");
+      const tblTitle = document.getElementById("ntIvTableTitle");
+      const tblSub = document.getElementById("ntIvTableSubtitle");
+      const cntBadge = document.getElementById("ntIvTableCountBadge");
+
+      if (ntIvTimeframe === "eod") {
+        if (titleEl) titleEl.textContent = `${data.name} – Historical Implied Volatility vs Spot Price (${data.lookback} Lookback)`;
+        if (subEl) subEl.textContent = `Daily closing ATM Implied Volatility (Right Axis) vs Spot Price (Left Axis) with colored volatility regimes`;
+        if (tblTitle) tblTitle.textContent = `Historical Daily EOD Snapshot History (${data.lookback})`;
+        if (tblSub) tblSub.textContent = `Daily settlement implied volatility, underlying spot, IVR and IVP metrics`;
+        if (cntBadge) cntBadge.textContent = `${series.length} Daily Sessions`;
+      } else {
+        if (titleEl) titleEl.textContent = `${data.name} – Intraday Implied Volatility vs Spot Price (30-Min Snapshots)`;
+        if (subEl) subEl.textContent = `High-frequency 30-minute interval ATM Implied Volatility vs Spot overlay from 09:15 AM to 03:30 PM`;
+        if (tblTitle) tblTitle.textContent = `Intraday 30-Minute Snapshot History`;
+        if (tblSub) tblSub.textContent = `Real-time snapshots of implied volatility, underlying spot, and skew changes`;
+        if (cntBadge) cntBadge.textContent = `${series.length} Snapshots Recorded`;
+      }
+
+      // Render Dual-axis Timeseries Chart
+      renderNtIvChart("ntChartIvTimeseries", series, ntIvTimeframe);
+
+      // Render Timeseries Table
+      renderNtIvHistoryTable(series, ntIvTimeframe);
+
+    } else {
+      // Strike Smile View
+      if (timelineCard) timelineCard.style.display = "none";
+      if (smileCard) smileCard.style.display = "block";
+      if (historyContainer) historyContainer.style.display = "none";
+      if (strikesContainer) strikesContainer.style.display = "block";
+
+      const tblTitle = document.getElementById("ntIvTableTitle");
+      const tblSub = document.getElementById("ntIvTableSubtitle");
+      const cntBadge = document.getElementById("ntIvTableCountBadge");
+
+      if (tblTitle) tblTitle.textContent = `Strike-Wise Implied Volatility Breakdown (Around ATM)`;
+      if (tblSub) tblSub.textContent = `Strike pricing, skew distribution, and call vs put implied volatility curve`;
+      if (cntBadge) cntBadge.textContent = `${(data.strikes || []).length} Strikes Filtered`;
+
+      // Render Smile Chart
+      renderNtIvSmileChart("ntChartIvSmile", data.strikes || [], data.atmStrike, data.spot);
+
+      // Render Strikes Table
+      renderNtIvStrikesTable(data.strikes || [], data.atmStrike);
+    }
+  }
+
+  function renderNtIvChart(canvasId, series, mode) {
+    const setup = setupCanvas(canvasId);
+    if (!setup) return;
+    const { ctx, width, height } = setup;
+    const theme = getThemeColors();
+
+    const padding = { top: 40, right: 65, bottom: 50, left: 75 };
+    const chartW = width - padding.left - padding.right;
+    const chartH = height - padding.top - padding.bottom;
+
+    if (!series || !series.length) {
+      ctx.fillStyle = theme.bg;
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = theme.text;
+      ctx.font = "12px Inter";
+      ctx.textAlign = "center";
+      ctx.fillText("No snapshot records available for selected timeframe.", width / 2, height / 2);
+      return;
+    }
+
+    const spots = series.map(d => Number(d.spot));
+    const atmIvs = series.map(d => Number(d.atmIv));
+    const ceIvs = series.map(d => Number(d.callIv));
+    const peIvs = series.map(d => Number(d.putIv));
+
+    const minSpot = Math.min(...spots) * 0.998;
+    const maxSpot = Math.max(...spots) * 1.002;
+
+    const minIv = Math.max(5.0, Math.min(8.0, Math.min(...atmIvs) * 0.9));
+    const maxIv = Math.max(22.0, Math.max(...atmIvs, ...peIvs) * 1.08);
+
+    // Background fill
+    ctx.fillStyle = theme.bg;
+    ctx.fillRect(0, 0, width, height);
+
+    // Coordinate helpers
+    const getYSpot = (val) => padding.top + chartH - ((val - minSpot) / (maxSpot - minSpot || 1)) * chartH;
+    const getYIv = (val) => padding.top + chartH - ((val - minIv) / (maxIv - minIv || 1)) * chartH;
+
+    // --- Shaded Volatility Regime Bands (Right Axis basis) ---
+    const yHighZone = Math.max(padding.top, getYIv(18.0));
+    const yLowZone = Math.min(padding.top + chartH, getYIv(12.0));
+
+    // High IV Zone (> 18%)
+    if (yHighZone > padding.top) {
+      ctx.fillStyle = isLight() ? "rgba(239, 68, 68, 0.08)" : "rgba(239, 68, 68, 0.12)";
+      ctx.fillRect(padding.left, padding.top, chartW, yHighZone - padding.top);
+    }
+    // Normal IV Zone (12% - 18%)
+    if (yLowZone > yHighZone) {
+      ctx.fillStyle = isLight() ? "rgba(245, 158, 11, 0.05)" : "rgba(245, 158, 11, 0.08)";
+      ctx.fillRect(padding.left, yHighZone, chartW, yLowZone - yHighZone);
+    }
+    // Low IV Zone (< 12%)
+    if (padding.top + chartH > yLowZone) {
+      ctx.fillStyle = isLight() ? "rgba(16, 185, 129, 0.06)" : "rgba(16, 185, 129, 0.10)";
+      ctx.fillRect(padding.left, yLowZone, chartW, (padding.top + chartH) - yLowZone);
+    }
+
+    // Gridlines & Dual Y-Axis Labels
+    ctx.strokeStyle = theme.grid;
+    ctx.lineWidth = 1;
+
+    for (let i = 0; i <= 5; i++) {
+      const y = padding.top + (chartH / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding.left, y);
+      ctx.lineTo(width - padding.right, y);
+      ctx.stroke();
+
+      // Left Axis: Spot Price (₹)
+      ctx.fillStyle = theme.blue;
+      ctx.font = "10px JetBrains Mono";
+      ctx.textAlign = "right";
+      const spotVal = Math.round(maxSpot - ((maxSpot - minSpot) / 5) * i);
+      ctx.fillText(`₹${spotVal.toLocaleString("en-IN")}`, padding.left - 10, y + 4);
+
+      // Right Axis: Implied Volatility (%)
+      ctx.fillStyle = theme.purple;
+      ctx.textAlign = "left";
+      const ivVal = (maxIv - ((maxIv - minIv) / 5) * i).toFixed(1);
+      ctx.fillText(`${ivVal}%`, width - padding.right + 10, y + 4);
+    }
+
+    const n = series.length;
+
+    // --- Line 1: Underlying Spot Price (Left Axis) ---
+    ctx.strokeStyle = theme.blue;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const x = padding.left + (chartW / (n - 1 || 1)) * i;
+      const y = getYSpot(spots[i]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Subtle area glow under spot line
+    const grad = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH);
+    grad.addColorStop(0, isLight() ? "rgba(2, 132, 199, 0.12)" : "rgba(56, 189, 248, 0.15)");
+    grad.addColorStop(1, "rgba(56, 189, 248, 0.0)");
+    ctx.fillStyle = grad;
+    ctx.lineTo(padding.left + chartW, padding.top + chartH);
+    ctx.lineTo(padding.left, padding.top + chartH);
+    ctx.closePath();
+    ctx.fill();
+
+    // --- Line 2: Call IV (Right Axis, Dashed Pink/Red) ---
+    ctx.strokeStyle = theme.red;
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const x = padding.left + (chartW / (n - 1 || 1)) * i;
+      const y = getYIv(ceIvs[i]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // --- Line 3: Put IV (Right Axis, Dashed Green) ---
+    ctx.strokeStyle = theme.green;
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const x = padding.left + (chartW / (n - 1 || 1)) * i;
+      const y = getYIv(peIvs[i]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]); // Reset dash
+
+    // --- Line 4: ATM IV Curve (Right Axis, Solid Purple, Highlighted) ---
+    ctx.strokeStyle = theme.purple;
+    ctx.lineWidth = 2.8;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const x = padding.left + (chartW / (n - 1 || 1)) * i;
+      const y = getYIv(atmIvs[i]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Point circles on ATM IV
+    for (let i = 0; i < n; i++) {
+      const x = padding.left + (chartW / (n - 1 || 1)) * i;
+      const y = getYIv(atmIvs[i]);
+      ctx.fillStyle = theme.purple;
+      ctx.beginPath();
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = theme.bg;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // X-Axis Labels (Time or Date)
+    const stepLabel = Math.max(1, Math.ceil(n / 7));
+    for (let i = 0; i < n; i++) {
+      if (i % stepLabel === 0 || i === n - 1) {
+        const x = padding.left + (chartW / (n - 1 || 1)) * i;
+        ctx.fillStyle = theme.textBright;
+        ctx.font = "10px JetBrains Mono";
+        ctx.textAlign = "center";
+        const label = series[i].time || series[i].date;
+        ctx.fillText(label, x, height - padding.bottom + 20);
+      }
+    }
+  }
+
+  function renderNtIvSmileChart(canvasId, strikes, atmStrike, spot) {
+    const setup = setupCanvas(canvasId);
+    if (!setup) return;
+    const { ctx, width, height } = setup;
+    const theme = getThemeColors();
+
+    const padding = { top: 40, right: 40, bottom: 50, left: 60 };
+    const chartW = width - padding.left - padding.right;
+    const chartH = height - padding.top - padding.bottom;
+
+    if (!strikes || !strikes.length) {
+      ctx.fillStyle = theme.bg;
+      ctx.fillRect(0, 0, width, height);
+      return;
+    }
+
+    const ceIvs = strikes.map(s => Number(s.ceIv));
+    const peIvs = strikes.map(s => Number(s.peIv));
+    const avgIvs = strikes.map(s => Number(s.avgIv));
+
+    const minIv = Math.min(...ceIvs, ...peIvs) * 0.95;
+    const maxIv = Math.max(...ceIvs, ...peIvs) * 1.05;
+
+    ctx.fillStyle = theme.bg;
+    ctx.fillRect(0, 0, width, height);
+
+    // Gridlines & Y-Axis Labels
+    ctx.strokeStyle = theme.grid;
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = padding.top + (chartH / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding.left, y);
+      ctx.lineTo(width - padding.right, y);
+      ctx.stroke();
+
+      ctx.fillStyle = theme.text;
+      ctx.font = "10px JetBrains Mono";
+      ctx.textAlign = "right";
+      const val = (maxIv - ((maxIv - minIv) / 5) * i).toFixed(1);
+      ctx.fillText(`${val}%`, padding.left - 10, y + 4);
+    }
+
+    const n = strikes.length;
+    const getY = (val) => padding.top + chartH - ((val - minIv) / (maxIv - minIv || 1)) * chartH;
+
+    // ATM Vertical Marker Line
+    const atmIndex = strikes.findIndex(s => s.strike === atmStrike || s.isAtm);
+    if (atmIndex >= 0) {
+      const xAtm = padding.left + (chartW / (n - 1 || 1)) * atmIndex;
+      ctx.strokeStyle = theme.textBright;
+      ctx.setLineDash([5, 5]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(xAtm, padding.top);
+      ctx.lineTo(xAtm, padding.top + chartH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // ATM Badge text
+      ctx.fillStyle = theme.teal;
+      ctx.font = "10px JetBrains Mono";
+      ctx.textAlign = "center";
+      ctx.fillText(`ATM (${Number(atmStrike).toLocaleString()})`, xAtm, padding.top - 8);
+    }
+
+    // Line 1: Call IV
+    ctx.strokeStyle = theme.red;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const x = padding.left + (chartW / (n - 1 || 1)) * i;
+      const y = getY(ceIvs[i]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Call dots
+    for (let i = 0; i < n; i++) {
+      const x = padding.left + (chartW / (n - 1 || 1)) * i;
+      const y = getY(ceIvs[i]);
+      ctx.fillStyle = theme.red;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Line 2: Put IV
+    ctx.strokeStyle = theme.green;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const x = padding.left + (chartW / (n - 1 || 1)) * i;
+      const y = getY(peIvs[i]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Put dots
+    for (let i = 0; i < n; i++) {
+      const x = padding.left + (chartW / (n - 1 || 1)) * i;
+      const y = getY(peIvs[i]);
+      ctx.fillStyle = theme.green;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Line 3: Average IV (Cyan Dashed)
+    ctx.strokeStyle = theme.teal;
+    ctx.lineWidth = 1.8;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const x = padding.left + (chartW / (n - 1 || 1)) * i;
+      const y = getY(avgIvs[i]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // X-Axis Labels (Strike Prices)
+    const stepLabel = Math.max(1, Math.ceil(n / 9));
+    for (let i = 0; i < n; i++) {
+      if (i % stepLabel === 0 || i === n - 1 || i === atmIndex) {
+        const x = padding.left + (chartW / (n - 1 || 1)) * i;
+        ctx.fillStyle = (i === atmIndex) ? theme.teal : theme.textBright;
+        ctx.font = (i === atmIndex) ? "bold 10px JetBrains Mono" : "10px JetBrains Mono";
+        ctx.textAlign = "center";
+        ctx.fillText(Number(strikes[i].strike).toLocaleString(), x, height - padding.bottom + 20);
+      }
+    }
+  }
+
+  function renderNtIvHistoryTable(series, timeframe) {
+    const tbody = document.querySelector("#ntTableIvHistory tbody");
+    if (!tbody) return;
+
+    if (!series || !series.length) {
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted" style="padding: 20px;">No snapshot records available.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = series.slice().reverse().map(row => {
+      const isPos = (row.spotChg || 0) >= 0;
+      const chgStr = row.spotChg != null ? `${isPos ? '+' : ''}${Number(row.spotChg).toFixed(2)} (${isPos ? '+' : ''}${row.spotChgPct || 0}%)` : '--';
+      const regClass = row.regime === 'Low' ? 'p2-badge-green' : (row.regime === 'High' ? 'p2-badge-red' : 'p2-badge-teal');
+
+      return `
+        <tr>
+          <td class="font-bold">${row.time || row.date}</td>
+          <td class="text-right font-mono text-blue font-bold">₹${Number(row.spot).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+          <td class="text-right font-mono ${isPos ? 'text-green' : 'text-red'}">${chgStr}</td>
+          <td class="text-right font-mono font-bold text-purple">${Number(row.atmIv).toFixed(2)}%</td>
+          <td class="text-right font-mono text-red">${Number(row.callIv).toFixed(2)}%</td>
+          <td class="text-right font-mono text-green">${Number(row.putIv).toFixed(2)}%</td>
+          <td class="text-right font-mono ${row.ivSkew >= 0 ? 'text-amber' : 'text-teal'}">${row.ivSkew >= 0 ? '+' : ''}${Number(row.ivSkew).toFixed(2)}%</td>
+          <td class="text-right font-mono">${row.vix != null ? Number(row.vix).toFixed(2) : '--'}</td>
+          <td class="text-center"><span class="p2-badge ${regClass}">${row.regime || 'Normal'}</span></td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderNtIvStrikesTable(strikes, atmStrike) {
+    const tbody = document.querySelector("#ntTableIvStrikes tbody");
+    if (!tbody) return;
+
+    if (!strikes || !strikes.length) {
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted" style="padding: 20px;">No strike records available.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = strikes.map(s => {
+      const isAtm = (s.strike === atmStrike || s.isAtm);
+      const rowStyle = isAtm ? 'style="background: rgba(0, 229, 255, 0.08); font-weight: 700;"' : '';
+      const statusBadge = isAtm ? '<span class="p2-badge p2-badge-teal">ATM</span>' : (s.strike < atmStrike ? '<span class="p2-badge p2-badge-green">ITM Call / OTM Put</span>' : '<span class="p2-badge p2-badge-red">OTM Call / ITM Put</span>');
+
+      return `
+        <tr ${rowStyle}>
+          <td class="text-center font-mono font-bold ${isAtm ? 'text-teal' : ''}">${Number(s.strike).toLocaleString()}</td>
+          <td class="text-right font-mono">${s.distPct >= 0 ? '+' : ''}${s.distPct}%</td>
+          <td class="text-right font-mono text-red">${Number(s.ceIv).toFixed(2)}%</td>
+          <td class="text-right font-mono text-green">${Number(s.peIv).toFixed(2)}%</td>
+          <td class="text-right font-mono font-bold text-teal">${Number(s.avgIv).toFixed(2)}%</td>
+          <td class="text-right font-mono ${s.ivSkew >= 0 ? 'text-amber' : 'text-blue'}">${s.ivSkew >= 0 ? '+' : ''}${Number(s.ivSkew).toFixed(2)}%</td>
+          <td class="text-right font-mono">₹${Number(s.ceLtp || 0).toFixed(2)}</td>
+          <td class="text-right font-mono">₹${Number(s.peLtp || 0).toFixed(2)}</td>
+          <td class="text-center">${statusBadge}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function downloadIvCsv() {
+    if (!cachedNtIvData) return;
+    const mode = ntIvView === "smile" ? "strikes_smile" : ntIvTimeframe;
+    let csv = "";
+    if (ntIvView === "smile") {
+      csv = "Strike,DistancePct,CallIV,PutIV,AvgIV,IVSkew,CallLTP,PutLTP\n";
+      (cachedNtIvData.strikes || []).forEach(s => {
+        csv += `${s.strike},${s.distPct},${s.ceIv},${s.peIv},${s.avgIv},${s.ivSkew},${s.ceLtp || 0},${s.peLtp || 0}\n`;
+      });
+    } else {
+      const series = (ntIvTimeframe === "eod") ? (cachedNtIvData.eodSeries || []) : (cachedNtIvData.intradaySeries || []);
+      csv = "TimeOrDate,SpotPrice,SpotChange,ATM_IV,Call_IV,Put_IV,IV_Skew,IndiaVIX,Regime\n";
+      series.forEach(r => {
+        csv += `"${r.time || r.date}",${r.spot},${r.spotChg || 0},${r.atmIv},${r.callIv},${r.putIv},${r.ivSkew},${r.vix || ''},"${r.regime || ''}"\n`;
+      });
+    }
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `NiftyTrader_IV_${currentSymbol}_${mode}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   // ========================================================================
@@ -2253,7 +2885,11 @@
   function formatIstTime(isoStr) {
     if (!isoStr) return "--";
     try {
+      if (typeof isoStr === "string" && isoStr.length <= 5 && isoStr.includes(":")) {
+        return isoStr;
+      }
       const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
       return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
     } catch {
       return isoStr;
@@ -2263,7 +2899,11 @@
   function formatIstFull(isoStr) {
     if (!isoStr) return "--";
     try {
+      if (typeof isoStr === "string" && isoStr.length <= 5 && isoStr.includes(":")) {
+        return isoStr;
+      }
       const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
       return d.toLocaleString("en-IN", {
         day: "2-digit",
         month: "short",
@@ -2473,16 +3113,24 @@
     ctx.font = "10px 'JetBrains Mono', monospace";
     ctx.textAlign = "center";
     const xStep = Math.max(1, Math.floor(n / 7));
+    let lastDrawnX = -999;
 
     for (let i = 0; i < n; i += xStep) {
       const x = getX(i);
-      const timeStr = formatIstTime(points[i].time);
-      ctx.fillText(timeStr, x, height - 15);
+      const isNearEnd = n > 1 && (getX(n - 1) - x < 60);
+      if (isNearEnd) continue;
+      if (x - lastDrawnX >= 55) {
+        const timeStr = formatIstTime(points[i].time);
+        ctx.fillText(timeStr, x, height - 15);
+        lastDrawnX = x;
+      }
     }
-    // Always print final timestamp
+    // Always print final timestamp cleanly without overlap
     if (n > 1) {
       const xLast = getX(n - 1);
-      ctx.fillText(formatIstTime(points[n - 1].time), xLast, height - 15);
+      if (xLast - lastDrawnX >= 45) {
+        ctx.fillText(formatIstTime(points[n - 1].time), xLast, height - 15);
+      }
     }
 
     // 6. Crosshair Rendering (when hovered)
@@ -3319,7 +3967,7 @@
       dateInput.value = currentContribDate;
       dateInput.addEventListener("change", (e) => {
         currentContribDate = e.target.value || _todayStr;
-        loadBreadthContributionSuite(currentContribIndex, currentContribDate);
+        loadBreadthContributionSuite(currentContribIndex, currentContribDate, true);
       });
     }
 
@@ -3330,7 +3978,7 @@
         idxBtns.forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         currentContribIndex = btn.getAttribute("data-index");
-        loadBreadthContributionSuite(currentContribIndex, currentContribDate);
+        loadBreadthContributionSuite(currentContribIndex, currentContribDate, true);
       });
     });
 

@@ -1,30 +1,34 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Breadth Lab | Market Breadth, Options Greeks &amp; Institutional Research Desk</title>
-    <meta name="description" content="Institutional-grade Indian equity Market Breadth, sub-second Options Greeks (Delta, Gamma, Theta, Vega), Max Pain, Smart Money FII/DII positioning &amp; verified broker research price targets with audit proof.">
-    <meta name="keywords" content="market breadth, nifty 50, options desk, options greeks, black scholes greeks, max pain, pcr ratio, fii dii data, smart money tracker, broker price targets, jefferies target, morgan stanley, sebi disclaimer">
-    <meta name="author" content="Breadth Lab Quantitative Analytics">
+    <title>TradersDesk.in | Institutional Derivatives, Options Greeks &amp; Market Breadth Terminal</title>
+    <meta name="description" content="TradersDesk.in — Institutional-grade Indian derivatives analytics, real-time Options Chain Pro, Black-Scholes Greeks (Delta, Gamma, Theta, Vega), Max Pain, Multi-Strike OI, Market Breadth &amp; FII/DII Smart Money positioning.">
+    <meta name="keywords" content="TradersDesk, tradersdesk.in, option chain, nifty option chain, bank nifty option chain, options greeks, max pain, pcr ratio, market breadth, fii dii activity, open interest analysis, niftytrader, gocharting, definedge">
+    <meta name="author" content="TradersDesk.in Quantitative Analytics">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <link rel="canonical" href="https://breadthlab.com/">
+    <link rel="canonical" href="https://tradersdesk.in/">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/favicon.svg">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://breadthlab.com/">
-    <meta property="og:title" content="Breadth Lab | Institutional Market Breadth &amp; Options Analytics">
-    <meta property="og:description" content="Real-time Indian equity Market Breadth, Black-Scholes Greeks, Smart Money EOD Tracker, and verified broker research targets.">
-    <meta property="og:site_name" content="Breadth Lab">
+    <meta property="og:url" content="https://tradersdesk.in/">
+    <meta property="og:title" content="TradersDesk.in | Institutional Derivatives &amp; Options Analytics Terminal">
+    <meta property="og:description" content="Sub-second Indian Options Chain Pro, Black-Scholes Greeks, Max Pain, Multi-Strike OI, and Live Market Breadth.">
+    <meta property="og:site_name" content="TradersDesk.in">
+    <meta property="og:image" content="https://tradersdesk.in/tradersdesk-logo.jpg">
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Breadth Lab | Quantitative Market Intelligence">
-    <meta name="twitter:description" content="Institutional Market Breadth, Options Greeks surfaces, and verified broker research price targets.">
+    <meta name="twitter:title" content="TradersDesk.in | Institutional Derivatives &amp; Quant Terminal">
+    <meta name="twitter:description" content="Real-time Indian derivatives analytics, Options Chain Pro, Greeks surfaces &amp; Market Breadth.">
+    <meta name="twitter:image" content="https://tradersdesk.in/tradersdesk-logo.jpg">
 
     <!-- PWA & Mobile Web App -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#090e17">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -35,18 +39,18 @@
       "@graph": [
         {
           "@type": "WebApplication",
-          "@id": "https://breadthlab.com/#webapp",
-          "name": "Breadth Lab",
-          "url": "https://breadthlab.com/",
+          "@id": "https://tradersdesk.in/#webapp",
+          "name": "TradersDesk.in",
+          "url": "https://tradersdesk.in/",
           "applicationCategory": "FinanceApplication",
           "operatingSystem": "All",
           "description": "Institutional-grade market breadth algorithms, real-time Black-Scholes Options Greeks, and verified broker price targets."
         },
         {
           "@type": "FinancialService",
-          "@id": "https://breadthlab.com/#service",
-          "name": "Breadth Lab Market Intelligence",
-          "url": "https://breadthlab.com/",
+          "@id": "https://tradersdesk.in/#service",
+          "name": "TradersDesk.in Market Intelligence",
+          "url": "https://tradersdesk.in/",
           "serviceType": "Quantitative Market Research & Analytics Desk",
           "areaServed": "IN",
           "disclaimer": "Educational and quantitative research platform. Not a SEBI registered investment advisor."
@@ -58,7 +62,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css?v=20260921_v7">
+    <link rel="stylesheet" href="/styles.css?v=20260928_v3">
 
 
     <!-- Supabase JS Client for Cloud Google OAuth & State Sync -->
@@ -75,26 +79,14 @@
 
         <!-- Row 1: Brand + Pulse Strip + Right Controls -->
         <div class="inst-brand-bar">
-          <div class="inst-brand">
-            <span class="inst-brand-icon">⚡</span>
-            <div class="inst-brand-text">
-              <span class="inst-brand-name">Breadth Lab</span>
-              <span class="inst-brand-tagline">Institutional Market Intelligence</span>
+          <a href="/" class="inst-brand" style="text-decoration:none; display:flex; align-items:center;" title="TradersDesk.in — Institutional Quant &amp; Derivatives Terminal">
+            <img src="/tradersdesk_header.svg" alt="TradersDesk.in" class="inst-brand-logo-img" style="height:26px; width:auto; display:block;" onerror="this.style.display='none'; document.getElementById('instBrandFallback').style.display='inline-flex';" />
+            <div class="inst-brand-fallback-text" id="instBrandFallback" style="display:none; align-items:center; font-size:18px; font-weight:800; letter-spacing:-0.3px;">
+              <span style="color:#ffffff;">Traders</span><span style="color:#38bdf8;">Desk<svg style="width:13px; height:13px; vertical-align:middle; transform:translateY(-2px); margin-left:-1px;" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg></span><span style="background:#10b981; color:#030712; font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:900; padding:1.5px 5px; border-radius:4px; margin-left:5px;">.in</span>
             </div>
-          </div>
+          </a>
 
-          <!-- Live market pulse ticker -->
-          <div class="inst-pulse-strip" id="instPulseStrip">
-            <span class="inst-pulse-item" id="pulseNifty">NIFTY <span class="pval" id="pulseNiftyVal">--</span></span>
-            <span class="inst-pulse-sep">|</span>
-            <span class="inst-pulse-item" id="pulseBankNifty">BANKNIFTY <span class="pval" id="pulseBankNiftyVal">--</span></span>
-            <span class="inst-pulse-sep">|</span>
-            <span class="inst-pulse-item" id="pulseSensex">SENSEX <span class="pval" id="pulseSensexVal">--</span></span>
-            <span class="inst-pulse-sep">|</span>
-            <span class="inst-pulse-item" id="pulseVix">VIX <span class="pval" id="pulseVixVal">--</span></span>
-            <span class="inst-pulse-sep">|</span>
-            <span class="inst-pulse-item inst-pulse-live" id="pulseLiveBadge" title="Real-time Exchange Heartbeat"><span class="pulse-dot"></span> LIVE <span id="pulseCountdown" style="font-size:10px; opacity:0.85;">2s</span></span>
-          </div>
+
 
           <div class="inst-right-controls">
             <div class="status inst-api-status" id="apiStatus">Checking API...</div>
@@ -270,11 +262,11 @@
             <div class="inst-kpi-val" id="dashKpiBreadth">--</div>
             <div class="inst-kpi-sub">PnF Bullish %</div>
           </div>
-          <div class="inst-kpi-card" onclick="instNav('options')">
-            <div class="inst-kpi-icon">⚡</div>
-            <div class="inst-kpi-label">wPCR</div>
-            <div class="inst-kpi-val" id="dashKpiWpcr">--</div>
-            <div class="inst-kpi-sub">Weighted PCR</div>
+          <div class="inst-kpi-card" onclick="instNav('options')" title="India Volatility Index — Market Sentiment &amp; Risk Regime">
+            <div class="inst-kpi-icon">🛡️</div>
+            <div class="inst-kpi-label">India VIX</div>
+            <div class="inst-kpi-val" id="dashKpiVix">--</div>
+            <div class="inst-kpi-sub" id="dashKpiVixSub">Volatility Regime</div>
           </div>
           <div class="inst-kpi-card" onclick="instNav('smartmoney')">
             <div class="inst-kpi-icon">🏛️</div>
@@ -301,17 +293,17 @@
           <div class="inst-idx-card" onclick="instNav('options')">
             <div class="idx-card-top">
               <span class="idx-name">NIFTY 50</span>
-              <span class="idx-badge live">● LIVE</span>
+              <span class="idx-badge live" id="dashNiftyBadge">● LIVE</span>
             </div>
             <div class="idx-spot" id="dashNiftySpot">--</div>
             <div class="idx-chg" id="dashNiftyChg">--</div>
-            <div class="idx-meta"><span>PCR: <b id="dashNiftyPcr">--</b></span> <span>wPCR: <b id="dashNiftyWpcr">--</b></span></div>
+            <div class="idx-meta"><span>PCR: <b id="dashNiftyPcr">--</b></span> <span>Max Pain: <b id="dashNiftyMaxPain">--</b></span></div>
           </div>
 
           <div class="inst-idx-card" onclick="instNav('options')">
             <div class="idx-card-top">
               <span class="idx-name">BANK NIFTY</span>
-              <span class="idx-badge live">● LIVE</span>
+              <span class="idx-badge live" id="dashBankNiftyBadge">● LIVE</span>
             </div>
             <div class="idx-spot" id="dashBankNiftySpot">--</div>
             <div class="idx-chg" id="dashBankNiftyChg">--</div>
@@ -321,7 +313,7 @@
           <div class="inst-idx-card" onclick="instNav('options')">
             <div class="idx-card-top">
               <span class="idx-name">FINNIFTY</span>
-              <span class="idx-badge live">● LIVE</span>
+              <span class="idx-badge live" id="dashFinNiftyBadge">● LIVE</span>
             </div>
             <div class="idx-spot" id="dashFinNiftySpot">--</div>
             <div class="idx-chg" id="dashFinNiftyChg">--</div>
@@ -331,7 +323,7 @@
           <div class="inst-idx-card" onclick="instNav('breadth')">
             <div class="idx-card-top">
               <span class="idx-name">SENSEX</span>
-              <span class="idx-badge live">● LIVE</span>
+              <span class="idx-badge live" id="dashSensexBadge">● LIVE</span>
             </div>
             <div class="idx-spot" id="dashSensexSpot">--</div>
             <div class="idx-chg" id="dashSensexChg">--</div>
@@ -1062,7 +1054,7 @@
                 Tick: <span id="upstoxLastUpdated" style="color:#f8fafc;">--:--:--</span>
               </div>
               <button type="button" id="upstoxBtnRefresh" class="btn-adm-primary" style="background:#10b981; padding:7px 14px; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
-                🔄 Refresh Stream
+                <span id="upstoxRefreshIcon" class="refresh-icon" style="display:inline-block;">🔄</span> <span id="upstoxRefreshText">Refresh Stream</span>
               </button>
             </div>
           </div>
@@ -1178,50 +1170,258 @@
             </div>
           </div>
 
+          <!-- ================================================================
+               ⚡ Upstox Multi-Strike Option Visualizer Tool (Image 15 Style)
+               ================================================================ -->
+          <div class="opt-vis-banner">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="opt-vis-banner-title">📊 MULTI-STRIKE OPTION VISUALIZER</span>
+              <span class="opt-vis-banner-badge">14 METRICS</span>
+            </div>
+            <button type="button" id="upstoxVisToggleBtn" class="opt-vis-toggle-btn">
+              <span id="upstoxVisToggleIcon">▲</span> <span id="upstoxVisToggleText">Collapse Visualizer</span>
+            </button>
+          </div>
+          <div class="upstox-vis-panel" id="upstoxVisPanel">
+            
+            <!-- 14-Metric Pills Bar (Group 1 | Group 2 | Group 3) -->
+            <div class="opt-vis-pill-bar">
+              <div class="opt-pill-group">
+                <button type="button" class="opt-vis-pill" data-metric="oi">OI</button>
+                <button type="button" class="opt-vis-pill" data-metric="oichg">OI Chg</button>
+                <button type="button" class="opt-vis-pill" data-metric="prem">Prem</button>
+                <button type="button" class="opt-vis-pill" data-metric="premskew">Prem Skew</button>
+                <button type="button" class="opt-vis-pill" data-metric="maxpain">Max Pain</button>
+                <button type="button" class="opt-vis-pill" data-metric="oipctile">OI %ile</button>
+              </div>
+              <div class="opt-pill-sep"></div>
+              <div class="opt-pill-group">
+                <button type="button" class="opt-vis-pill" data-metric="writeskew">Write Skew</button>
+                <button type="button" class="opt-vis-pill" data-metric="premflow">Prem Flow</button>
+                <button type="button" class="opt-vis-pill active" data-metric="turnover">Turnover</button>
+                <button type="button" class="opt-vis-pill" data-metric="volume">Volume</button>
+                <button type="button" class="opt-vis-pill" data-metric="callput">call:put</button>
+                <button type="button" class="opt-vis-pill" data-metric="force">force</button>
+              </div>
+              <div class="opt-pill-sep"></div>
+              <div class="opt-pill-group">
+                <button type="button" class="opt-vis-pill" data-metric="ivskew">IV Skew</button>
+                <button type="button" class="opt-vis-pill" data-metric="dayoi">Day Oi</button>
+              </div>
+            </div>
+
+            <!-- Chart Box -->
+            <div class="opt-vis-card">
+              <div class="opt-vis-header">
+                <div class="opt-vis-title-group">
+                  <h3 class="opt-vis-title" id="optVisChartTitle">Turnover (₹ Cr)</h3>
+                  <span class="opt-vis-sub" id="optVisChartSub">Strike-wise institutional distribution • Click any bar for deep radar</span>
+                </div>
+                <div class="opt-vis-actions">
+                  <span class="opt-vis-atm-badge" id="optVisAtmBadge">ATM: --</span>
+                </div>
+              </div>
+
+              <!-- High-Performance Interactive Canvas Visualizer -->
+              <div class="opt-vis-chart-canvas-wrap" id="optVisCanvasWrap">
+                <canvas id="optVisCanvas" height="320"></canvas>
+                <div id="optVisTooltip" class="opt-vis-tooltip" style="display:none;"></div>
+              </div>
+
+              <!-- Legend (Matching Image 15) -->
+              <div class="opt-vis-legend">
+                <div class="legend-chip cyan">
+                  <span class="legend-dot cyan"></span>
+                  <span id="optVisPutLegend">Put Turnover (-- Cr)</span>
+                </div>
+                <div class="legend-chip yellow">
+                  <span class="legend-dot yellow"></span>
+                  <span id="optVisCallLegend">Call Turnover (-- Cr)</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
           <!-- Dual Upstox Option Chain Table -->
           <div class="upstox-table-wrapper">
             <table class="upstox-table" id="upstoxChainTable">
               <thead>
                 <tr class="head-group">
-                  <th colspan="9" class="th-calls">CALL OPTIONS (CE)</th>
-                  <th class="th-strike">STRIKE</th>
-                  <th colspan="9" class="th-puts">PUT OPTIONS (PE)</th>
+                  <th colspan="8" class="th-calls">🟢 CALL OPTIONS (CE)</th>
+                  <th class="th-strike">⚡ STRIKE</th>
+                  <th colspan="8" class="th-puts">🔴 PUT OPTIONS (PE)</th>
                 </tr>
                 <tr class="head-sub">
-                  <!-- Calls -->
+                  <!-- Calls (8 Columns) -->
                   <th style="text-align:right;">OI (Depth)</th>
+                  <th style="text-align:right;">OI Chg</th>
+                  <th style="text-align:center;">Buildup</th>
                   <th style="text-align:right;">Volume</th>
                   <th class="upstox-greek-col" style="text-align:right;">IV %</th>
-                  <th class="upstox-greek-col" style="text-align:right;">Delta (&Delta;)</th>
-                  <th class="upstox-greek-col" style="text-align:right;">Theta (&theta;)</th>
-                  <th class="upstox-greek-col" style="text-align:right;">Vega (&nu;)</th>
-                  <th class="upstox-greek-col" style="text-align:right;">Gamma (&Gamma;)</th>
+                  <th class="upstox-greek-col" style="text-align:right;">Delta (Δ)</th>
                   <th style="text-align:right;">LTP (₹)</th>
                   <th style="text-align:right;">Chg</th>
 
-                  <!-- Center Strike -->
-                  <th class="th-strike">Strike</th>
+                  <!-- Center Strike (1 Column) -->
+                  <th class="th-strike" style="text-align:center;">Strike</th>
 
-                  <!-- Puts -->
+                  <!-- Puts (8 Columns) -->
                   <th style="text-align:right;">Chg</th>
                   <th style="text-align:right;">LTP (₹)</th>
-                  <th class="upstox-greek-col" style="text-align:right;">Delta (&Delta;)</th>
-                  <th class="upstox-greek-col" style="text-align:right;">Theta (&theta;)</th>
-                  <th class="upstox-greek-col" style="text-align:right;">Vega (&nu;)</th>
-                  <th class="upstox-greek-col" style="text-align:right;">Gamma (&Gamma;)</th>
+                  <th class="upstox-greek-col" style="text-align:right;">Delta (Δ)</th>
                   <th class="upstox-greek-col" style="text-align:right;">IV %</th>
                   <th style="text-align:right;">Volume</th>
+                  <th style="text-align:center;">Buildup</th>
+                  <th style="text-align:right;">OI Chg</th>
                   <th style="text-align:right;">OI (Depth)</th>
                 </tr>
               </thead>
               <tbody id="upstoxChainTableBody">
                 <tr>
-                  <td colspan="19" style="text-align:center; padding:32px; color:#94a3b8;">
+                  <td colspan="17" style="text-align:center; padding:32px; color:#94a3b8;">
                     ⏳ Loading live Upstox Option Chain...
                   </td>
                 </tr>
               </tbody>
+              <tfoot id="upstoxChainTableFoot" style="display:none;">
+                <tr class="upstox-foot-row">
+                  <td id="footCeOi" style="text-align:right; font-weight:800; color:#10b981;">--</td>
+                  <td id="footCeOiChg" style="text-align:right; font-weight:800;">--</td>
+                  <td colspan="6"></td>
+                  <td class="col-strike" style="font-size:10.5px; font-weight:800; text-align:center;">TOTAL</td>
+                  <td colspan="6"></td>
+                  <td id="footPeOiChg" style="text-align:right; font-weight:800;">--</td>
+                  <td id="footPeOi" style="text-align:right; font-weight:800; color:#ef4444;">--</td>
+                </tr>
+              </tfoot>
             </table>
+          </div>
+
+          <!-- ================================================================
+               🔍 Strike Intelligence Radar Modal (Click Karne Ke Baad Detail)
+               ================================================================ -->
+          <div id="upstoxStrikeModal" class="upstox-modal-overlay" style="display:none;" onclick="if(event.target===this)this.style.display='none';">
+            <div class="upstox-modal-box">
+              <div class="upstox-modal-header">
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <h3 class="upstox-modal-title" id="modalStrikeTitle">STRIKE RADAR</h3>
+                    <span id="modalMoneynessTag" class="modal-badge atm">ATM</span>
+                    <span id="modalDistanceTag" class="modal-badge distance">0 pts</span>
+                  </div>
+                  <p class="upstox-modal-sub" id="modalUnderlyingSubtitle">NIFTY 50 • Spot: --</p>
+                </div>
+                <button type="button" class="upstox-modal-close" id="modalCloseBtn" onclick="document.getElementById('upstoxStrikeModal').style.display='none';">✕</button>
+              </div>
+
+              <div class="upstox-modal-body">
+                <!-- Row 1: Breakevens & Force -->
+                <div class="modal-section-grid">
+                  <div class="modal-metric-card">
+                    <span class="mm-lbl">ATM Straddle Prem</span>
+                    <span class="mm-val" id="modalStraddlePrem" style="color:#f472b6;">--</span>
+                    <span class="mm-sub" id="modalPremSkew">Prem Skew: --</span>
+                  </div>
+                  <div class="modal-metric-card">
+                    <span class="mm-lbl">Lower Breakeven</span>
+                    <span class="mm-val" id="modalLowerBe" style="color:#38bdf8;">--</span>
+                    <span class="mm-sub">Downside cushion</span>
+                  </div>
+                  <div class="modal-metric-card">
+                    <span class="mm-lbl">Upper Breakeven</span>
+                    <span class="mm-val" id="modalUpperBe" style="color:#fbbf24;">--</span>
+                    <span class="mm-sub">Upside ceiling</span>
+                  </div>
+                  <div class="modal-metric-card">
+                    <span class="mm-lbl">Directional Force</span>
+                    <span class="mm-val" id="modalForceVal" style="color:#10b981;">--</span>
+                    <span class="mm-sub" id="modalForceSignal">--</span>
+                  </div>
+                </div>
+
+                <!-- Row 2: OI & Writer Dominance -->
+                <div class="modal-section-grid" style="margin-top:12px;">
+                  <div class="modal-metric-card">
+                    <span class="mm-lbl">Call OI vs Put OI</span>
+                    <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                      <span>CE: <strong id="modalCeOi" style="color:#10b981;">--</strong> <span id="modalCeDayOi" class="m-pill green">--</span></span>
+                      <span>PE: <strong id="modalPeOi" style="color:#ef4444;">--</strong> <span id="modalPeDayOi" class="m-pill red">--</span></span>
+                    </div>
+                  </div>
+                  <div class="modal-metric-card">
+                    <span class="mm-lbl">OI Concentration Wall</span>
+                    <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                      <span>CE: <strong id="modalCePctile">--</strong></span>
+                      <span>PE: <strong id="modalPePctile">--</strong></span>
+                    </div>
+                    <span class="mm-sub" id="modalPctileDesc">--</span>
+                  </div>
+                  <div class="modal-metric-card">
+                    <span class="mm-lbl">Writer Skew</span>
+                    <span class="mm-val" id="modalWriteSkew" style="color:#fbbf24;">--</span>
+                    <span class="mm-sub" id="modalWriterDominance">--</span>
+                  </div>
+                  <div class="modal-metric-card">
+                    <span class="mm-lbl">Total Turnover &amp; Net Flow</span>
+                    <span class="mm-val" id="modalTurnover" style="color:#a78bfa;">--</span>
+                    <span class="mm-sub">Net Flow: <strong id="modalNetFlow">--</strong></span>
+                  </div>
+                </div>
+
+                <!-- Row 3: Greeks Comparison Table -->
+                <div style="margin-top:14px; background:#070d1e; border:1px solid #1a2538; border-radius:8px; overflow:hidden;">
+                  <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:center; font-family:'JetBrains Mono',monospace;">
+                    <thead style="background:#0c162d; border-bottom:1px solid #1e2e4a; color:#94a3b8;">
+                      <tr>
+                        <th style="padding:6px; color:#10b981;">CALL (CE)</th>
+                        <th style="padding:6px;">GREEK METRIC</th>
+                        <th style="padding:6px; color:#ef4444;">PUT (PE)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <td id="mCeDelta" style="padding:6px; color:#10b981; font-weight:700;">--</td>
+                        <td style="color:#94a3b8;">Delta (&Delta;)</td>
+                        <td id="mPeDelta" style="padding:6px; color:#ef4444; font-weight:700;">--</td>
+                      </tr>
+                      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <td id="mCeTheta" style="padding:6px; color:#f87171;">--</td>
+                        <td style="color:#94a3b8;">Theta (&theta; / day)</td>
+                        <td id="mPeTheta" style="padding:6px; color:#f87171;">--</td>
+                      </tr>
+                      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <td id="mCeGamma" style="padding:6px; color:#38bdf8;">--</td>
+                        <td style="color:#94a3b8;">Gamma (&Gamma;)</td>
+                        <td id="mPeGamma" style="padding:6px; color:#38bdf8;">--</td>
+                      </tr>
+                      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <td id="mCeVega" style="padding:6px; color:#fbbf24;">--</td>
+                        <td style="color:#94a3b8;">Vega (&nu;)</td>
+                        <td id="mPeVega" style="padding:6px; color:#fbbf24;">--</td>
+                      </tr>
+                      <tr>
+                        <td id="mCeIv" style="padding:6px; color:#cbd5e1;">--</td>
+                        <td style="color:#94a3b8;">Implied Volatility (IV %)</td>
+                        <td id="mPeIv" style="padding:6px; color:#cbd5e1;">--</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Row 4: Minor Stats -->
+                <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:12px; font-size:10.5px; color:#94a3b8; background:#070d1e; padding:8px 12px; border-radius:6px; border:1px solid #1a2538;">
+                  <span>CE Prem Flow: <strong id="modalCeFlow" style="color:#10b981;">--</strong></span>
+                  <span>PE Prem Flow: <strong id="modalPeFlow" style="color:#ef4444;">--</strong></span>
+                  <span>CE Vol: <strong id="modalCeVol">--</strong></span>
+                  <span>PE Vol: <strong id="modalPeVol">--</strong></span>
+                  <span>Call:Put Ratio: <strong id="modalCpRatio">--</strong></span>
+                  <span>IV Skew: <strong id="modalIvSkew">--</strong></span>
+                  <span>Max Pain: <strong id="modalMaxPainDist">--</strong></span>
+                </div>
+
+              </div>
+            </div>
           </div>
 
         </div>
@@ -1604,6 +1804,7 @@
             </div>
             <div class="canvas-wrap">
               <canvas id="optOiCanvas" width="760" height="280"></canvas>
+              <div id="optOiTooltip" class="chart-tooltip" style="display:none;"></div>
             </div>
           </article>
           <article class="chart-section">
@@ -1612,6 +1813,7 @@
             </div>
             <div class="canvas-wrap">
               <canvas id="optIvCanvas" width="760" height="280"></canvas>
+              <div id="optIvTooltip" class="chart-tooltip" style="display:none;"></div>
             </div>
           </article>
         </section>
@@ -2542,46 +2744,67 @@
         </div>
 
         <!-- ================================================================
-             Sub-Tab 3: Official NSE Participant-Wise Open Interest Matrix
+             Sub-Tab 3: Trendlyne-Style Participant-Wise OI Matrix
              ================================================================ -->
         <div id="p1FiiSubtabOi" class="fii-dii-subpanel" style="display:none;">
-          <div class="sm-card sm-table-card" style="background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 14px;">
-            <div class="sm-card-header" style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px; margin-bottom: 12px;">
-              <h4 style="margin: 0; font-size: 14.5px; font-weight: 800; color: var(--text-primary);">📋 Official NSE Derivatives Participant Matrix (F&amp;O Open Interest)</h4>
-              <span class="matrix-subtitle" style="font-size: 11.5px; color: var(--text-muted);">EOD audit of Index Futures, Index Calls, Index Puts, and Stock Futures across FII, DII, Pro &amp; Client</span>
+
+          <!-- Header Controls -->
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 style="margin:0; font-size:15px; font-weight:800; color:var(--text-primary);">📋 Participant-Wise Open Interest Matrix</h3>
+              <span id="poiLastUpdated" style="font-size:10px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.25); border-radius:4px; padding:2px 8px; font-weight:700;">Loading...</span>
+              <span id="poiAutoRefreshBadge" style="font-size:10px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25); border-radius:4px; padding:2px 7px; font-weight:700; display:none;">🔄 Live</span>
             </div>
-            <div class="wpcr-table-wrap" style="overflow-x: auto;">
-              <table class="wpcr-data-table sm-table" id="smParticipantTable" style="width: 100%; border-collapse: collapse;">
-                <thead>
-                  <tr>
-                    <th rowspan="2" style="vertical-align:middle; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Participant</th>
-                    <th colspan="3" style="text-align:center; padding: 8px 10px; background: var(--table-th-bg); color: var(--cyan); border-bottom: 1px solid var(--table-border);">Index Futures</th>
-                    <th colspan="3" style="text-align:center; padding: 8px 10px; background: var(--table-th-bg); color: var(--green); border-bottom: 1px solid var(--table-border);">Index Calls (CE)</th>
-                    <th colspan="3" style="text-align:center; padding: 8px 10px; background: var(--table-th-bg); color: var(--red); border-bottom: 1px solid var(--table-border);">Index Puts (PE)</th>
-                    <th colspan="3" style="text-align:center; padding: 8px 10px; background: var(--table-th-bg); color: var(--cyan); border-bottom: 1px solid var(--table-border);">Stock Futures</th>
-                    <th rowspan="2" style="vertical-align:middle; text-align:center; padding: 8px 10px; background: var(--table-th-bg); color: var(--table-th-text); border-bottom: 1px solid var(--table-border);">Desk Stance</th>
-                  </tr>
-                  <tr>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Long</th>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Short</th>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--cyan);">Net Fut</th>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--green);">Long</th>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--red);">Short</th>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Net CE</th>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--green);">Long</th>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--red);">Short</th>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Net PE</th>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Long</th>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--table-th-text);">Short</th>
-                    <th style="padding: 6px 8px; background: var(--table-th-bg); color: var(--cyan);">Net Stk</th>
-                  </tr>
-                </thead>
-                <tbody id="smParticipantTableBody">
-                  <!-- Populated dynamically -->
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <button type="button" id="poiToggleChangeBtn" class="ctrl-btn" style="font-size:11.5px; padding:6px 14px; font-weight:700; cursor:pointer;">📈 Show Day Change &amp; %</button>
+              <button type="button" id="poiRefreshBtn" class="ctrl-btn primary" style="font-size:12px; padding:7px 16px;">🔄 Refresh Now</button>
+            </div>
+          </div>
+
+          <!-- Signal Cards Row -->
+          <div id="poiSignalRow" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:12px; margin-bottom:16px;"></div>
+
+          <!-- MAIN TRENDLYNE-STYLE MATRIX TABLE -->
+          <div class="sm-card sm-table-card" style="margin-bottom:16px;">
+            <div style="padding:10px 14px; border-bottom:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <span style="font-size:13.5px; font-weight:800; color:var(--text-primary);" id="poiTableHeading">Participant-Wise Derivatives Open Interest Matrix</span><br>
+                <span style="font-size:11px; color:var(--text-muted);" id="poiTableSubheading">Official NSE bhav copy · Cumulative open interest contracts across Market Participants</span>
+              </div>
+              <span style="font-size:11px; color:var(--text-muted);" id="poiSessionLabel">--</span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table id="poiMainTable" style="width:100%; border-collapse:collapse; font-size:12px;">
+                <!-- thead and tbody filled dynamically -->
+                <thead id="poiMainTableHead"></thead>
+                <tbody id="poiMainTableBody">
+                  <tr><td colspan="16" style="padding:24px; text-align:center; color:var(--text-muted); font-size:13px;">Click "📋 Open Interest Matrix" tab to load data...</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
+
+          <!-- Divergence & Trap Radar -->
+          <div class="sm-card" id="poiDivergenceCard" style="margin-bottom:16px; border-left:3px solid #38bdf8; background:var(--bg-card); border-top:1px solid var(--border-default); border-right:1px solid var(--border-default); border-bottom:1px solid var(--border-default); border-radius:var(--radius-md);">
+            <div style="padding:12px 16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                <span style="font-size:13px; font-weight:800; color:var(--text-primary);">🎯 Smart Money vs Retail Divergence Radar</span>
+                <span id="poiDivBadge" style="font-size:10.5px; font-weight:800; padding:3px 10px; border-radius:4px; background:#334155; color:#94a3b8;">Analyzing...</span>
+              </div>
+              <div id="poiDivTitle" style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">--</div>
+              <div id="poiDivDesc" style="font-size:12px; color:var(--text-muted); line-height:1.6;">Loading analysis...</div>
+            </div>
+          </div>
+
+          <!-- Buildup Legend -->
+          <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:10px 0; font-size:11px;">
+            <span style="color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.6px;">Buildup:</span>
+            <span><span style="background:#10b981; color:#030712; font-weight:800; padding:1px 6px; border-radius:2px; font-size:10px;">LONG BUILD</span> <span style="color:var(--text-muted);">Net↑ + OI↑</span></span>
+            <span><span style="background:#ef4444; color:#fff; font-weight:800; padding:1px 6px; border-radius:2px; font-size:10px;">SHORT BUILD</span> <span style="color:var(--text-muted);">Net↓ + OI↑</span></span>
+            <span><span style="background:#f59e0b; color:#030712; font-weight:800; padding:1px 6px; border-radius:2px; font-size:10px;">LONG UNWIND</span> <span style="color:var(--text-muted);">Net↓ + OI↓</span></span>
+            <span><span style="background:#8b5cf6; color:#fff; font-weight:800; padding:1px 6px; border-radius:2px; font-size:10px;">SHORT COVER</span> <span style="color:var(--text-muted);">Net↑ + OI↓</span></span>
+          </div>
+
         </div>
 
       </div> <!-- /panelSmartMoney -->
@@ -3773,7 +3996,7 @@
             <!-- Official T+1 Schedule Notice -->
             <div style="font-size:11px; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:7px 12px; margin-top:10px; display:flex; align-items:center; gap:8px;">
               <span style="font-size:13px;">ℹ️</span>
-              <span><strong>Official NSE Regulatory Schedule:</strong> Brokers report MTF books on a <strong>T+1 settlement schedule</strong>. As of today morning (22 Sep), the latest official disclosure published by NSE is <strong>18 Sep 2026</strong>. Monday (21 Sep) data is compiled and released by NSE today afternoon/evening.</span>
+              <span id="mtaRegulatoryNotice"><strong>Official NSE Regulatory Disclosure:</strong> Brokers report MTF client margin books on a <strong>T+1 regulatory schedule</strong>. All numbers are compiled directly from official NSE exchange disclosure archives.</span>
             </div>
 
 
@@ -4386,8 +4609,8 @@
       </footer>
     </main>
 
-    <script src="/app.js?v=20260922_v12"></script>
-    <script src="/upstox_chain.js?v=20260922_v1"></script>
+    <script src="/app.js?v=20260928_v14"></script>
+    <script src="/upstox_chain.js?v=20260928_v4"></script>
     <script src="/futures_desk.js?v=20260922_v1"></script>
     <script src="/auth_sync.js?v=20260919_v1"></script>
   </body>

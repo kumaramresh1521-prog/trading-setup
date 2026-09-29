@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Bloomberg Excel Grid Test</title>
+  <link rel="stylesheet" href="/libs/jsuites.css" type="text/css" />
+  <link rel="stylesheet" href="/libs/jexcel.css" type="text/css" />
+  <script src="/libs/jsuites.js"></script>
+  <script src="/libs/jexcel.js"></script>
+  <style>
+    body {
+      background: #040814;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      padding: 16px;
+      margin: 0;
+    }
+    .excel-container {
+      background: #060b18;
+      border: 1px solid #14203d;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .excel-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: #080f22;
+      border-bottom: 1px solid #14203d;
+      font-size: 13px;
+    }
+    .name-box {
+      background: #0d1730;
+      border: 1px solid #203560;
+      color: #38bdf8;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 4px;
+      min-width: 60px;
+      text-align: center;
+    }
+    .fx-input {
+      flex: 1;
+      background: #0b1329;
+      border: 1px solid #1e293b;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      outline: none;
+    }
+    .fx-input:focus {
+      border-color: #10b981;
+    }
+
+    /* Dark theme overrides for Jspreadsheet */
+    .jexcel_container {
+      font-family: monospace;
+      background: #060b18;
+      width: 100%;
+    }
+    .jexcel {
+      background: #060b18;
+      border-collapse: separate;
+      color: #f8fafc;
+    }
+    .jexcel > thead > tr > td {
+      background: #091024 !important;
+      color: #38bdf8 !important;
+      font-weight: 700;
+      border: 1px solid #1a2a4f !important;
+      padding: 6px 8px;
+      font-size: 11.5px;
+      text-align: center;
+    }
+    .jexcel > thead > tr > td.selected {
+      background: #1e293b !important;
+      color: #10b981 !important;
+    }
+    .jexcel > tbody > tr > td {
+      background: #070d1a !important;
+      color: #f1f5f9 !important;
+      border: 1px solid #14203d !important;
+      padding: 5px 8px !important;
+      font-size: 12px !important;
+      font-family: monospace;
+    }
+    .jexcel > tbody > tr > td.jexcel_row {
+      background: #091024 !important;
+      color: #64748b !important;
+      font-weight: 700 !important;
+      text-align: center !important;
+      border-right: 1px solid #1a2a4f !important;
+    }
+    .jexcel > tbody > tr > td.highlight {
+      background: rgba(16, 185, 129, 0.15) !important;
+    }
+    .jexcel > tbody > tr > td.highlight-top {
+      border-top: 2px solid #10b981 !important;
+    }
+    .jexcel > tbody > tr > td.highlight-left {
+      border-left: 2px solid #10b981 !important;
+    }
+    .jexcel > tbody > tr > td.highlight-right {
+      border-right: 2px solid #10b981 !important;
+    }
+    .jexcel > tbody > tr > td.highlight-bottom {
+      border-bottom: 2px solid #10b981 !important;
+    }
+    .jexcel_corner {
+      background: #10b981 !important;
+      border: 1px solid #ffffff !important;
+      width: 7px !important;
+      height: 7px !important;
+    }
+    .jexcel_contextmenu {
+      background: #0b1329 !important;
+      border: 1px solid #38bdf8 !important;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7) !important;
+      color: #f8fafc !important;
+      border-radius: 6px;
+    }
+    .jexcel_contextmenu a {
+      color: #f8fafc !important;
+      font-size: 12px;
+      padding: 6px 12px;
+    }
+    .jexcel_contextmenu a:hover {
+      background: #1e293b !important;
+      color: #38bdf8 !important;
+    }
+  </style>
+</head>
+<body>
+  <h2>⚡ Real Excel Spreadsheet Grid Demo</h2>
+  <div class="excel-container">
+    <div class="excel-bar">
+      <div class="name-box" id="nameBox">A1</div>
+      <span style="color:#818cf8; font-weight:800; font-style:italic;">ƒx</span>
+      <input type="text" class="fx-input" id="fxInput" placeholder="Excel formula: e.g. =A1+100, =SUM(A1:A5), =C1-D1" />
+      <button style="padding:4px 10px; background:#10b981; border:none; color:#fff; border-radius:4px; font-size:12px; cursor:pointer;" onclick="applyFx()">✓ Apply</button>
+    </div>
+    <div id="spreadsheet" style="width:100%; overflow:auto;"></div>
+  </div>
+
+  <script>
+    const sampleData = [
+      [22850, '=A1+100', 165.20, 110.40, '=C1-D1', '0.045', '14.2%', '12.4', '0.55', '0.51', '14.5%', '13.9%', '15.2', '14.1', '12400', '18200'],
+      [22900, '=A2+100', 142.10, 95.30, '=C2-D2', '0.042', '14.0%', '12.1', '0.52', '0.48', '14.3%', '13.8%', '14.8', '13.9', '14500', '21000'],
+      [22950, '=A3+100', 121.50, 81.20, '=C3-D3', '0.038', '13.9%', '11.8', '0.49', '0.45', '14.1%', '13.6%', '14.5', '13.6', '16800', '24500'],
+      [23000, '=A4+100', 103.20, 68.40, '=C4-D4', '0.035', '13.8%', '11.5', '0.46', '0.42', '14.0%', '13.5%', '14.1', '13.4', '19200', '28000'],
+      [23050, '=A5+100', 86.40, 56.80, '=C5-D5', '0.031', '13.7%', '11.2', '0.43', '0.39', '13.8%', '13.4%', '13.8', '13.1', '22400', '32100']
+    ];
+
+    const columns = [
+      { type: 'numeric', title: 'A: Strike 1 (Far)', width: 115 },
+      { type: 'numeric', title: 'B: Strike 2 (Near)', width: 115 },
+      { type: 'numeric', title: 'C: Far Bid', width: 95, mask: '#,##0.00' },
+      { type: 'numeric', title: 'D: Near Ask', width: 95, mask: '#,##0.00' },
+      { type: 'numeric', title: 'E: Spread LTP', width: 105, mask: '#,##0.00' },
+      { type: 'text', title: 'F: Delta Spread', width: 95 },
+      { type: 'text', title: 'G: IV Spread', width: 85 },
+      { type: 'text', title: 'H: Vega Spread', width: 95 },
+      { type: 'text', title: 'I: Far Delta', width: 85 },
+      { type: 'text', title: 'J: Near Delta', width: 85 },
+      { type: 'text', title: 'K: Far IV', width: 80 },
+      { type: 'text', title: 'L: Near IV', width: 80 },
+      { type: 'text', title: 'M: Far Vega', width: 80 },
+      { type: 'text', title: 'N: Near Vega', width: 80 },
+      { type: 'text', title: 'O: Far Vol', width: 85 },
+      { type: 'text', title: 'P: Near Vol', width: 85 }
+    ];
+
+    let currentCellX = 0;
+    let currentCellY = 0;
+
+    const sheet = jspreadsheet(document.getElementById('spreadsheet'), {
+      data: sampleData,
+      columns: columns,
+      minDimensions: [16, 10],
+      tableOverflow: true,
+      tableHeight: '480px',
+      allowInsertRow: true,
+      allowManualInsertRow: true,
+      allowInsertColumn: true,
+      allowManualInsertColumn: true,
+      allowDeleteRow: true,
+      allowDeleteColumn: true,
+      wordWrap: false,
+      onselection: function(instance, x1, y1, x2, y2, origin) {
+        currentCellX = x1;
+        currentCellY = y1;
+        const colLetter = String.fromCharCode(65 + x1);
+        const rowNum = y1 + 1;
+        document.getElementById('nameBox').textContent = colLetter + rowNum;
+        const val = sheet.getValueFromCoords(x1, y1);
+        document.getElementById('fxInput').value = val || '';
+      },
+      onafterchanges: function(instance, records) {
+        console.log("Changes detected in sheet:", records);
+      }
+    });
+
+    function applyFx() {
+      const val = document.getElementById('fxInput').value.trim();
+      sheet.setValueFromCoords(currentCellX, currentCellY, val);
+    }
+  </script>
+</body>
+</html>

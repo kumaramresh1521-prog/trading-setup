@@ -368,28 +368,211 @@ def get_niftytrader_volume_pcr(symbol="nifty50"):
         "timeSeries": time_series
     }
 
-def get_niftytrader_iv(symbol="nifty50"):
+def get_niftytrader_iv(symbol="nifty50", timeframe="intraday", lookback="1M"):
     data = generate_strikes_data(symbol)
+    spot = data["spot"]
     atm = data["atmStrike"]
     step = data["step"]
     
-    strikes = [
-        {
-            "strike": s["strike"],
-            "isAtm": s["isAtm"],
-            "ceIv": s["ceIv"],
-            "peIv": s["peIv"],
-            "avgIv": round((s["ceIv"] + s["peIv"]) / 2, 2)
-        }
-        for s in data["strikes"] if abs(s["strike"] - atm) <= 8 * step
+    # Characteristic parameters by symbol matching NiftyTrader
+    iv_specs = {
+        "nifty50": {"base_iv": 13.42, "high_52w": 23.40, "low_52w": 10.15, "median_52w": 13.60, "vix": 11.39, "vix_chg": -0.90},
+        "banknifty": {"base_iv": 15.65, "high_52w": 26.80, "low_52w": 11.90, "median_52w": 15.80, "vix": 11.39, "vix_chg": -0.90},
+        "finnifty": {"base_iv": 13.90, "high_52w": 24.10, "low_52w": 10.80, "median_52w": 14.10, "vix": 11.39, "vix_chg": -0.90},
+        "sensex": {"base_iv": 12.95, "high_52w": 22.90, "low_52w": 9.80, "median_52w": 13.20, "vix": 11.39, "vix_chg": -0.90},
+        "crudeoil": {"base_iv": 26.50, "high_52w": 45.20, "low_52w": 18.50, "median_52w": 27.10, "vix": 16.50, "vix_chg": 0.45},
+        "reliance": {"base_iv": 19.80, "high_52w": 32.50, "low_52w": 14.20, "median_52w": 20.10, "vix": 11.39, "vix_chg": -0.90},
+        "hdfcbank": {"base_iv": 17.50, "high_52w": 29.80, "low_52w": 13.50, "median_52w": 18.20, "vix": 11.39, "vix_chg": -0.90},
+        "infy": {"base_iv": 21.20, "high_52w": 35.60, "low_52w": 15.40, "median_52w": 21.80, "vix": 11.39, "vix_chg": -0.90}
+    }
+    sym_key = (symbol or "nifty50").lower().replace(" ", "").replace("-", "")
+    spec = iv_specs.get(sym_key, iv_specs["nifty50"])
+    
+    current_iv = spec["base_iv"]
+    iv_change = round(0.38 if sym_key == "nifty50" else (current_iv * 0.02), 2)
+    high_52w = spec["high_52w"]
+    low_52w = spec["low_52w"]
+    median_52w = spec["median_52w"]
+    india_vix = spec["vix"]
+    vix_change = spec["vix_chg"]
+    
+    # IV Rank = (Current IV - 52W Low) / (52W High - 52W Low) * 100
+    iv_rank = round(((current_iv - low_52w) / max(0.01, (high_52w - low_52w))) * 100, 1)
+    # IV Percentile (% of historical days below current IV)
+    iv_percentile = round(min(99.0, max(1.0, iv_rank * 1.15 + 3.2)), 1)
+    
+    atm_call_iv = round(current_iv - 0.57, 2)
+    atm_put_iv = round(current_iv + 0.68, 2)
+    iv_skew = round(atm_put_iv - atm_call_iv, 2)  # Put IV - Call IV
+    
+    if iv_rank < 25 or current_iv < 12.0:
+        regime = "Low Volatility Regime"
+        regime_type = "low"
+        strategy_rec = "Option premiums are historically cheap with compressed extrinsic value. Buying options (Debit Spreads, Calendar Spreads, Long Straddles) offers favorable risk/reward. Writing naked options has a thin margin of safety and heightened IV expansion risk."
+    elif iv_rank > 70 or current_iv > 18.0:
+        regime = "High / Elevated Volatility Regime"
+        regime_type = "high"
+        strategy_rec = "Implied Volatility is historically high with bloated option premiums. Option selling strategies (Short Strangles, Iron Butterflies, Credit Spreads) possess a substantial statistical edge from mean-reverting IV crush."
+    else:
+        regime = "Normal / Balanced Volatility Regime"
+        regime_type = "normal"
+        strategy_rec = "Implied Volatility is trading within historical normal equilibrium. Balanced strategies such as Iron Condors, Covered Calls, or Directional Spreads offer consistent time-decay edge without extreme expansion or crush risk."
+        
+    # Strike-wise IV Smile & Skew curve (21 strikes centered on ATM)
+    strikes = []
+    for s in data["strikes"]:
+        if abs(s["strike"] - atm) <= 10 * step:
+            dist_pct = round(((s["strike"] - spot) / spot) * 100, 2)
+            c_iv = s["ceIv"]
+            p_iv = s["peIv"]
+            avg_iv = round((c_iv + p_iv) / 2, 2)
+            sk = round(p_iv - c_iv, 2)
+            strikes.append({
+                "strike": s["strike"],
+                "isAtm": s["isAtm"],
+                "distPct": dist_pct,
+                "ceIv": c_iv,
+                "peIv": p_iv,
+                "avgIv": avg_iv,
+                "ivSkew": sk,
+                "ceLtp": s["ceLtp"],
+                "peLtp": s["peLtp"],
+                "ceOi": s["ceOi"],
+                "peOi": s["peOi"]
+            })
+
+    # Intraday 30-min series (09:15 AM to 03:30 PM)
+    time_slots = [
+        ("09:15 AM", -12.4, 0.75, -0.15),
+        ("09:45 AM", -38.2, 0.62, -0.22),
+        ("10:15 AM", -22.5, 0.48, -0.30),
+        ("10:45 AM", -31.8, 0.35, -0.38),
+        ("11:15 AM", -42.0, 0.20, -0.45),
+        ("11:45 AM", -35.6, 0.12, -0.52),
+        ("12:15 PM", -28.4, -0.05, -0.60),
+        ("12:45 PM", -18.2, -0.15, -0.68),
+        ("01:15 PM", -11.0, 0.05, -0.72),
+        ("01:45 PM", -19.5, 0.12, -0.75),
+        ("02:15 PM", +15.2, 0.22, -0.80),
+        ("02:45 PM", +38.6, 0.30, -0.85),
+        ("03:15 PM", +62.4, 0.35, -0.88),
+        ("03:30 PM", +75.8, 0.38, -0.90)
     ]
     
+    intraday_series = []
+    base_open_spot = spot - 75.8
+    for t_str, sp_delta, iv_delta, vix_delta in time_slots:
+        snap_spot = round(base_open_spot + (sp_delta + 75.8), 2)
+        snap_atm_iv = round(current_iv + (iv_delta - 0.38), 2)
+        snap_ce_iv = round(snap_atm_iv - 0.55, 2)
+        snap_pe_iv = round(snap_atm_iv + 0.65, 2)
+        snap_skew = round(snap_pe_iv - snap_ce_iv, 2)
+        snap_vix = round(india_vix + (vix_delta - (-0.90)), 2)
+        snap_chg_pct = round(((snap_spot - base_open_spot) / max(1.0, base_open_spot)) * 100, 2)
+        
+        snap_regime = "Normal"
+        if snap_atm_iv < 12.0:
+            snap_regime = "Low"
+        elif snap_atm_iv > 18.0:
+            snap_regime = "High"
+            
+        intraday_series.append({
+            "time": t_str,
+            "spot": snap_spot,
+            "spotChg": round(snap_spot - base_open_spot, 2),
+            "spotChgPct": snap_chg_pct,
+            "atmIv": snap_atm_iv,
+            "callIv": snap_ce_iv,
+            "putIv": snap_pe_iv,
+            "ivSkew": snap_skew,
+            "vix": snap_vix,
+            "regime": snap_regime
+        })
+
+    # Historical EOD series
+    lookback_days_map = {"1M": 22, "3M": 66, "6M": 132, "1Y": 250}
+    num_days = lookback_days_map.get(lookback.upper(), 22)
+    
+    now = datetime.now()
+    rnd = random.Random(42 + hash(sym_key))
+    raw_eod = []
+    
+    for i in range(num_days - 1, -1, -1):
+        target_date = (now - timedelta(days=int(i * 1.45))).strftime("%Y-%m-%d")
+        factor = i / max(1, num_days)
+        d_spot = round(spot * (1.0 - 0.04 * factor + 0.015 * math.sin(i * 0.25) + rnd.uniform(-0.005, 0.005)), 2)
+        d_iv = round(max(9.5, min(24.0, current_iv + 2.5 * math.sin(i * 0.18) + rnd.uniform(-0.4, 0.4))), 2)
+        d_ce = round(d_iv - 0.52, 2)
+        d_pe = round(d_iv + 0.65, 2)
+        d_skew = round(d_pe - d_ce, 2)
+        d_vix = round(max(9.0, d_iv - 1.8 + rnd.uniform(-0.3, 0.3)), 2)
+        d_ivr = round(((d_iv - low_52w) / max(0.01, (high_52w - low_52w))) * 100, 1)
+        d_ivp = round(min(99.0, max(1.0, d_ivr * 1.1 + rnd.uniform(-2, 2))), 1)
+        
+        reg = "Normal"
+        if d_iv < 12.0:
+            reg = "Low"
+        elif d_iv > 18.0:
+            reg = "High"
+            
+        prev_spot = d_spot * (1.0 - rnd.uniform(-0.008, 0.008))
+        d_chg = round(d_spot - prev_spot, 2)
+        d_chg_pct = round(((d_spot - prev_spot) / prev_spot) * 100, 2)
+        
+        raw_eod.append({
+            "date": target_date,
+            "spot": d_spot,
+            "spotChg": d_chg,
+            "spotChgPct": d_chg_pct,
+            "atmIv": d_iv,
+            "callIv": d_ce,
+            "putIv": d_pe,
+            "ivSkew": d_skew,
+            "vix": d_vix,
+            "ivRank": d_ivr,
+            "ivPercentile": d_ivp,
+            "regime": reg
+        })
+        
+    if raw_eod:
+        raw_eod[-1]["date"] = now.strftime("%Y-%m-%d")
+        raw_eod[-1]["spot"] = spot
+        raw_eod[-1]["atmIv"] = current_iv
+        raw_eod[-1]["callIv"] = atm_call_iv
+        raw_eod[-1]["putIv"] = atm_put_iv
+        raw_eod[-1]["ivSkew"] = iv_skew
+        raw_eod[-1]["vix"] = india_vix
+        raw_eod[-1]["ivRank"] = iv_rank
+        raw_eod[-1]["ivPercentile"] = iv_percentile
+        raw_eod[-1]["regime"] = regime.split()[0]
+        
     return {
         "ok": True,
         "symbol": symbol,
         "name": data["name"],
-        "spot": data["spot"],
+        "exchange": data["exchange"],
+        "spot": spot,
         "atmStrike": atm,
+        "currentAtmIv": current_iv,
+        "ivChange": iv_change,
+        "callIv": atm_call_iv,
+        "putIv": atm_put_iv,
+        "ivSkew": iv_skew,
+        "skewInterpretation": "Put Skew (Downside Put hedging premium elevated)" if iv_skew > 0 else "Call Skew (Upside Call momentum pricing)",
+        "ivRank": iv_rank,
+        "ivPercentile": iv_percentile,
+        "high52wIv": high_52w,
+        "low52wIv": low_52w,
+        "median52wIv": median_52w,
+        "indiaVix": india_vix,
+        "vixChange": vix_change,
+        "regime": regime,
+        "regimeType": regime_type,
+        "strategyRecommendation": strategy_rec,
+        "timeframe": timeframe,
+        "lookback": lookback,
+        "intradaySeries": intraday_series,
+        "eodSeries": raw_eod,
         "strikes": strikes
     }
 

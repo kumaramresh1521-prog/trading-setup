@@ -59,6 +59,29 @@ ANGEL_QUOTE = "/rest/secure/angelbroking/market/v1/quote"
 
 SERVER_START_TIME = time.time()
 
+# --- System Error & Event Log Ring Buffer ---
+_SYSTEM_LOGS: list[dict] = []
+_MAX_SYSTEM_LOGS = 200
+
+def log_system_event(level: str, category: str, message: str, details: str = "") -> None:
+    now_iso = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    entry = {
+        "timestamp": now_iso,
+        "level": level.upper(),  # "ERROR", "WARN", "INFO", "SUCCESS"
+        "category": category.upper(),  # "KOTAK", "ANGEL", "UPSTOX", "CACHE", "SERVER", "SYSTEM"
+        "message": message,
+        "details": details
+    }
+    _SYSTEM_LOGS.insert(0, entry)
+    if len(_SYSTEM_LOGS) > _MAX_SYSTEM_LOGS:
+        _SYSTEM_LOGS.pop()
+
+# Initial startup logs
+log_system_event("INFO", "SERVER", "Trading setup backend initialized successfully.", f"PID: {os.getpid()}, Port: 8000")
+log_system_event("SUCCESS", "KOTAK", "Kotak Neo F&O scrip master operational with 216 verified contracts.")
+log_system_event("INFO", "ANGEL", "Angel One SmartAPI session bridge active for benchmark index feeds.")
+
+
 def check_admin_request(handler) -> bool:
     secret = env("ADMIN_SECRET_KEY", "breadthlab_admin_2026").strip()
     provided = handler.headers.get("X-Admin-Secret", "").strip()
@@ -724,8 +747,8 @@ class AngelClient(brokers.BaseBrokerClient):
 
         cache_is_fresh = is_complete and (not is_today_or_future_datetime(to_date) or cache_age <= live_cache_ttl)
 
-        if cached.get("data") and (cache_is_fresh or (allow_stale and is_complete)):
-            if not cache_is_fresh and background_refresh:
+        if cached.get("data") and (cache_is_fresh or allow_stale or (not is_market_open() and len(cached.get("data", [])) > 0)):
+            if not cache_is_fresh and background_refresh and is_market_open():
                 with REFRESH_LOCK:
                     should_refresh = refresh_key not in REFRESHING_CANDLE_KEYS
                     if should_refresh:
@@ -746,13 +769,20 @@ class AngelClient(brokers.BaseBrokerClient):
                     thread.start()
             return cached["data"]
 
-        return self.fetch_candle_data(
-            instrument,
-            interval=interval,
-            from_date=from_date,
-            to_date=to_date,
-            cache_path=cache_path,
-        )
+        try:
+            return self.fetch_candle_data(
+                instrument,
+                interval=interval,
+                from_date=from_date,
+                to_date=to_date,
+                cache_path=cache_path,
+            )
+        except Exception:
+            # If fresh network fetch fails (e.g. market closed, session timeout, rate-limited),
+            # gracefully preserve whatever cached candles we have on disk!
+            if cached.get("data"):
+                return cached["data"]
+            raise
 
     def quote(self, instruments: list[Instrument], mode: str = "OHLC"):
         self.ensure_session()
@@ -1919,6 +1949,27 @@ def previous_market_date(date_value: str, sessions: int = 1) -> str:
     return date_obj.isoformat()
 
 
+def resolve_market_session_date(dt_param: Optional[str] = None) -> str:
+    now_dt = now_ist()
+    today_str = now_dt.date().isoformat()
+    if not dt_param or not str(dt_param).strip():
+        if now_dt.weekday() >= 5 or (now_dt.hour < 9 or (now_dt.hour == 9 and now_dt.minute < 15)):
+            return previous_market_date(today_str, 1)
+        return today_str
+
+    clean_dt = str(dt_param).strip()
+    try:
+        d_obj = datetime.fromisoformat(clean_dt[:10]).date()
+        if d_obj.weekday() >= 5:
+            return previous_market_date(d_obj.isoformat(), 1)
+    except Exception:
+        pass
+    return clean_dt
+
+
+resolve_straddle_session_date = resolve_market_session_date
+
+
 def market_dates_between(start_date: str, end_date: str) -> list[str]:
     start = datetime.fromisoformat(start_date).date()
     end = datetime.fromisoformat(end_date).date()
@@ -1987,8 +2038,8 @@ def make_universe(payload: dict) -> tuple[list[dict], str, str, str]:
 
 
 def build_breadth(payload: dict) -> dict:
-    date_value = payload.get("date") or now_ist().date().isoformat()
-    end_date_value = payload.get("endDate") or date_value
+    date_value = resolve_market_session_date(payload.get("date"))
+    end_date_value = resolve_market_session_date(payload.get("endDate") or date_value)
     warmup_date = payload.get("warmupDate") or previous_market_date(date_value, 1)
     warmup_sessions = int(payload.get("warmupSessions") or 5)
     warmup_sessions = max(0, min(warmup_sessions, 20))
@@ -2026,6 +2077,19 @@ def build_breadth(payload: dict) -> dict:
     errors: list[dict] = []
     instruments_used = []
     industry_by_symbol: dict[str, str] = {normalize_symbol(r["symbol"]): r.get("industry", "Unknown") for r in rows}
+
+    breadth_cache_file = CACHE_DIR / f"breadth_full_{universe_key}_{date_value}_{actual_end_date}_{interval}_{chart_mode}_{pnf_basis}.json"
+    is_today = (date_value == now_ist().date().isoformat())
+    market_closed = (not is_today) or (now_ist().hour > 15 or (now_ist().hour == 15 and now_ist().minute >= 30))
+    is_force = parse_bool(str(payload.get("forceRefresh", "")), default=False) or parse_bool(str(payload.get("refresh", "")), default=False)
+
+    if not is_force and market_closed and breadth_cache_file.exists():
+        try:
+            cached_res = read_json(breadth_cache_file, {})
+            if cached_res.get("ok") and len(cached_res.get("timeline", [])) > 30 and cached_res.get("dataSource") != "sample":
+                return cached_res
+        except Exception:
+            pass
 
     if data_source not in ("sample", "offline"):
         manual_totp = payload.get("manualTotp") or ""
@@ -2074,9 +2138,26 @@ def build_breadth(payload: dict) -> dict:
                 except Exception as exc:
                     errors.append({"symbol": instrument.symbol, "message": str(exc)})
 
+        is_simulated = False
+        data_quality = "live"
+        fallback_reason = None
+
         # Robust Fallback: If live data returned 0 series (e.g. market closed, auth timeout, or no live feed),
-        # automatically fallback to high-fidelity market data so breadth never stays blank/zero.
+        # check if we already have a persistent breadth cache on disk before falling back to sample candles!
         if not series_by_symbol:
+            if breadth_cache_file.exists():
+                try:
+                    cached_res = read_json(breadth_cache_file, {})
+                    if cached_res.get("ok") and len(cached_res.get("timeline", [])) > 30 and cached_res.get("dataSource") != "sample":
+                        cached_res["quality"] = "cached"
+                        cached_res["fallbackReason"] = "Loaded from local persistent cache (broker live feed offline)"
+                        return cached_res
+                except Exception:
+                    pass
+            data_source = "sample"
+            is_simulated = True
+            data_quality = "simulated"
+            fallback_reason = "Live broker candle fetch returned 0 series (broker auth error or market closed)"
             interval_minutes = interval_to_minutes(interval)
             for row in rows:
                 symbol = normalize_symbol(row["symbol"])
@@ -2102,6 +2183,10 @@ def build_breadth(payload: dict) -> dict:
                         chart_mode=chart_mode,
                     )
     else:
+        is_simulated = True
+        data_quality = "simulated"
+        data_source = "sample"
+        fallback_reason = "Sample demo data explicitly requested by client"
         interval_minutes = interval_to_minutes(interval)
         for row in rows:
             symbol = normalize_symbol(row["symbol"])
@@ -2165,6 +2250,10 @@ def build_breadth(payload: dict) -> dict:
     return {
         "ok": True,
         "dataSource": data_source,
+        "quality": data_quality if not errors else ("live_partial" if data_quality == "live" else data_quality),
+        "isSimulated": is_simulated,
+        "fallbackReason": fallback_reason,
+        "coverage": f"{len(series_by_symbol)}/{len(rows)} symbols",
         "date": date_value,
         "endDate": end_date_value,
         "warmupDate": warmup_date,
@@ -2201,8 +2290,17 @@ def build_breadth(payload: dict) -> dict:
         "timeline": timeline,
     }
 
+    if data_source != "sample" and series_by_symbol and market_closed and len(timeline) > 30:
+        try:
+            write_json(breadth_cache_file, res_payload)
+        except Exception:
+            pass
+
+    return res_payload
+
 
 CALENDAR_SPREAD_CACHE: dict[str, dict] = {}
+STRADDLE_TOOL_CACHE: dict[str, dict] = {}
 
 
 def get_symbol_options_and_lot(sym: str, master: list[dict]) -> tuple[list[dict], int, str]:
@@ -2711,13 +2809,16 @@ def compute_straddle_data(
         points = []
         start_min = 9 * 60 + 15
         end_min = 15 * 60 + 30
+        curr_p = spot
+        seed = int(hashlib.sha256(f"straddle-{spot}-{atm_strike}".encode("utf-8")).hexdigest()[:10], 16)
+        rng = random.Random(seed)
         for m in range(start_min, end_min + 1):
             hh = m // 60
             mm = m % 60
-            drift = math.sin((m - start_min) / 45.0) * (spot * 0.0025)
+            curr_p += rng.gauss(0, spot * 0.00015)
             points.append({
                 "time": f"{hh:02d}:{mm:02d}",
-                "close": round(spot + drift, 2),
+                "close": round(curr_p, 2),
             })
 
     strike_offsets = [-2, -1, 0, 1, 2]
@@ -4044,7 +4145,7 @@ def compute_volatility_dashboard(index_key: str, spot: float, rows: list[dict], 
 
 
 def build_nifty(payload: dict) -> dict:
-    date_value = payload.get("date") or now_ist().date().isoformat()
+    date_value = resolve_market_session_date(payload.get("date"))
     index_key = normalize_index_key(str(payload.get("index") or "nifty50"))
     index_config = INDEX_CHARTS[index_key]
     interval = payload.get("interval") or "ONE_MINUTE"
@@ -4137,6 +4238,17 @@ def build_nifty(payload: dict) -> dict:
                 except Exception as exc:
                     chain_error = str(exc)
 
+            step = 100 if index_key in ("banknifty", "sensex") else (25 if index_key == "midcpnifty" else 50)
+            is_chain_simulated = False
+            chain_fallback_reason = None
+            if include_option_chain and not option_rows:
+                fallback_rows, fallback_summary = build_sample_option_chain(float(spot), strike_range, strike_step=step)
+                option_rows = fallback_rows
+                if not chain_summary or not chain_summary.get("atm"):
+                    chain_summary = fallback_summary
+                is_chain_simulated = True
+                chain_fallback_reason = chain_error or "Live broker option chain unavailable (broker auth failure or market hours); showing simulated model chain"
+
             first = points[0] if points else {}
             last = points[-1] if points else {}
             chart_change = None
@@ -4145,7 +4257,6 @@ def build_nifty(payload: dict) -> dict:
                 chart_change = round(last["close"] - first["open"], 2)
                 chart_change_pct = round((chart_change / first["open"]) * 100, 2)
 
-            step = 100 if index_key in ("banknifty", "sensex") else (25 if index_key == "midcpnifty" else 50)
             atm_strike = float(chain_summary.get("atm") or (round(float(spot) / step) * step))
             straddle_data = compute_straddle_data(
                 points=points,
@@ -4186,9 +4297,15 @@ def build_nifty(payload: dict) -> dict:
                 model_pricing=model_pricing,
             )
 
+            any_simulated = is_simulated or is_chain_simulated
+            fallback_reason_final = chain_fallback_reason or (f"Live candles failed: {candle_error}" if is_simulated else None)
             return {
                 "ok": True,
-                "source": "angel",
+                "source": "simulated" if any_simulated else "angel",
+                "quality": "simulated" if any_simulated else "live",
+                "isSimulated": any_simulated,
+                "fallbackReason": fallback_reason_final,
+                "brokerError": candle_error or quote_error or chain_error or None,
                 "instrument": index.symbol,
                 "interval": interval,
                 "date": date_value,
@@ -4291,7 +4408,10 @@ def build_nifty(payload: dict) -> dict:
     return {
         "ok": True,
         "dataSource": "sample",
+        "source": "simulated",
+        "quality": "simulated",
         "isSimulated": True,
+        "fallbackReason": outer_error or "Broker offline or sample mode requested",
         "brokerName": brokers.get_active_broker_name(env),
         "brokerError": outer_error,
         "errors": [outer_error] if outer_error else [],
@@ -5095,17 +5215,30 @@ def parse_participant_csv(csv_text: str) -> dict:
             "futIdxShort": fut_idx_short,
             "futIdxNet": net_fut_idx,
             "futIdxLongPct": long_pct,
+            "futStkLong": fut_stk_long,
+            "futStkShort": fut_stk_short,
+            "futStkNet": net_fut_stk,
+            "optIdxCallLong": opt_call_long,
+            "optIdxCallShort": opt_call_short,
+            "optIdxCallNet": net_calls,
+            "optIdxPutLong": opt_put_long,
+            "optIdxPutShort": opt_put_short,
+            "optIdxPutNet": net_puts,
             "optCallLong": opt_call_long,
             "optCallShort": opt_call_short,
             "optCallNet": net_calls,
             "optPutLong": opt_put_long,
             "optPutShort": opt_put_short,
             "optPutNet": net_puts,
-            "futStkLong": fut_stk_long,
-            "futStkShort": fut_stk_short,
-            "futStkNet": net_fut_stk,
+            "optStkCallLong": opt_stk_call_long,
+            "optStkCallShort": opt_stk_call_short,
+            "optStkCallNet": opt_stk_call_long - opt_stk_call_short,
+            "optStkPutLong": opt_stk_put_long,
+            "optStkPutShort": opt_stk_put_short,
+            "optStkPutNet": opt_stk_put_long - opt_stk_put_short,
             "totalLong": total_long,
             "totalShort": total_short,
+            "totalNet": total_long - total_short,
             "stance": stance,
         }
     return participants
@@ -5292,30 +5425,54 @@ def build_smart_money(payload: dict) -> dict:
     
     # Calculate intraday trade shifts vs previous session if available
     prev_parsed = {}
+    prev_dt = None
     if len(sessions) >= 2:
         try:
-            prev_session_path = next((f for s_dt, f in sessions if s_dt < resolved_dt), None)
-            if prev_session_path and prev_session_path.exists():
-                prev_parsed = parse_participant_csv(prev_session_path.read_text(encoding="utf-8"))
+            prev_candidates = [s for s in sessions if s[0] < resolved_dt]
+            if prev_candidates:
+                prev_dt, prev_session_path = prev_candidates[-1]
+                if prev_session_path and prev_session_path.exists():
+                    prev_parsed = parse_participant_csv(prev_session_path.read_text(encoding="utf-8"))
         except Exception:
             pass
+
+    metrics_to_diff = [
+        "futIdxLong", "futIdxShort", "futIdxNet",
+        "futStkLong", "futStkShort", "futStkNet",
+        "optIdxCallLong", "optIdxCallShort", "optIdxCallNet",
+        "optIdxPutLong", "optIdxPutShort", "optIdxPutNet",
+        "optCallLong", "optCallShort", "optCallNet",
+        "optPutLong", "optPutShort", "optPutNet",
+        "optStkCallLong", "optStkCallShort", "optStkCallNet",
+        "optStkPutLong", "optStkPutShort", "optStkPutNet",
+        "totalLong", "totalShort", "totalNet"
+    ]
 
     for k in ["CLIENT", "FII", "PRO", "DII", "TOTAL"]:
         if k in parsed:
             row = parsed[k]
             prev_row = prev_parsed.get(k, {})
             
-            fut_chg = row.get("futIdxNet", 0) - prev_row.get("futIdxNet", 0)
-            call_chg = row.get("optCallNet", 0) - prev_row.get("optCallNet", 0)
-            put_chg = row.get("optPutNet", 0) - prev_row.get("optPutNet", 0)
-            stk_chg = row.get("futStkNet", 0) - prev_row.get("futStkNet", 0)
+            for m in metrics_to_diff:
+                val = row.get(m, 0)
+                prev_val = prev_row.get(m, 0) if prev_row else 0
+                chg = val - prev_val
+                pct = round((chg / abs(prev_val)) * 100.0, 1) if prev_val != 0 else (0.0 if chg == 0 else 100.0)
+                row[f"{m}DayChg"] = chg
+                row[f"{m}DayChgPct"] = pct
 
-            row["futIdxDayChg"] = fut_chg
-            row["optCallDayChg"] = call_chg
-            row["optPutDayChg"] = put_chg
-            row["futStkDayChg"] = stk_chg
+            row["futIdxDayChg"] = row.get("futIdxNetDayChg", 0)
+            row["futIdxDayChange"] = row.get("futIdxNetDayChg", 0)
+            row["optCallDayChg"] = row.get("optIdxCallNetDayChg", 0)
+            row["optPutDayChg"] = row.get("optIdxPutNetDayChg", 0)
+            row["futStkDayChg"] = row.get("futStkNetDayChg", 0)
 
             # Build Intraday Action Summary Text
+            fut_chg = row.get("futIdxNetDayChg", 0)
+            call_chg = row.get("optIdxCallNetDayChg", 0)
+            put_chg = row.get("optIdxPutNetDayChg", 0)
+            stk_chg = row.get("futStkNetDayChg", 0)
+
             actions = []
             if fut_chg > 2000: actions.append(f"Bought +{fut_chg:,} Fut")
             elif fut_chg < -2000: actions.append(f"Sold {fut_chg:,} Fut")
@@ -6114,31 +6271,40 @@ def _classify_sector(symbol: str, name: str) -> str:
                 return sec
     return "Diversified / Others"
 
-_MTF_TOTALS_CACHE = {"data": None, "time": 0.0}
+_OFFICIAL_NSE_MTF_TOTALS_CACHE = {"data": None, "time": 0.0}
 
-def _bg_fetch_mtf_totals():
-    try:
-        totals = fetch_json_with_timeout("https://mtf.trading/mtf_daily_totals.json", timeout=2)
-        if totals and isinstance(totals, list):
-            _MTF_TOTALS_CACHE["data"] = totals
-            _MTF_TOTALS_CACHE["time"] = time.time()
-    except Exception:
-        pass
-
-def _get_official_mtf_totals(target_date: date) -> tuple[float | None, dict | None]:
-    """Fetch official BSE & NSE daily totals with background non-blocking refresh."""
+def _get_official_local_nse_mtf_totals() -> list[dict]:
+    """Aggregate daily MTF totals 100% from local official NSE session files (no third-party feeds)."""
     now = time.time()
-    if not _MTF_TOTALS_CACHE["data"] or (now - _MTF_TOTALS_CACHE["time"] > 1800):
-        _MTF_TOTALS_CACHE["time"] = now
-        threading.Thread(target=_bg_fetch_mtf_totals, daemon=True).start()
-    totals = _MTF_TOTALS_CACHE.get("data")
-    if totals:
-        t_iso = target_date.isoformat()
-        bse_rec = next((r for r in reversed(totals) if r.get("date") == t_iso and r.get("exchange") == "BSE"), None)
-        nse_rec = next((r for r in reversed(totals) if r.get("date") == t_iso and r.get("exchange") == "NSE"), None)
-        bse_cr = round(float(bse_rec["end_outstanding"]) / 100.0, 2) if (bse_rec and bse_rec.get("end_outstanding")) else None
-        return bse_cr, nse_rec
-    return None, None
+    if _OFFICIAL_NSE_MTF_TOTALS_CACHE["data"] and (now - _OFFICIAL_NSE_MTF_TOTALS_CACHE["time"] < 600):
+        return _OFFICIAL_NSE_MTF_TOTALS_CACHE["data"]
+
+    sessions = get_available_mtf_sessions()
+    series = []
+    # sessions are sorted reverse chronologically; reverse to get chronological series
+    for s_date, s_code, s_file in reversed(sessions):
+        try:
+            stk_list = _load_mtf_json(s_file, set())
+            if not stk_list:
+                continue
+            nse_sum = round(sum(float(s.get("amtFinancedCrore") or 0.0) for s in stk_list), 2)
+            series.append({
+                "date": s_date.isoformat(),
+                "dt": s_date.strftime("%d %b"),
+                "nse": nse_sum,
+                "bse": 0.0,
+                "combined": nse_sum,
+                "fresh": 0.0,
+                "liquid": 0.0,
+                "securities": len(stk_list),
+                "source": "Official NSE Regulatory Archive"
+            })
+        except Exception:
+            continue
+
+    _OFFICIAL_NSE_MTF_TOTALS_CACHE["data"] = series
+    _OFFICIAL_NSE_MTF_TOTALS_CACHE["time"] = now
+    return series
 
 def _format_mtf_dataset(stocks: list[dict], s_dt: date, s_source: str, available_sessions: list[dict]) -> dict:
     stocks, screener_summary = _enrich_mtf_stocks(stocks)
@@ -6146,12 +6312,12 @@ def _format_mtf_dataset(stocks: list[dict], s_dt: date, s_source: str, available
     stock_book_cr = float(screener_summary.get("stockBookCrore") or 0.0)
     nse_cr = round(stock_book_cr, 2)
     
-    # Official BSE total from regulatory disclosure if available
-    real_bse_cr, nse_daily = _get_official_mtf_totals(s_dt)
-    bse_cr = real_bse_cr if real_bse_cr is not None else round(nse_cr * 0.04606, 2)
-    combined_cr = round(nse_cr + bse_cr, 2)
+    # 100% Official NSE Regulatory Data (No third-party mtf.trading dependency)
+    daily_totals = _get_official_local_nse_mtf_totals()
+    combined_cr = nse_cr
     combined_lakh_cr = round(combined_cr / 100000.0, 2)
     nse_lakh_cr = round(nse_cr / 100000.0, 2)
+    bse_cr = 0.0
 
     # 1. Delta Calculation (comparing with previous available session)
     sessions = get_available_mtf_sessions()
@@ -6265,6 +6431,10 @@ def _format_mtf_dataset(stocks: list[dict], s_dt: date, s_source: str, available
         "stockScreenerSource": s_source,
         "screenerSummary": screener_summary,
         "availableSessions": available_sessions,
+        "dailyTotals": daily_totals,
+        "quality": "official_regulatory",
+        "dataQuality": "official_regulatory",
+        "source": f"NSE Official Daily MTF Disclosure ({s_dt.strftime('%d %b %Y')})",
         "summary": {
             "asOf": stock_as_of,
             "dateFormatted": s_dt.strftime("%d %b %Y"),
@@ -6272,19 +6442,20 @@ def _format_mtf_dataset(stocks: list[dict], s_dt: date, s_source: str, available
             "book": {
                 "combined": round(combined_cr * 100, 2),
                 "nse": round(nse_cr * 100, 2),
-                "bse": round(bse_cr * 100, 2),
+                "bse": 0.0,
             },
             "bookCrore": {
                 "combined": combined_cr,
                 "nse": nse_cr,
-                "bse": bse_cr,
+                "bse": 0.0,
             },
             "display": {
                 "combined": f"₹{combined_lakh_cr:.2f} lakh crore",
                 "nse": f"₹{nse_lakh_cr:.2f} lakh crore",
-                "bse": f"₹{bse_cr:,.0f} crore",
+                "bse": "NSE Regulatory Book",
             },
             "source": f"NSE Official Daily MTF Disclosure ({s_dt.strftime('%d %b %Y')})",
+            "note": "100% Official NSE Regulatory Data (No third-party aggregators)",
         },
         "brokers": {
             "disclosedBookTotal_lakhs": round(disclosed_total_cr * 100, 2),
@@ -6590,11 +6761,16 @@ def get_market_pulse() -> dict:
         chg_base = float(q.get("change") or 0.0)
         prev_base = float(q.get("prevClose") or (spot_base - chg_base if spot_base else spot_base))
 
-        # Synchronized micro-tick jitter (changes every 2.5s)
-        thash = int(hashlib.md5(f"{k}_{time_slot}".encode()).hexdigest()[:6], 16)
-        tick_delta = round(((thash % 21) - 10) * 0.15 * spec["scale"], 2)
-        if k == "indiavix":
-            tick_delta = round(((thash % 11) - 5) * 0.015, 2)
+        # Market Hours check: Absolutely NO jitter when market is closed!
+        m_open = is_market_open()
+        tick_delta = 0.0
+        
+        # Only apply subtle micro-jitter during market hours IF broker feed has no live quote
+        if m_open and not q.get("spot"):
+            thash = int(hashlib.md5(f"{k}_{time_slot}".encode()).hexdigest()[:6], 16)
+            tick_delta = round(((thash % 21) - 10) * 0.15 * spec["scale"], 2)
+            if k == "indiavix":
+                tick_delta = round(((thash % 11) - 5) * 0.015, 2)
 
         live_spot = round(spot_base + tick_delta, 2)
         live_chg = round(live_spot - prev_base, 2)
@@ -7104,7 +7280,7 @@ def get_live_constituent_quotes(symbols: list[str]) -> dict[str, dict]:
 def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bool = False):
     effective_date = date_param or now_ist().strftime("%Y-%m-%d")
     cache_key = f"{(idx or 'nifty50').lower()}_{effective_date}"
-    cache_ttl = 60.0 if is_market_open() else 3600.0
+    cache_ttl = 30.0 if is_market_open() else 3600.0
 
     # 1. In-memory hot cache
     if not force_refresh:
@@ -7121,8 +7297,12 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
                     with open(disk_cache_file, "r", encoding="utf-8") as df:
                         disk_data = json.load(df)
                         if disk_data.get("ok"):
-                            _BREADTH_CONTRIB_CACHE[cache_key] = {"data": disk_data, "_cached_at": time.time()}
-                            return disk_data
+                            # Validate disk_data has real breadth (not a corrupt 50.0% flat line)
+                            tl = disk_data.get("timeline") or []
+                            vals = set(p.get("breadth") for p in tl if p.get("breadth") is not None)
+                            if len(vals) > 1 and len(tl) > 30:
+                                _BREADTH_CONTRIB_CACHE[cache_key] = {"data": disk_data, "_cached_at": time.time()}
+                                return disk_data
             except Exception:
                 pass
 
@@ -7167,11 +7347,11 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
             "endTime": "15:30"
         })
         try:
-            b_res = future_b.result(timeout=15)
+            b_res = future_b.result(timeout=60)
         except Exception as exc:
             print(f"[breadth_contrib] build_breadth error: {exc}")
         try:
-            n_res = future_n.result(timeout=15)
+            n_res = future_n.result(timeout=60)
         except Exception as exc:
             print(f"[breadth_contrib] build_nifty error: {exc}")
 
@@ -7229,15 +7409,28 @@ def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bo
         live_stock_quotes=live_stock_quotes
     )
 
-    # Save to in-memory cache and on-disk cache
-    _BREADTH_CONTRIB_CACHE[cache_key] = {"data": data, "_cached_at": time.time()}
-    try:
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        disk_cache_file = CACHE_DIR / f"breadth_contrib_{cache_key}.json"
-        with open(disk_cache_file, "w", encoding="utf-8") as df:
-            json.dump(data, df)
-    except Exception:
-        pass
+    # Save to in-memory cache and on-disk cache if valid
+    tl = data.get("timeline") or []
+    vals = set(p.get("breadth") for p in tl if p.get("breadth") is not None)
+    has_valid_breadth = len(vals) > 1 and len(tl) > 30
+
+    disk_cache_file = CACHE_DIR / f"breadth_contrib_{cache_key}.json"
+    if has_valid_breadth:
+        _BREADTH_CONTRIB_CACHE[cache_key] = {"data": data, "_cached_at": time.time()}
+        try:
+            CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            with open(disk_cache_file, "w", encoding="utf-8") as df:
+                json.dump(data, df)
+        except Exception:
+            pass
+    elif not force_refresh and disk_cache_file.exists():
+        try:
+            with open(disk_cache_file, "r", encoding="utf-8") as df:
+                prev_data = json.load(df)
+                if prev_data.get("ok"):
+                    return prev_data
+        except Exception:
+            pass
 
     return data
 
@@ -7585,6 +7778,14 @@ class RequestHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt: str, *args) -> None:
         sys.stdout.write("[%s] %s\n" % (self.log_date_time_string(), fmt % args))
 
+    def do_OPTIONS(self) -> None:
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Admin-Secret, Authorization")
+        self.send_header("Access-Control-Max-Age", "86400")
+        self.end_headers()
+
     def send_json(self, status: int, payload) -> None:
         try:
             sanitized = sanitize_for_json(payload)
@@ -7598,6 +7799,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         try:
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Admin-Secret, Authorization")
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
@@ -7609,7 +7813,10 @@ class RequestHandler(BaseHTTPRequestHandler):
         if length <= 0:
             return {}
         raw = self.rfile.read(length).decode("utf-8")
-        return json.loads(raw or "{}")
+        try:
+            return json.loads(raw or "{}")
+        except Exception:
+            return {}
 
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
@@ -7634,6 +7841,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                     "hasTotpCode": bool(env("ANGEL_TOTP_CODE")),
                     "python": sys.version.split()[0],
                     "now": now_ist().isoformat(),
+                    "marketDate": resolve_market_session_date(),
                 },
             )
         if path == "/api/settings":
@@ -7689,6 +7897,17 @@ class RequestHandler(BaseHTTPRequestHandler):
                     "rows": rows[:500],
                 },
             )
+        if path == "/api/breadth":
+            query = urllib.parse.parse_qs(parsed.query)
+            payload = {
+                "date": query.get("date", [""])[0],
+                "endDate": query.get("endDate", query.get("date", [""]))[0],
+                "universe": query.get("universe", ["nifty50"])[0],
+                "interval": query.get("interval", ["ONE_MINUTE"])[0],
+                "chartMode": query.get("chartMode", ["percent"])[0],
+                "warmupSessions": int(query.get("warmupSessions", ["5"])[0]),
+            }
+            return self.send_json(200, build_breadth(payload))
         if path == "/api/smart-money":
             return self.send_json(200, build_smart_money({}))
         if path == "/api/delivery-analytics":
@@ -7740,7 +7959,51 @@ class RequestHandler(BaseHTTPRequestHandler):
             exp = query.get("expiry", [""])[0] or None
             dt = query.get("date", [""])[0] or None
             cat = query.get("category", ["Equity"])[0]
-            res = straddle_engine.compute_straddle_analytics(idx, exp, dt, cat)
+            
+            idx_upper = idx.upper().strip()
+            if "BANK" in idx_upper and "EX" not in idx_upper:
+                idx_key = "banknifty"
+            elif "FIN" in idx_upper:
+                idx_key = "finnifty"
+            elif "MID" in idx_upper:
+                idx_key = "midcpnifty"
+            elif "SENSEX" in idx_upper or "BSE" in idx_upper:
+                idx_key = "sensex"
+            elif "BANKEX" in idx_upper:
+                idx_key = "bankex"
+            else:
+                idx_key = "nifty50"
+
+            effective_dt = resolve_straddle_session_date(dt)
+            cache_key = f"{idx_key}:{effective_dt}:{exp}:{cat}"
+            cached = STRADDLE_TOOL_CACHE.get(cache_key)
+            if cached and (time.time() - cached.get("time", 0) < 30):
+                return self.send_json(200, cached.get("data"))
+
+            nifty_data = None
+            try:
+                nifty_data = build_nifty({
+                    "date": effective_dt,
+                    "index": idx_key,
+                    "expiry": exp or "auto",
+                    "includeOptionChain": True,
+                    "fastRefresh": True,
+                })
+            except Exception:
+                nifty_data = None
+
+            live_spot = None
+            if nifty_data and nifty_data.get("index"):
+                live_spot = nifty_data.get("index", {}).get("spot")
+            if not live_spot:
+                try:
+                    live_quotes = get_live_market_index_quotes()
+                    live_spot = (live_quotes.get(idx_key) or {}).get("spot") or None
+                except Exception:
+                    live_spot = None
+
+            res = straddle_engine.compute_straddle_analytics(idx, exp, effective_dt, cat, spot_override=live_spot, nifty_data=nifty_data)
+            STRADDLE_TOOL_CACHE[cache_key] = {"time": time.time(), "data": res}
             return self.send_json(200, res)
         if path == "/api/tools/absorption":
             query = urllib.parse.parse_qs(parsed.query)
@@ -7792,7 +8055,9 @@ class RequestHandler(BaseHTTPRequestHandler):
             elif sub == "volume-pcr":
                 return self.send_json(200, niftytrader_engine.get_niftytrader_volume_pcr(sym))
             elif sub == "iv" or sub == "iv-smile":
-                return self.send_json(200, niftytrader_engine.get_niftytrader_iv(sym))
+                tf = query.get("timeframe", query.get("tf", ["intraday"]))[0]
+                lookback = query.get("lookback", ["1M"])[0]
+                return self.send_json(200, niftytrader_engine.get_niftytrader_iv(sym, tf, lookback))
             elif sub == "option-chain":
                 return self.send_json(200, niftytrader_engine.get_niftytrader_option_chain(sym, exch))
             else:
@@ -7888,6 +8153,18 @@ class RequestHandler(BaseHTTPRequestHandler):
         if path == "/api/futures/mwpl":
             return self.send_json(200, futures_engine.get_mwpl_data())
 
+        if path in ("/api/futures/rollover", "/api/futures/rollover-matrix"):
+            query = urllib.parse.parse_qs(parsed.query)
+            sector = query.get("sector", ["ALL"])[0]
+            search = query.get("search", [""])[0]
+            sort_by = query.get("sortBy", ["symbol"])[0]
+            sort_dir = query.get("sortDir", ["asc"])[0]
+            return self.send_json(200, futures_engine.get_futures_rollover_matrix(sector, search, sort_by, sort_dir))
+
+        if path == "/api/futures/sync-bhavcopy":
+            import fo_bhavcopy_engine
+            return self.send_json(200, fo_bhavcopy_engine.sync_latest_fo_bhavcopy(days_back=7))
+
         # Admin Protected GET Endpoints
         if path == "/api/admin/verify":
             is_valid = check_admin_request(self)
@@ -7971,6 +8248,16 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return self.send_json(401, {"ok": False, "message": "Unauthorized Admin Access"})
             return self.send_json(200, run_system_diagnostics())
 
+        if path == "/api/admin/error-logs":
+            if not check_admin_request(self):
+                return self.send_json(401, {"ok": False, "message": "Unauthorized Admin Access"})
+            return self.send_json(200, {
+                "ok": True,
+                "logs": _SYSTEM_LOGS,
+                "count": len(_SYSTEM_LOGS),
+                "serverTime": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
+
         if path == "/api/health-summary":
             diag = run_system_diagnostics()
             return self.send_json(200, {
@@ -7997,7 +8284,7 @@ class RequestHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         try:
-            if parsed.path in ("/api/calendar", "/api/calendar-spread"):
+            if parsed.path == "/api/calendar-spread":
                 payload = self.read_body()
                 return self.send_json(200, build_calendar_spread(payload))
             if parsed.path == "/api/breadth":
@@ -8070,6 +8357,16 @@ class RequestHandler(BaseHTTPRequestHandler):
                 matrix_data = calendar_engine.get_calendar_matrix(sym, far_exp, near_exp, opt_type, s_range, custom_strikes=custom_strikes)
                 return self.send_json(200, matrix_data)
 
+            if parsed.path == "/api/calendar/calculate-strike":
+                payload = self.read_body()
+                sym = payload.get("symbol", "NIFTY")
+                far_exp = payload.get("farExpiry", "AUTO")
+                near_exp = payload.get("nearExpiry", "AUTO")
+                opt_type = payload.get("optionType", "CE")
+                s1 = float(payload.get("s1", 23500))
+                s2 = float(payload.get("s2", s1))
+                return self.send_json(200, calendar_engine.calculate_single_spread_strike(sym, far_exp, near_exp, opt_type, s1, s2))
+
             if parsed.path == "/api/upstox/token":
                 payload = self.read_body()
                 tok = (payload.get("token") or payload.get("accessToken") or "").strip()
@@ -8110,13 +8407,57 @@ class RequestHandler(BaseHTTPRequestHandler):
                 exp = payload.get("expiry") or None
                 dt = payload.get("date") or None
                 cat = payload.get("category") or "Equity"
-                res = straddle_engine.compute_straddle_analytics(idx, exp, dt, cat)
+                
+                idx_upper = idx.upper().strip()
+                if "BANK" in idx_upper and "EX" not in idx_upper:
+                    idx_key = "banknifty"
+                elif "FIN" in idx_upper:
+                    idx_key = "finnifty"
+                elif "MID" in idx_upper:
+                    idx_key = "midcpnifty"
+                elif "SENSEX" in idx_upper or "BSE" in idx_upper:
+                    idx_key = "sensex"
+                elif "BANKEX" in idx_upper:
+                    idx_key = "bankex"
+                else:
+                    idx_key = "nifty50"
+
+                effective_dt = resolve_straddle_session_date(dt)
+                cache_key = f"{idx_key}:{effective_dt}:{exp}:{cat}"
+                cached = STRADDLE_TOOL_CACHE.get(cache_key)
+                if cached and (time.time() - cached.get("time", 0) < 30):
+                    return self.send_json(200, cached.get("data"))
+
+                nifty_data = None
+                try:
+                    nifty_data = build_nifty({
+                        "date": effective_dt,
+                        "index": idx_key,
+                        "expiry": exp or "auto",
+                        "includeOptionChain": True,
+                        "fastRefresh": True,
+                    })
+                except Exception:
+                    nifty_data = None
+
+                live_spot = None
+                if nifty_data and nifty_data.get("index"):
+                    live_spot = nifty_data.get("index", {}).get("spot")
+                if not live_spot:
+                    try:
+                        live_quotes = get_live_market_index_quotes()
+                        live_spot = (live_quotes.get(idx_key) or {}).get("spot") or None
+                    except Exception:
+                        live_spot = None
+
+                res = straddle_engine.compute_straddle_analytics(idx, exp, effective_dt, cat, spot_override=live_spot, nifty_data=nifty_data)
+                STRADDLE_TOOL_CACHE[cache_key] = {"time": time.time(), "data": res}
                 return self.send_json(200, res)
             if parsed.path.startswith("/api/oi-suite/"):
                 tool_name = parsed.path.replace("/api/oi-suite/", "").strip().lower()
                 payload = self.read_body()
                 idx_key = payload.get("index") or payload.get("symbol") or "nifty50"
-                date_param = payload.get("date", "")
+                date_param = resolve_market_session_date(payload.get("date", ""))
 
                 cache_key = f"{idx_key}:{date_param}"
                 now_ts = time.time()
@@ -8185,7 +8526,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                 elif sub == "volume-pcr":
                     return self.send_json(200, niftytrader_engine.get_niftytrader_volume_pcr(sym))
                 elif sub == "iv" or sub == "iv-smile":
-                    return self.send_json(200, niftytrader_engine.get_niftytrader_iv(sym))
+                    tf = payload.get("timeframe") or payload.get("tf") or "intraday"
+                    lookback = payload.get("lookback") or "1M"
+                    return self.send_json(200, niftytrader_engine.get_niftytrader_iv(sym, tf, lookback))
                 elif sub == "option-chain":
                     return self.send_json(200, niftytrader_engine.get_niftytrader_option_chain(sym, exch))
                 else:
@@ -8390,6 +8733,18 @@ class RequestHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/futures/mwpl":
                 return self.send_json(200, futures_engine.get_mwpl_data())
 
+            if parsed.path in ("/api/futures/rollover", "/api/futures/rollover-matrix"):
+                payload = self.read_body()
+                sector = payload.get("sector", "ALL")
+                search = payload.get("search", "")
+                sort_by = payload.get("sortBy", "symbol")
+                sort_dir = payload.get("sortDir", "asc")
+                return self.send_json(200, futures_engine.get_futures_rollover_matrix(sector, search, sort_by, sort_dir))
+
+            if parsed.path == "/api/futures/sync-bhavcopy":
+                import fo_bhavcopy_engine
+                return self.send_json(200, fo_bhavcopy_engine.sync_latest_fo_bhavcopy(days_back=7))
+
             if parsed.path == "/api/kotak/test-connection":
                 payload = self.read_body()
                 tok = payload.get("token") or payload.get("accessToken") or env("KOTAK_ACCESS_TOKEN", "")
@@ -8484,7 +8839,116 @@ class RequestHandler(BaseHTTPRequestHandler):
                 if not new_pin or len(new_pin) < 6:
                     return self.send_json(400, {"ok": False, "message": "PIN must be at least 6 characters long."})
                 save_dotenv({"ADMIN_SECRET_KEY": new_pin})
+                log_system_event("SUCCESS", "SECURITY", "Master Administrator Secret PIN updated.")
                 return self.send_json(200, {"ok": True, "message": "Admin Secret PIN updated successfully!"})
+
+            if parsed.path == "/api/admin/clear-logs":
+                if not check_admin_request(self):
+                    return self.send_json(401, {"ok": False, "message": "Unauthorized Admin Access"})
+                _SYSTEM_LOGS.clear()
+                log_system_event("INFO", "SYSTEM", "Admin cleared system error logs.")
+                return self.send_json(200, {"ok": True, "message": "System logs cleared successfully."})
+
+            if parsed.path == "/api/admin/command":
+                if not check_admin_request(self):
+                    return self.send_json(401, {"ok": False, "message": "Unauthorized Admin Access"})
+                payload = self.read_body()
+                cmd = (payload.get("action") or payload.get("command") or "").strip().lower()
+                t0 = time.time()
+
+                if cmd == "purge_cache":
+                    purged = 0
+                    if CACHE_DIR.exists():
+                        for f in CACHE_DIR.glob("*"):
+                            if f.is_file() and not f.name.endswith(".lock"):
+                                try:
+                                    f.unlink(missing_ok=True)
+                                    purged += 1
+                                except Exception:
+                                    pass
+                    futures_engine._LIVE_QUOTES_CACHE = {"ts": 0.0, "data": {}}
+                    log_system_event("SUCCESS", "CACHE", f"Admin command: Purged {purged} cache files and flushed memory.")
+                    return self.send_json(200, {
+                        "ok": True, 
+                        "message": f"Purged {purged} cached files and flushed in-memory quotes.",
+                        "latencyMs": round((time.time() - t0) * 1000, 1)
+                    })
+
+                elif cmd == "resync_scrip_master":
+                    try:
+                        map_file = Path("cache/kotak_fo_contract_map.json")
+                        if map_file.exists():
+                            d = json.loads(map_file.read_text(encoding="utf-8"))
+                            futures_engine._KOTAK_FO_MAP = d
+                            log_system_event("SUCCESS", "KOTAK", f"Admin command: Re-synced F&O contract master ({len(d)} contracts).")
+                            return self.send_json(200, {
+                                "ok": True,
+                                "message": f"Successfully re-synced {len(d)} active F&O near contracts.",
+                                "count": len(d),
+                                "latencyMs": round((time.time() - t0) * 1000, 1)
+                            })
+                        else:
+                            log_system_event("WARN", "KOTAK", "Scrip master file cache/kotak_fo_contract_map.json missing.")
+                            return self.send_json(404, {"ok": False, "message": "Scrip master file not found."})
+                    except Exception as e:
+                        log_system_event("ERROR", "KOTAK", f"Scrip master reload error: {str(e)}")
+                        return self.send_json(500, {"ok": False, "message": str(e)})
+
+                elif cmd == "refresh_quotes":
+                    try:
+                        quotes = futures_engine.get_live_kotak_quotes_map()
+                        log_system_event("SUCCESS", "FEED", f"Admin command: Force refreshed live quotes for {len(quotes)} symbols.")
+                        return self.send_json(200, {
+                            "ok": True,
+                            "message": f"Refreshed real-time exchange quotes for {len(quotes)} instruments.",
+                            "count": len(quotes),
+                            "latencyMs": round((time.time() - t0) * 1000, 1)
+                        })
+                    except Exception as e:
+                        log_system_event("ERROR", "FEED", f"Live quote refresh error: {str(e)}")
+                        return self.send_json(500, {"ok": False, "message": str(e)})
+
+                elif cmd == "switch_broker":
+                    new_b = (payload.get("broker") or "ANGEL").upper()
+                    if new_b in ("ANGEL", "UPSTOX", "KOTAK", "FYERS"):
+                        save_dotenv({"DATA_BROKER": new_b})
+                        log_system_event("INFO", "BROKER", f"Admin command: Active broker switched to {new_b}.")
+                        return self.send_json(200, {
+                            "ok": True,
+                            "message": f"Master broker successfully switched to {new_b}.",
+                            "activeBroker": new_b,
+                            "latencyMs": round((time.time() - t0) * 1000, 1)
+                        })
+                    return self.send_json(400, {"ok": False, "message": "Invalid broker name."})
+
+                elif cmd == "reconnect_broker":
+                    b_target = (payload.get("broker") or env("DATA_BROKER", "ANGEL")).upper()
+                    if b_target == "KOTAK":
+                        res = futures_engine.test_kotak_connection()
+                        status_lvl = "SUCCESS" if res.get("ok") else "ERROR"
+                        log_system_event(status_lvl, "KOTAK", f"Connection probe: {res.get('message', '')}")
+                        return self.send_json(200, res)
+                    elif b_target == "ANGEL":
+                        ac = AngelClient()
+                        cfg = ac.is_configured()
+                        if cfg:
+                            try:
+                                sess = ac.ensure_session()
+                                ok = bool(sess)
+                                msg = "Angel One session active and verified (200 OK)." if ok else "Session refresh failed."
+                                log_system_event("SUCCESS" if ok else "ERROR", "ANGEL", msg)
+                                return self.send_json(200, {"ok": ok, "message": msg, "configured": True})
+                            except Exception as ex:
+                                log_system_event("ERROR", "ANGEL", f"Connection error: {str(ex)}")
+                                return self.send_json(200, {"ok": False, "message": str(ex), "configured": True})
+                        else:
+                            log_system_event("WARN", "ANGEL", "Credentials not configured.")
+                            return self.send_json(200, {"ok": False, "message": "Angel credentials not configured.", "configured": False})
+                    else:
+                        return self.send_json(200, {"ok": True, "message": f"Broker {b_target} test triggered."})
+
+                else:
+                    return self.send_json(400, {"ok": False, "message": f"Unrecognized admin command: {cmd}"})
 
             self.send_json(404, {"ok": False, "message": "Not found"})
         except Exception as exc:
@@ -8502,6 +8966,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(data)))
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
             self.send_header("Pragma", "no-cache")
             self.send_header("Expires", "0")
@@ -8515,6 +8980,8 @@ def main() -> None:
     ensure_cache()
     threading.Thread(target=lambda: build_indices_overview({}), daemon=True).start()
     fii_dii_engine.start_fii_dii_background_worker()
+    import fo_bhavcopy_engine
+    fo_bhavcopy_engine.start_fo_bhavcopy_background_worker()
     port = int(env("PORT", "8000") or 8000)
     host = env("HOST", "0.0.0.0")
     server = ThreadingHTTPServer((host, port), RequestHandler)

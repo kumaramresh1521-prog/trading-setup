@@ -27,6 +27,12 @@
     buildupData: null,
     heatmapData: null,
     mwplData: null,
+    rolloverData: null,
+    rolloverSearch: '',
+    rolloverSector: 'ALL',
+    rolloverTier: 'ALL',
+    rolloverSortBy: 'symbol',
+    rolloverSortDir: 'asc',
     lastPrices: {},
     initialized: false
   };
@@ -73,7 +79,7 @@
       btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
 
-    const views = ['matrix', 'buildup', 'indices', 'mwpl'];
+    const views = ['matrix', 'buildup', 'indices', 'mwpl', 'rollover'];
     views.forEach(v => {
       const el = document.getElementById(`futView_${v}`);
       if (el) {
@@ -90,6 +96,7 @@
     else if (state.activeSubTab === 'buildup') loadBuildupView();
     else if (state.activeSubTab === 'indices') loadIndicesDetailView();
     else if (state.activeSubTab === 'mwpl') loadMwpl();
+    else if (state.activeSubTab === 'rollover') loadRolloverMatrix();
   }
 
   // --- Benchmark Index Ribbon ---
@@ -573,6 +580,213 @@
     }
   }
 
+  // --- Historical & Monthly Futures Rollover Matrix ---
+  async function loadRolloverMatrix(forceRefresh = false) {
+    const tbody = document.getElementById('futRolloverTableBody');
+    const thead = document.getElementById('futRolloverTableHead');
+    if (!tbody) return;
+
+    if (!state.rolloverData || forceRefresh) {
+      try {
+        tbody.innerHTML = `<tr><td colspan="17" style="text-align:center; padding:30px; color:#94a3b8;"><div class="spinner-small" style="margin-bottom:8px;"></div>Fetching Historical Rollover Matrix...</td></tr>`;
+        const res = await fetch('/api/futures/rollover');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        state.rolloverData = await res.json();
+      } catch (err) {
+        console.error('Error fetching rollover matrix:', err);
+        tbody.innerHTML = `<tr><td colspan="17" style="text-align:center; padding:30px; color:#ef4444;">Failed to load Rollover Matrix (${err.message}). Click Refresh to retry.</td></tr>`;
+        return;
+      }
+    }
+
+    const data = state.rolloverData;
+    if (!data || !data.ok) return;
+
+    // Render Stats Strip
+    const st = data.stats || {};
+    const elAvg = document.getElementById('futRoAvgMarket');
+    if (elAvg) elAvg.textContent = (st.avgMarketRollover ?? 86.5).toFixed(2) + '%';
+    const elHigh = document.getElementById('futRoHighCount');
+    if (elHigh) elHigh.textContent = st.highRolloverCount ?? '--';
+    const elLow = document.getElementById('futRoLowCount');
+    if (elLow) elLow.textContent = st.lowRolloverCount ?? '--';
+    const elTot = document.getElementById('futRoTotalCount');
+    if (elTot) elTot.textContent = st.totalTracked ?? (data.data ? data.data.length : '--');
+
+    // Build Table Headers dynamically
+    const months = data.months || [];
+    if (thead) {
+      let thHtml = `<th class="sticky-col sortable" data-sort="symbol">SYMBOL ${getSortIcon('symbol', state.rolloverSortBy, state.rolloverSortDir)}</th>`;
+      months.forEach(m => {
+        thHtml += `<th class="sortable text-right" data-sort="${m}">${m} ${getSortIcon(m, state.rolloverSortBy, state.rolloverSortDir)}</th>`;
+      });
+      thHtml += `<th class="sortable text-right" data-sort="avg3M">3M AVG ${getSortIcon('avg3M', state.rolloverSortBy, state.rolloverSortDir)}</th>`;
+      thHtml += `<th class="sortable text-right" data-sort="currentRo">CURRENT ${getSortIcon('currentRo', state.rolloverSortBy, state.rolloverSortDir)}</th>`;
+      thead.innerHTML = thHtml;
+
+      // Attach sort handlers to new headers
+      thead.querySelectorAll('th.sortable').forEach(th => {
+        th.onclick = () => {
+          const col = th.dataset.sort;
+          if (state.rolloverSortBy === col) {
+            state.rolloverSortDir = state.rolloverSortDir === 'desc' ? 'asc' : 'desc';
+          } else {
+            state.rolloverSortBy = col;
+            state.rolloverSortDir = (col === 'symbol') ? 'asc' : 'desc';
+          }
+          loadRolloverMatrix(false);
+        };
+      });
+    }
+
+    renderRolloverRows();
+  }
+
+  function getSortIcon(col, currentSort, currentDir) {
+    if (col !== currentSort) return '<span class="sort-carat" style="opacity:0.3; margin-left:3px;">⇅</span>';
+    return currentDir === 'desc' ? '<span class="sort-carat" style="color:#38bdf8; margin-left:3px;">▼</span>' : '<span class="sort-carat" style="color:#38bdf8; margin-left:3px;">▲</span>';
+  }
+
+  function renderRolloverRows() {
+    const tbody = document.getElementById('futRolloverTableBody');
+    if (!tbody || !state.rolloverData) return;
+
+    let rows = state.rolloverData.data || [];
+    const months = state.rolloverData.months || [];
+
+    // Filter by search
+    const q = (state.rolloverSearch || '').trim().toUpperCase();
+    if (q) {
+      rows = rows.filter(r => r.symbol.toUpperCase().includes(q) || (r.name && r.name.toUpperCase().includes(q)));
+    }
+
+    // Filter by sector
+    if (state.rolloverSector && state.rolloverSector !== 'ALL') {
+      const secU = state.rolloverSector.toUpperCase();
+      if (secU === 'INDICES') {
+        rows = rows.filter(r => r.isIndex);
+      } else {
+        rows = rows.filter(r => (r.sector || '').toUpperCase() === secU);
+      }
+    }
+
+    // Filter by tier
+    if (state.rolloverTier === 'HIGH') {
+      rows = rows.filter(r => {
+        const v = r.rollovers ? r.rollovers['AUG 2026'] : null;
+        return typeof v === 'number' && v >= 90.0;
+      });
+    } else if (state.rolloverTier === 'NORMAL') {
+      rows = rows.filter(r => {
+        const v = r.rollovers ? r.rollovers['AUG 2026'] : null;
+        return typeof v === 'number' && v >= 75.0 && v < 90.0;
+      });
+    } else if (state.rolloverTier === 'LOW') {
+      rows = rows.filter(r => {
+        const v = r.rollovers ? r.rollovers['AUG 2026'] : null;
+        return typeof v === 'number' && v < 75.0;
+      });
+    }
+
+    // Sort
+    const col = state.rolloverSortBy || 'symbol';
+    const isDesc = state.rolloverSortDir === 'desc';
+    rows = [...rows].sort((a, b) => {
+      let vA, vB;
+      if (col === 'symbol') {
+        vA = a.symbol;
+        vB = b.symbol;
+        return isDesc ? vB.localeCompare(vA) : vA.localeCompare(vB);
+      } else if (col === 'avg3M' || col === 'avg6M' || col === 'currentRo') {
+        vA = Number(a[col]) || 0;
+        vB = Number(b[col]) || 0;
+      } else {
+        // month column
+        vA = a.rollovers ? a.rollovers[col] : null;
+        vB = b.rollovers ? b.rollovers[col] : null;
+        if (typeof vA !== 'number') vA = -1;
+        if (typeof vB !== 'number') vB = -1;
+      }
+      return isDesc ? (vB - vA) : (vA - vB);
+    });
+
+    if (rows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${months.length + 3}" style="text-align:center; padding:30px; color:#94a3b8;">No F&amp;O symbols found matching filters.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = rows.map(r => {
+      let cells = '';
+      // Sticky symbol cell
+      cells += `
+        <td class="sticky-col ro-sym-cell" onclick="window.futuresDesk.filterBySymbol('${r.symbol}')" title="Click to inspect ${r.symbol}">
+          <div class="ro-sym-name">${r.symbol}</div>
+          <div class="ro-sym-sector">${r.sector}</div>
+        </td>
+      `;
+
+      // Monthly cells
+      months.forEach(m => {
+        const v = r.rollovers ? r.rollovers[m] : null;
+        if (v === '-' || v === null || v === undefined) {
+          cells += `<td class="ro-val-cell ro-dash">-</td>`;
+        } else {
+          const num = Number(v);
+          let cls = 'ro-val-cell';
+          if (num >= 90.0) cls += ' ro-high';
+          else if (num >= 80.0) cls += ' ro-good';
+          else if (num < 75.0) cls += ' ro-low';
+          cells += `<td class="${cls}">${num.toFixed(4)}</td>`;
+        }
+      });
+
+      // 3M AVG
+      const a3 = Number(r.avg3M || 0);
+      let a3Cls = 'ro-val-cell ro-avg';
+      if (a3 >= 90.0) a3Cls += ' ro-high';
+      else if (a3 < 75.0) a3Cls += ' ro-low';
+      cells += `<td class="${a3Cls}">${a3 > 0 ? a3.toFixed(4) : '-'}</td>`;
+
+      // CURRENT
+      const cr = Number(r.currentRo || 0);
+      cells += `<td class="ro-val-cell ro-curr" style="color:#38bdf8; font-weight:700;">${cr > 0 ? cr.toFixed(2) + '%' : '-'}</td>`;
+
+      return `<tr>${cells}</tr>`;
+    }).join('');
+  }
+
+  function exportRolloverCsv() {
+    if (!state.rolloverData || !state.rolloverData.data) {
+      alert('Rollover data not loaded yet.');
+      return;
+    }
+    const months = state.rolloverData.months || [];
+    const headers = ['SYMBOL', 'SECTOR', ...months, '3M_AVG', 'CURRENT_RO_PCT'];
+    const csvRows = [headers.join(',')];
+
+    state.rolloverData.data.forEach(r => {
+      const row = [
+        r.symbol,
+        `"${r.sector || ''}"`,
+        ...months.map(m => {
+          const v = r.rollovers ? r.rollovers[m] : '-';
+          return v;
+        }),
+        r.avg3M ?? '',
+        r.currentRo ?? ''
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `NSE_Futures_Rollover_Matrix_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // --- Auto-Refresh Engine ---
   function setAutoRefresh(seconds) {
     state.autoRefreshSec = seconds;
@@ -715,6 +929,84 @@
       });
     });
 
+    // Rollover Search Input Listener
+    const roSearchInput = document.getElementById('futRolloverSearch');
+    const roClearBtn = document.getElementById('futRolloverClearSearch');
+    if (roSearchInput) {
+      roSearchInput.addEventListener('input', (e) => {
+        state.rolloverSearch = e.target.value.trim().toUpperCase();
+        if (roClearBtn) roClearBtn.style.display = state.rolloverSearch ? 'block' : 'none';
+        renderRolloverRows();
+      });
+    }
+    if (roClearBtn && roSearchInput) {
+      roClearBtn.addEventListener('click', () => {
+        roSearchInput.value = '';
+        state.rolloverSearch = '';
+        roClearBtn.style.display = 'none';
+        renderRolloverRows();
+      });
+    }
+
+    // Rollover Sector Dropdown
+    const roSectorSelect = document.getElementById('futRolloverSectorSelect');
+    if (roSectorSelect) {
+      roSectorSelect.addEventListener('change', (e) => {
+        state.rolloverSector = e.target.value || 'ALL';
+        renderRolloverRows();
+      });
+    }
+
+    // Rollover Tier Dropdown
+    const roTierSelect = document.getElementById('futRolloverTierSelect');
+    if (roTierSelect) {
+      roTierSelect.addEventListener('change', (e) => {
+        state.rolloverTier = e.target.value || 'ALL';
+        renderRolloverRows();
+      });
+    }
+
+    // Rollover Export CSV Button
+    const roExportBtn = document.getElementById('futRoExportCsvBtn');
+    if (roExportBtn) {
+      roExportBtn.addEventListener('click', () => {
+        exportRolloverCsv();
+      });
+    }
+
+    // Rollover Refresh Button
+    const roRefBtn = document.getElementById('futRoRefreshBtn');
+    if (roRefBtn) {
+      roRefBtn.addEventListener('click', () => {
+        loadRolloverMatrix(true);
+      });
+    }
+
+    // Rollover Sync Bhavcopy Button
+    const roSyncBtn = document.getElementById('futRoSyncBhavBtn');
+    if (roSyncBtn) {
+      roSyncBtn.addEventListener('click', async () => {
+        roSyncBtn.disabled = true;
+        const origText = roSyncBtn.innerHTML;
+        roSyncBtn.innerHTML = '⏳ Syncing...';
+        try {
+          const res = await fetch('/api/futures/sync-bhavcopy');
+          const data = await res.json();
+          if (data && data.ok) {
+            alert(`[SUCCESS] Official NSE FO Bhavcopy synced successfully!\nDate: ${data.dateDisplay || data.date}\nTotal Symbols: ${data.totalSymbols}\nSource: ${data.source}`);
+            loadRolloverMatrix(true);
+          } else {
+            alert(`Sync notice: ${data.message || 'No newer Bhavcopy found'}`);
+          }
+        } catch (err) {
+          alert('Error syncing Bhavcopy: ' + err.message);
+        } finally {
+          roSyncBtn.disabled = false;
+          roSyncBtn.innerHTML = origText;
+        }
+      });
+    }
+
     // Start 5s Live Auto-Refresh Immediately
     setAutoRefresh(5);
 
@@ -733,7 +1025,9 @@
     loadMatrix,
     loadBuildupView,
     loadIndicesDetailView,
-    loadMwpl
+    loadMwpl,
+    loadRolloverMatrix,
+    exportRolloverCsv
   };
 
   // Auto-init on load if panel is active

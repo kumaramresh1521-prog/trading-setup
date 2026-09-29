@@ -7,6 +7,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Jspreadsheet CE & jSuites Local Libraries -->
+  <link rel="stylesheet" href="/libs/jsuites.css" type="text/css" />
+  <link rel="stylesheet" href="/libs/jexcel.css" type="text/css" />
+  <script src="/libs/jsuites.js"></script>
+  <script src="/libs/jexcel.js"></script>
+
   <style>
     :root {
       --bg-root: #030712;
@@ -64,7 +71,8 @@
     .brand-area {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
     .brand-badge {
@@ -83,15 +91,26 @@
       color: var(--text-main);
     }
 
+    .spot-chip {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+
     .status-chip {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       font-family: var(--font-mono);
       font-size: 11px;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
       padding: 3px 8px;
       border-radius: 20px;
     }
@@ -117,6 +136,7 @@
       font-family: var(--font-sans);
       border: 1px solid transparent;
       user-select: none;
+      text-decoration: none;
     }
 
     .btn-primary {
@@ -140,57 +160,33 @@
     }
     .btn-indigo:hover { background: #3730a3; color: white; }
 
+    .btn-emerald {
+      background: #064e3b;
+      color: #a7f3d0;
+      border-color: #059669;
+    }
+    .btn-emerald:hover { background: #047857; color: white; }
+
     /* Main Container */
     .container {
-      max-width: 1650px;
+      max-width: 1780px;
       margin: 0 auto;
-      padding: 16px 20px;
+      padding: 14px 18px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       width: 100%;
     }
 
-    /* Engine Status Card */
-    .ai-process-card {
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      border-radius: 10px;
-      padding: 12px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .ai-process-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .ai-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 4px;
-      background: #10b981;
-      color: #fff;
-    }
-
-    /* Saved Combination Tabs Strip */
+    /* 📑 Saved Combination Tabs Strip */
     .saved-tabs-strip {
       background: var(--bg-panel);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
-      padding: 12px 16px;
+      padding: 10px 16px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .tabs-scroll-container {
@@ -254,98 +250,96 @@
       background: rgba(239, 68, 68, 0.15);
     }
 
-    /* Top Controls Strip: Underlying -> Far Expiry -> Near Expiry */
+    /* Setup Strip */
     .setup-strip {
       background: var(--bg-panel);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
-      padding: 14px 18px;
+      padding: 12px 16px;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 14px;
     }
 
     .control-box {
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      min-width: 210px;
+      gap: 4px;
+      min-width: 160px;
       flex: 1;
     }
 
     .control-label {
       font-size: 11px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
       color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      letter-spacing: 0.3px;
     }
 
     .control-select, .control-input {
       background: #0b1329;
-      border: 1px solid var(--border-subtle);
+      border: 1px solid #1e293b;
       color: var(--text-main);
       padding: 8px 12px;
       border-radius: 6px;
-      font-size: 13px;
-      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-family: var(--font-sans);
       outline: none;
       transition: border-color 0.15s ease;
-      height: 38px;
+      width: 100%;
     }
     .control-select:focus, .control-input:focus {
       border-color: var(--border-highlight);
     }
 
-    /* Option Type Tabs: CE vs PE ONLY */
+    /* Type Tabs (CE / PE) */
     .type-tabs-container {
       display: flex;
-      gap: 8px;
-      border-bottom: 2px solid var(--border-subtle);
-      padding-bottom: 2px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .type-tab {
-      padding: 8px 24px;
+      flex: 1;
+      min-width: 180px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 800;
       font-size: 13px;
-      font-weight: 700;
-      border-radius: 8px 8px 0 0;
+      letter-spacing: 0.5px;
+      text-align: center;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.15s ease;
+      background: #070d1a;
+      border: 1px solid var(--border-subtle);
       color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid transparent;
-      border-bottom: none;
+      transition: all 0.15s ease;
       user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .type-tab:hover {
+      background: #0f172a;
+      color: var(--text-main);
     }
 
     .type-tab.active-ce {
-      color: #10b981;
-      background: #07171e;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.18) 100%);
       border-color: #10b981;
-      box-shadow: 0 -2px 10px rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.2);
     }
 
     .type-tab.active-pe {
-      color: #f43f5e;
-      background: #1f0c14;
-      border-color: #f43f5e;
-      box-shadow: 0 -2px 10px rgba(244, 63, 94, 0.2);
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(220, 38, 38, 0.18) 100%);
+      border-color: #ef4444;
+      color: #f87171;
+      box-shadow: 0 0 14px rgba(239, 68, 68, 0.2);
     }
 
-    .type-tab:hover:not(.active-ce):not(.active-pe) {
-      color: #f8fafc;
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    /* Spreadsheet Table Card */
+    /* Main Spreadsheet Card */
     .sheet-card {
       background: var(--bg-panel);
       border: 1px solid var(--border-subtle);
@@ -353,11 +347,12 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
 
-    .sheet-header-actions {
+    .sheet-toolbar {
       padding: 10px 16px;
-      background: var(--bg-header);
+      background: #0b1329;
       border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
@@ -366,182 +361,225 @@
       gap: 10px;
     }
 
-    /* Internal Section Toolbar directly inside the table card */
-    .section-toolbar {
-      padding: 8px 16px;
-      background: #060e20;
-      border-bottom: 1px solid var(--border-subtle);
+    /* Excel Formula Bar (Professional Bloomberg UI) */
+    .excel-formula-bar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .section-toolbar-left {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .table-container {
-      overflow-x: auto;
-      max-height: 580px;
-    }
-
-    table.calendar-table {
-      width: 100%;
-      border-collapse: collapse;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #060b18;
+      border-bottom: 1px solid #14203d;
       font-family: var(--font-mono);
-      font-size: 11.5px;
-      text-align: right;
+      font-size: 12px;
+      flex-wrap: wrap;
     }
 
-    table.calendar-table th {
-      background: #091224;
+    .cell-address-box {
+      background: #0d1730;
+      border: 1px solid #203560;
+      color: #38bdf8;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 4px;
+      min-width: 65px;
+      text-align: center;
+      user-select: none;
+      font-size: 13px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.5px;
+    }
+
+    .formula-btn {
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #1e293b;
+      background: #0b1329;
       color: #94a3b8;
-      padding: 10px 10px;
-      border-bottom: 2px solid var(--border-subtle);
-      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
       font-weight: 700;
-      white-space: nowrap;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .formula-btn:hover { background: #1e293b; color: #f8fafc; }
+    .formula-btn-cancel:hover { color: #ef4444; border-color: #ef4444; background: rgba(239, 68, 68, 0.15); }
+    .formula-btn-accept { color: #10b981; }
+    .formula-btn-accept:hover { background: rgba(16, 185, 129, 0.2); border-color: #10b981; }
+    .formula-btn-fx { color: #818cf8; font-style: italic; font-family: serif; font-size: 15px; }
+    .formula-btn-fx:hover { background: rgba(129, 140, 248, 0.2); border-color: #818cf8; }
+
+    .formula-input {
+      flex: 1;
+      min-width: 280px;
+      background: #0b1329;
+      border: 1px solid #1e293b;
+      color: #f8fafc;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+    .formula-input:focus {
+      border-color: #10b981;
+      box-shadow: 0 0 0 1px #10b981;
+      background: #0a1426;
+    }
+
+    /* Jspreadsheet Dark Bloomberg Styling */
+    .jexcel_container {
+      font-family: var(--font-mono);
+      background: #060b18;
+      width: 100%;
+    }
+    .jexcel {
+      background: #060b18;
+      border-collapse: separate;
+      color: #f8fafc;
+      width: 100%;
+    }
+    .jexcel > thead > tr > td {
+      background: #091024 !important;
+      color: #38bdf8 !important;
+      font-weight: 700;
+      border: 1px solid #1a2a4f !important;
+      padding: 7px 8px;
+      font-size: 11.5px;
+      text-align: center;
       position: sticky;
       top: 0;
       z-index: 10;
-      text-transform: uppercase;
-      font-size: 11px;
+    }
+    .jexcel > thead > tr > td.selected {
+      background: #1e293b !important;
+      color: #10b981 !important;
+    }
+    .jexcel > tbody > tr > td {
+      background: #070d1a !important;
+      color: #f1f5f9 !important;
+      border: 1px solid #14203d !important;
+      padding: 6px 10px !important;
+      font-size: 12px !important;
+      font-family: var(--font-mono) !important;
+      text-align: right;
+    }
+    /* Align Strike columns center */
+    .jexcel > tbody > tr > td:nth-child(2),
+    .jexcel > tbody > tr > td:nth-child(3) {
+      text-align: center !important;
+      font-weight: 700;
+      color: #38bdf8 !important;
+      background: rgba(56, 189, 248, 0.04) !important;
+    }
+    /* Spread LTP highlight */
+    .jexcel > tbody > tr > td:nth-child(6) {
+      color: #10b981 !important;
+      font-weight: 800;
+    }
+    .jexcel > tbody > tr > td.jexcel_row {
+      background: #091024 !important;
+      color: #64748b !important;
+      font-weight: 700 !important;
+      text-align: center !important;
+      border-right: 1px solid #1a2a4f !important;
+      width: 44px !important;
+      user-select: none;
+    }
+    .jexcel > tbody > tr > td.highlight {
+      background: rgba(16, 185, 129, 0.16) !important;
+    }
+    .jexcel > tbody > tr > td.highlight-top {
+      border-top: 2px solid #10b981 !important;
+    }
+    .jexcel > tbody > tr > td.highlight-left {
+      border-left: 2px solid #10b981 !important;
+    }
+    .jexcel > tbody > tr > td.highlight-right {
+      border-right: 2px solid #10b981 !important;
+    }
+    .jexcel > tbody > tr > td.highlight-bottom {
+      border-bottom: 2px solid #10b981 !important;
+    }
+    .jexcel_corner {
+      background: #10b981 !important;
+      border: 1px solid #ffffff !important;
+      width: 9px !important;
+      height: 9px !important;
+      z-index: 50 !important;
+      border-radius: 1px !important;
+      cursor: crosshair !important;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.8) !important;
+      position: absolute !important;
+    }
+    .jexcel_corner::after {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      cursor: crosshair;
+      z-index: 60;
+    }
+    .jexcel_corner:hover {
+      background: #ffffff !important;
+      border-color: #10b981 !important;
+      transform: scale(1.3);
+    }
+    .drag-fill-highlight {
+      background: rgba(16, 185, 129, 0.35) !important;
+      outline: 2px dashed #10b981 !important;
+      outline-offset: -2px !important;
+    }
+    .jexcel_contextmenu {
+      background: #0b1329 !important;
+      border: 1px solid #38bdf8 !important;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7) !important;
+      color: #f8fafc !important;
+      border-radius: 6px;
+      z-index: 999;
+    }
+    .jexcel_contextmenu a {
+      color: #f8fafc !important;
+      font-size: 12px;
+      padding: 6px 14px;
+    }
+    .jexcel_contextmenu a:hover {
+      background: #1e293b !important;
+      color: #38bdf8 !important;
     }
 
-    table.calendar-table td {
-      padding: 8px 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      border-right: 1px solid rgba(255, 255, 255, 0.04);
-      white-space: nowrap;
-      transition: background-color 0.4s ease;
-    }
+    /* Uptick / Downtick animations */
+    .cell-uptick { animation: flashGreen 0.7s ease-out; }
+    .cell-downtick { animation: flashRed 0.7s ease-out; }
 
-    table.calendar-table td[contenteditable="true"] {
-      outline: none;
-      cursor: text;
-    }
-
-    table.calendar-table td[contenteditable="true"]:hover {
-      background: rgba(56, 189, 248, 0.08);
-    }
-
-    table.calendar-table td[contenteditable="true"]:focus {
-      background: #0f2240;
-      color: #38bdf8;
-      box-shadow: inset 0 0 0 1px #0284c7;
-    }
-
-    /* Price Tick Animations */
     @keyframes flashGreen {
-      0% { background-color: rgba(16, 185, 129, 0.5) !important; color: #fff; }
-      100% { background-color: transparent; }
+      0% { background: rgba(16, 185, 129, 0.5) !important; }
+      100% { background: #070d1a !important; }
     }
     @keyframes flashRed {
-      0% { background-color: rgba(239, 68, 68, 0.5) !important; color: #fff; }
-      100% { background-color: transparent; }
-    }
-    .cell-uptick { animation: flashGreen 0.6s ease-out; }
-    .cell-downtick { animation: flashRed 0.6s ease-out; }
-
-    /* Merged Section / Diagonal Strategy Label Row */
-    tr.section-label-row td {
-      background: linear-gradient(90deg, #1e1b4b 0%, #0c1228 100%) !important;
-      color: #a5b4fc !important;
-      font-weight: 700 !important;
-      font-size: 12.5px !important;
-      padding: 9px 14px !important;
-      border-top: 1px solid #4338ca !important;
-      border-bottom: 1px solid #4338ca !important;
-      text-align: left !important;
-      letter-spacing: 0.3px;
-    }
-    tr.section-label-row td:focus {
-      background: #2e1065 !important;
-      box-shadow: inset 0 0 0 1px #a855f7 !important;
+      0% { background: rgba(239, 68, 68, 0.5) !important; }
+      100% { background: #070d1a !important; }
     }
 
-    .col-strike {
-      text-align: center;
-      font-weight: 700;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.03);
-    }
-
-    .col-spread {
-      font-weight: 800;
-      font-size: 12px;
-      color: #10b981;
-    }
-
-    .col-delta-spread {
-      font-weight: 700;
-      color: #a855f7;
-    }
-
-    .col-vol-spread {
-      font-weight: 700;
-      color: #38bdf8;
-    }
-
-    .col-vega-spread {
-      font-weight: 700;
-      color: #f59e0b;
-    }
-
-    .row-atm {
-      background: rgba(2, 132, 199, 0.12) !important;
-      font-weight: 700;
-    }
-
-    .val-pos { color: #10b981; }
-    .val-neg { color: #ef4444; }
-
-    /* Footer Toolbar */
-    .sheet-footer-toolbar {
+    .sheet-footer {
       padding: 8px 16px;
       background: #070d1a;
       border-top: 1px solid var(--border-subtle);
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
     }
 
-    /* Footer / Real-time Discussion */
-    .discussion-card {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      padding: 16px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .notes-textarea {
-      width: 100%;
-      min-height: 90px;
-      background: #070d19;
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      color: #f1f5f9;
-      font-family: var(--font-sans);
-      font-size: 13px;
-      line-height: 1.5;
-      padding: 12px;
-      outline: none;
-      resize: vertical;
-      transition: border-color 0.15s ease;
-    }
-    .notes-textarea:focus { border-color: var(--border-highlight); }
-
-    /* Modals */
+    /* Modal Overlays */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -568,7 +606,7 @@
       display: none;
       align-items: center;
       gap: 8px;
-      z-index: 100;
+      z-index: 1000;
     }
   </style>
 </head>
@@ -578,50 +616,31 @@
   <header class="top-bar">
     <div class="brand-area">
       <span class="brand-badge">CALENDAR DESK</span>
-      <h1 class="brand-title">⚡ Options Calendar &amp; Diagonal Spread Matrix</h1>
+      <h1 class="brand-title">Options Calendar &amp; Diagonal Spread Matrix</h1>
+      <span class="spot-chip" id="spotBadge">NIFTY Spot: --</span>
       <span class="status-chip">
-        <span class="status-dot" id="liveDot"></span>
-        <span id="syncLabel">Connecting Live Feed...</span>
+        <span class="status-dot"></span>
+        <span id="syncLabel">Connecting...</span>
       </span>
     </div>
     <div style="display:flex; align-items:center; gap:8px;">
       <button id="btnLiveStream" class="btn btn-secondary" onclick="toggleLiveStream()" style="border-color:#10b981; color:#10b981;">
         <span class="status-dot"></span>
-        <span>1s Live Feed: <strong id="streamStateTxt">ON</strong></span>
+        <span>Live 1s: <strong id="streamStateTxt">ON</strong></span>
       </button>
       <button id="btnUpstoxStatus" class="btn btn-secondary" onclick="openUpstoxModal()" style="border-color:#38bdf8; color:#38bdf8;">
         ⚡ Upstox Connect
       </button>
-      <button class="btn btn-primary" onclick="saveAndSend()">💾 Save &amp; Send to AI</button>
+      <a href="/" class="btn btn-secondary" title="Back to Main Terminal">
+        ← Terminal
+      </a>
     </div>
   </header>
 
   <!-- Main Container -->
   <main class="container">
 
-    <!-- 🤖 AI Process & Live Engine Status Banner -->
-    <section class="ai-process-card" id="aiProcessSection">
-      <div class="ai-process-header">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size:20px;">⚡</span>
-          <div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:13px; font-weight:700; color:#38bdf8;">Pricing &amp; Greek Engine:</span>
-              <span class="ai-badge" id="engineBadge">INITIALIZING...</span>
-              <span id="spotBadge" style="font-family:var(--font-mono); font-size:12px; font-weight:700; color:#f8fafc; background:#1e293b; padding:2px 8px; border-radius:4px;">Spot: 23,450.00</span>
-            </div>
-            <div style="font-size:11.5px; color:#94a3b8; margin-top:2px;" id="engineSubtext">
-              Real-time quotes updating every second based on Black-Scholes Mathematical model &amp; Upstox API v2.
-            </div>
-          </div>
-        </div>
-        <div style="font-family:var(--font-mono); font-size:11px; color:#38bdf8; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.25); padding:4px 10px; border-radius:6px;">
-          Feed Rate: <strong id="tickCounter" style="color:#10b981;">1 tick/sec</strong> | Last Tick: <span id="lastTickTime" style="color:#f8fafc; font-weight:700;">--:--:--</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- 📑 Saved Expiry Combinations Bar (Clickable Tabs) -->
+    <!-- 📑 Saved Combination Tabs Strip -->
     <section class="saved-tabs-strip" id="savedTabsSection">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
         <div style="display:flex; align-items:center; gap:8px;">
@@ -637,18 +656,18 @@
       <div class="tabs-scroll-container" id="tabsScrollContainer">
         <!-- Rendered dynamically -->
         <span style="font-size:11.5px; color:#64748b; font-style:italic;" id="emptyTabsNotice">
-          Koi combination tab abhi save nahi kiya hai. Niche Far aur Near Expiry select karein aur "Save Current Combination as Tab" dabayein!
+          Koi combination tab abhi save nahi kiya hai. Niche Far aur Near Expiry select karein aur "Save as Tab" dabayein!
         </span>
       </div>
     </section>
 
-    <!-- 1. Top Controls: Underlying -> Far Expiry -> Near Expiry -> Save Tab Button -->
+    <!-- 1. Sleek Controls Strip -->
     <section class="setup-strip">
       <!-- Underlying -->
-      <div class="control-box">
-        <label class="control-label">📍 1. Underlying</label>
+      <div class="control-box" style="max-width:180px;">
+        <label class="control-label">📍 Underlying Index</label>
         <select id="cfgUnderlying" class="control-select" onchange="onUnderlyingChange()">
-          <option value="NIFTY">NIFTY 50</option>
+          <option value="NIFTY" selected>NIFTY 50</option>
           <option value="BANKNIFTY">BANK NIFTY</option>
           <option value="FINNIFTY">FIN NIFTY</option>
           <option value="MIDCPNIFTY">MIDCAP NIFTY</option>
@@ -656,37 +675,36 @@
         </select>
       </div>
 
-      <!-- Far Expiry (Buy Leg) with Add Option inside dropdown -->
+      <!-- Far Expiry (Buy Leg) -->
       <div class="control-box">
-        <label class="control-label" style="color: #38bdf8;">📅 2. Far Expiry (Buy Leg)</label>
+        <label class="control-label" style="color: #38bdf8;">📅 Far Expiry (Buy Leg)</label>
         <select id="cfgFarExpiry" class="control-select" onchange="handleSelectExpiryChange('far')">
-          <option value="06 Oct 2026" selected>06 Oct 2026 (Next Weekly Expiry)</option>
-          <option value="29 Sep 2026">29 Sep 2026 (Near / Current Expiry)</option>
-          <option value="13 Oct 2026">13 Oct 2026 (Far Weekly Expiry)</option>
-          <option value="19 Oct 2026">19 Oct 2026 (Far Weekly Expiry)</option>
-          <option value="27 Oct 2026">27 Oct 2026 (Monthly Expiry)</option>
-          <option value="23 Nov 2026">23 Nov 2026 (Monthly Expiry)</option>
-          <option value="29 Dec 2026">29 Dec 2026 (Quarterly Expiry)</option>
-          <option value="__ADD_CUSTOM__" style="color:#38bdf8; font-weight:700;">➕ Add Custom Date...</option>
+          <!-- Populated dynamically via JS -->
         </select>
       </div>
 
-      <!-- Near Expiry (Sell Leg) with Add Option inside dropdown -->
+      <!-- Near Expiry (Sell Leg) -->
       <div class="control-box">
-        <label class="control-label" style="color: #f59e0b;">⏳ 3. Near Expiry (Sell Leg)</label>
+        <label class="control-label" style="color: #f59e0b;">⏳ Near Expiry (Sell Leg)</label>
         <select id="cfgNearExpiry" class="control-select" onchange="handleSelectExpiryChange('near')">
-          <option value="29 Sep 2026" selected>29 Sep 2026 (Near / Current Expiry)</option>
-          <option value="06 Oct 2026">06 Oct 2026 (Next Weekly Expiry)</option>
-          <option value="13 Oct 2026">13 Oct 2026 (Far Weekly Expiry)</option>
-          <option value="19 Oct 2026">19 Oct 2026 (Far Weekly Expiry)</option>
-          <option value="27 Oct 2026">27 Oct 2026 (Monthly Expiry)</option>
-          <option value="23 Nov 2026">23 Nov 2026 (Monthly Expiry)</option>
-          <option value="29 Dec 2026">29 Dec 2026 (Quarterly Expiry)</option>
-          <option value="__ADD_CUSTOM__" style="color:#f59e0b; font-weight:700;">➕ Add Custom Date...</option>
+          <!-- Populated dynamically via JS -->
         </select>
       </div>
 
-      <!-- Save this Combination as Tab Button right here as requested -->
+      <!-- Strike Range -->
+      <div class="control-box" style="max-width:140px;">
+        <label class="control-label">🎯 ATM Strike Range</label>
+        <select id="cfgStrikeRange" class="control-select" onchange="fetchLiveMarketData(true)">
+          <option value="5">±5 Strikes</option>
+          <option value="6" selected>±6 Strikes</option>
+          <option value="8">±8 Strikes</option>
+          <option value="10">±10 Strikes</option>
+          <option value="12">±12 Strikes</option>
+          <option value="15">±15 Strikes</option>
+        </select>
+      </div>
+
+      <!-- Save as Tab Button -->
       <div class="control-box" style="flex: 0 0 auto;">
         <button class="btn btn-indigo" style="height: 38px; font-size: 12px; padding: 0 16px;" onclick="promptSaveCurrentAsTab()">
           💾 Save as Tab
@@ -694,7 +712,7 @@
       </div>
     </section>
 
-    <!-- 2. Type Tabs: CE and PE ONLY (Directly Below Expiry) -->
+    <!-- 2. Type Tabs: CE and PE ONLY -->
     <section class="type-tabs-container">
       <div id="tabCe" class="type-tab active-ce" onclick="switchOptionType('CE')">
         🟢 CALLS (CE) CALENDAR SPREAD
@@ -704,91 +722,86 @@
       </div>
     </section>
 
-    <!-- 3. Exact 16-Column Spread Table -->
+    <!-- 3. Authentic Excel Spreadsheet Matrix -->
     <section class="sheet-card">
-      <div class="sheet-header-actions">
-        <div style="font-size: 13px; font-weight: 700; color: #f8fafc; display:flex; align-items:center; gap:8px;">
-          <span id="tableTitleBadge" style="background:#10b981; color:#fff; font-size:11px; padding:2px 6px; border-radius:4px;">CE</span>
-          <span id="tableTitleText">Call Calendar Spread Matrix (Far Exp vs Near Exp)</span>
+      <div class="sheet-toolbar">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-emerald" onclick="addNewStrikeRow()" title="Add a custom strike row at the bottom">
+            ➕ Add Row
+          </button>
+          <button class="btn btn-indigo" onclick="insertRowAboveSelection()" title="Insert row above active selected cell">
+            ⬆️ Insert Row Above
+          </button>
+          <button class="btn btn-secondary" onclick="deleteSelectedRow()" title="Delete active row">
+            🗑️ Delete Row
+          </button>
+          <button class="btn btn-secondary" onclick="resetToAtmStrikes()" title="Reset table back to default ATM strikes">
+            ↻ Reset to ATM Range
+          </button>
+          <button class="btn btn-secondary" onclick="exportCsv()" title="Export spreadsheet to CSV">
+            📥 Export CSV
+          </button>
+
+          <!-- Spread Rule Formula Selector -->
+          <div style="display:inline-flex; align-items:center; gap:5px; margin-left:6px; font-size:11.5px; color:#94a3b8; font-family:var(--font-mono);">
+            <span>Spread Rule:</span>
+            <select id="spreadFormulaSelect" class="control-select" style="padding:3px 8px; font-size:11.5px; height:30px; width:auto;" onchange="onSpreadRuleChange()">
+              <option value="1:1" selected>1:1 (Far - Near)</option>
+              <option value="1:2">1:2 Ratio (Far - 2×Near)</option>
+              <option value="2:1">2:1 Ratio (2×Far - Near)</option>
+            </select>
+          </div>
+
+          <!-- Quick Diagonal Offset & Drop Down Tools -->
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-left:8px; padding:2px 8px; background:#0f172a; border:1px solid #334155; border-radius:6px; font-size:11.5px; font-family:var(--font-mono);">
+            <span style="color:#38bdf8; font-weight:700;">📐 Col B Diagonal:</span>
+            <select id="quickDiagonalOffsetSelect" class="control-select" style="padding:2px 6px; font-size:11px; height:28px; width:auto;">
+              <option value="0">0 (Same Strike: S1 = S2)</option>
+              <option value="50">+50 (+1 OTM Step)</option>
+              <option value="100" selected>+100 (+2 OTM Steps)</option>
+              <option value="150">+150 (+3 OTM Steps)</option>
+              <option value="200">+200 (+4 OTM Steps)</option>
+              <option value="-50">-50 (-1 ITM Step)</option>
+              <option value="-100">-100 (-2 ITM Steps)</option>
+              <option value="-150">-150 (-3 ITM Steps)</option>
+              <option value="-200">-200 (-4 ITM Steps)</option>
+            </select>
+            <button class="btn btn-emerald" style="padding:3px 10px; font-size:11px; height:28px;" onclick="applyQuickDiagonalToAll()" title="Apply selected diagonal offset to Column B across all rows">
+              ⚡ Drop Down to All
+            </button>
+          </div>
         </div>
-        <div style="font-size: 11px; color: #94a3b8; font-family: var(--font-mono);">
-          *All cells editable (`contenteditable`). Auto-recalculates Spread LTP, Delta Spread, Vol Spread &amp; Vega Spread!
+
+        <div style="font-size:12px; font-family:var(--font-mono); color:#38bdf8; display:flex; align-items:center; gap:6px;">
+          <span>Active Spread: <strong id="activePairDisplay" style="color:#f8fafc;">--</strong></span>
         </div>
       </div>
 
-      <!-- Internal Table Section Toolbar -->
-      <div class="section-toolbar">
-        <div class="section-toolbar-left">
-          <button class="btn btn-secondary" onclick="addNewStrikeRow()">➕ Add Strike Row</button>
-          <button class="btn btn-secondary" onclick="addBlankRow()">⬜ Add Blank Row</button>
-          <button class="btn btn-indigo" onclick="addSectionLabelRow()">🏷️ Add Strategy / Diagonal Label</button>
+      <!-- 📐 Authentic Excel Formula Bar -->
+      <div class="excel-formula-bar" id="excelFormulaBar">
+        <div class="cell-address-box" id="activeCellAddress" title="Active Cell Address (e.g. A1, B2)">A1</div>
+        <div style="display:flex; align-items:center; gap:3px;">
+          <button class="formula-btn formula-btn-cancel" onclick="cancelCellEdit()" title="Cancel edit (Esc)">✕</button>
+          <button class="formula-btn formula-btn-accept" onclick="applyFormulaFromBar()" title="Accept formula (Enter)">✓</button>
+          <button class="formula-btn formula-btn-fx" onclick="openFormulaHelpModal()" title="Excel Formula Guide (ƒx)">ƒx</button>
         </div>
-        <div style="font-size: 11px; color: #38bdf8; font-family: var(--font-mono); display:flex; align-items:center; gap:6px;">
-          <span>⚡ Active Combination: <strong id="activePairDisplay" style="color:#f8fafc;">--</strong></span>
-        </div>
+        <input type="text" id="excelFormulaInput" class="formula-input" placeholder="Type Excel formula: e.g. =A1+100, =C1-D1, =SUM(A1:A5), =ROUND(A1*1.02, 0)... Enter dabayein" onkeydown="handleFormulaInputKey(event)" />
+        <button class="btn btn-emerald" style="font-size:11.5px; padding:4px 10px; display:flex; align-items:center; gap:5px;" onclick="executeDropDownForActiveCol()" title="Drop down active cell / column to the bottom row">
+          <span>⬇️ Drop Down Column</span>
+        </button>
+        <button class="btn btn-indigo" style="font-size:11.5px; padding:4px 12px; background:#312e81; border-color:#4f46e5; color:#e0e7ff; display:flex; align-items:center; gap:5px;" onclick="fillDownColumnFormula()" title="Fill Down formula / value to all rows below (Ctrl+D)">
+          <span>⬇️ Fill Down (Ctrl+D)</span>
+        </button>
       </div>
 
-      <div class="table-container">
-        <table class="calendar-table" id="calendarGrid">
-          <thead>
-            <tr>
-              <th class="col-strike" style="width: 80px;">Strike 1</th>
-              <th class="col-strike" style="width: 80px;">Strike 2</th>
-              <th style="color: #38bdf8;">Bid (Far Exp)</th>
-              <th style="color: #f59e0b;">Ask (Near Exp)</th>
-              <th class="col-spread" style="color: #10b981;">LTP (Spread: Far-Near)</th>
-              <th>Far Exp Volume</th>
-              <th>Near Exp Volume</th>
-              <th class="col-delta-spread">Delta (Spread)</th>
-              <th class="col-vol-spread">Volatility Spread</th>
-              <th>Far Exp Delta</th>
-              <th>Near Exp Delta</th>
-              <th>Vol Far Exp</th>
-              <th>Vol Near Exp</th>
-              <th>Far Exp Vega</th>
-              <th>Near Exp Vega</th>
-              <th class="col-vega-spread">Vega Spread</th>
-              <th style="width: 40px; text-align: center;">✕</th>
-            </tr>
-          </thead>
-          <tbody id="gridBody">
-            <!-- Populated dynamically via JS -->
-          </tbody>
-        </table>
+      <!-- Real Jspreadsheet Grid Container -->
+      <div style="width:100%; overflow:auto;">
+        <div id="spreadsheetGrid" style="width:100%; min-height:480px;"></div>
       </div>
 
-      <!-- Footer Action Toolbar inside Table Section -->
-      <div class="sheet-footer-toolbar">
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="addNewStrikeRow()">➕ Add Strike Row</button>
-          <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="addBlankRow()">⬜ Add Blank Row</button>
-          <button class="btn btn-indigo" style="font-size:11px; padding:4px 10px;" onclick="addSectionLabelRow()">🏷️ Add Diagonal Header</button>
-        </div>
-        <span style="font-size:11px; color:#64748b; font-family:var(--font-mono);">
-          Rows count: <span id="rowCountBadge" style="color:#e2e8f0; font-weight:700;">0</span>
-        </span>
-      </div>
-    </section>
-
-    <!-- 4. Real-time Notes & Discussion Panel -->
-    <section class="discussion-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <span style="font-size: 13px; font-weight: 700; color: #f8fafc;">
-          💬 Real-Time Feedback &amp; Custom Rules:
-        </span>
-        <span id="savedAtTag" style="font-size: 11px; color: #94a3b8; font-family: var(--font-mono);">
-          Last saved: --
-        </span>
-      </div>
-      <textarea id="liveNotes" class="notes-textarea" placeholder="Yahan aap real-time me jo bhi bolna ya puchna chahein likhein... Example:
-- Bid (Far Exp) aur Ask (Near Exp) ka difference slippage me consider ho.
-- Strike 1 aur Strike 2 alag ho sakein agar diagonal calendar dekhna ho.
-- Likhne ke baad 'Save & Send to AI' dabayein!"></textarea>
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <span style="font-size:11px; color:#94a3b8;">
-          💡 AI aapke har badlaav ko real-time read karke interface aur formulas ko turant update karta hai.
-        </span>
-        <button class="btn btn-primary" onclick="saveAndSend()">💾 Save &amp; Send to AI</button>
+      <div class="sheet-footer">
+        <span>Rows: <strong id="rowCountBadge" style="color:#f8fafc;">0</strong> | Drag green corner handle down or right to drop-down / autofill formulas! Right-click for Excel context menu.</span>
+        <span>Last Tick: <strong id="lastTickTime" style="color:#f8fafc;">--:--:--</strong></span>
       </div>
     </section>
 
@@ -843,7 +856,7 @@
         <span style="cursor:pointer; color:#94a3b8; font-size:18px;" onclick="closeSaveTabModal()">✕</span>
       </div>
       <p style="font-size:12px; color:#94a3b8; line-height:1.5; margin:0;">
-        Is real expiry combination aur custom strikes ko apne custom tab me save karein taaki aap jab chahein 1-click me switch kar sakein:
+        Is real expiry combination aur spreadsheet configuration ko apne custom tab me save karein:
       </p>
       <div style="background:#131c38; border:1px solid #1e293b; border-radius:8px; padding:12px; font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
         <div><span style="color:#64748b;">Underlying:</span> <strong id="modalUnderlyingLabel" style="color:#f8fafc;">NIFTY</strong></div>
@@ -862,7 +875,52 @@
     </div>
   </div>
 
-  <div id="toast">✅ Saved and Synced with Assistant!</div>
+  <!-- Excel Mathematical & Financial Formula Guide Modal -->
+  <div class="modal-overlay" id="formulaHelpModal">
+    <div style="background:#0b1329; border:1px solid #38bdf8; border-radius:12px; padding:22px; max-width:680px; width:92%; display:flex; flex-direction:column; gap:14px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.6); max-height:85vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="color:#f8fafc; font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
+          <span>📐 Authentic Excel Formulas &amp; Drop-Down Guide</span>
+        </h3>
+        <span style="cursor:pointer; color:#94a3b8; font-size:18px;" onclick="closeFormulaHelpModal()">✕</span>
+      </div>
+      <p style="font-size:12px; color:#94a3b8; line-height:1.5; margin:0;">
+        Ye real Excel spreadsheet component hai. Formula row aur column dono me lagta hai aur Excel ki tarah drop down / autofill hota hai:
+      </p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px;">
+        <div style="background:#131c38; border:1px solid #1e293b; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+          <div style="color:#38bdf8; font-weight:700;">📊 Row &amp; Column Formulas:</div>
+          <div><code style="color:#10b981;">=A1 + 100</code> : Cell A1 me 100 jod kar Strike 2 banana</div>
+          <div><code style="color:#10b981;">=C1 - D1</code> : Far Bid (Col C) - Near Ask (Col D)</div>
+          <div><code style="color:#10b981;">=C1 - 2*D1</code> : 1:2 Ratio spread formula</div>
+          <div><code style="color:#10b981;">=SUM(A1:A5)</code> : 5 strikes ka sum</div>
+        </div>
+
+        <div style="background:#131c38; border:1px solid #1e293b; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+          <div style="color:#f59e0b; font-weight:700;">🧮 Mathematical Functions:</div>
+          <div><code style="color:#e0e7ff;">=ROUND(A1 * 1.01, 0)</code> : 1% OTM rounded</div>
+          <div><code style="color:#e0e7ff;">=INT(A1 / 100) * 100</code> : Round to nearest hundred</div>
+          <div><code style="color:#e0e7ff;">=ABS(A1 - 23000)</code> : Absolute distance</div>
+          <div><code style="color:#e0e7ff;">=AVERAGE(C1, D1)</code> : Bid-Ask average</div>
+          <div><code style="color:#e0e7ff;">=IF(A1 > 23000, A1+100, A1+50)</code> : Conditional strike</div>
+        </div>
+      </div>
+
+      <div style="background:#081024; border:1px dashed #10b981; border-radius:8px; padding:12px; font-size:12px; line-height:1.5;">
+        <strong style="color:#10b981;">🟩 Excel Drop-Down / Autofill Handle (.jexcel_corner):</strong>
+        <p style="margin:4px 0 0; color:#94a3b8;">
+          Selected cell ke bottom-right corner par jo <strong>Green Dot</strong> hota hai, usko mouse se pakad kar niche (vertical) ya daayein (horizontal) drag karein — formula relative references (e.g. <code>A1</code> ➜ <code>A2</code>, <code>A3</code>) ke sath automatic drop down / copy ho jayega! Sath hi aap <code>Ctrl+C</code> aur <code>Ctrl+V</code> se Microsoft Excel ya Google Sheets se direct copy-paste kar sakte hain.
+        </p>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="closeFormulaHelpModal()">Samajh Gaya (Close)</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast">✅ Saved!</div>
 
   <script>
     let currentType = 'CE'; // CE or PE only
@@ -872,11 +930,673 @@
     let isFetching = false;
     let currentPendingExpiryTarget = 'far';
 
-    // Matrix persistence & Saved Tabs
-    let customMatrixStore = {}; // Maps `${underlying}_${farExpiry}_${nearExpiry}_${type}` -> rows[]
-    let savedTabsStore = [];    // Array of { id, name, underlying, farExpiry, nearExpiry, optionType, rows }
+    // Saved Tabs & Matrix Store (Persistent via localStorage)
+    let customMatrixStore = {};
+    let savedTabsStore = [];
     let activeTabId = null;
 
+    let currentSpotPrice = 23063.1;
+    let currentAtmStrike = 23050;
+
+    // Jspreadsheet Instance & Selection Coordinates
+    let sheet = null;
+    let selectedCoords = { x1: 0, y1: 0, x2: 0, y2: 0 };
+    let ignoreChangeEvents = false;
+
+    // Spreadsheet Column Definitions (A through P)
+    // Only Strike 1 (A) and Strike 2 (B) are user-editable; C through P are read-only static market displays
+    const gridColumns = [
+      { type: 'numeric', title: 'A: Strike 1 (Far)', width: 130 },
+      { type: 'numeric', title: 'B: Strike 2 (Near)', width: 130 },
+      { type: 'numeric', title: 'C: Far Bid', width: 95, mask: '#,##0.00', readOnly: true },
+      { type: 'numeric', title: 'D: Near Ask', width: 95, mask: '#,##0.00', readOnly: true },
+      { type: 'text', title: 'E: LTP (Spread)', width: 110, readOnly: true },
+      { type: 'text', title: 'F: Delta Spread', width: 95, readOnly: true },
+      { type: 'text', title: 'G: IV Spread', width: 85, readOnly: true },
+      { type: 'text', title: 'H: Vega Spread', width: 95, readOnly: true },
+      { type: 'text', title: 'I: Far Delta', width: 85, readOnly: true },
+      { type: 'text', title: 'J: Near Delta', width: 85, readOnly: true },
+      { type: 'text', title: 'K: Far IV', width: 80, readOnly: true },
+      { type: 'text', title: 'L: Near IV', width: 80, readOnly: true },
+      { type: 'text', title: 'M: Far Vega', width: 80, readOnly: true },
+      { type: 'text', title: 'N: Near Vega', width: 80, readOnly: true },
+      { type: 'text', title: 'O: Far Vol', width: 85, readOnly: true },
+      { type: 'text', title: 'P: Near Vol', width: 85, readOnly: true }
+    ];
+
+    function initStoresFromStorage() {
+      try {
+        const sTabs = localStorage.getItem('calendar_saved_tabs');
+        if (sTabs) savedTabsStore = JSON.parse(sTabs);
+        const sMatrix = localStorage.getItem('calendar_matrix_store');
+        if (sMatrix) customMatrixStore = JSON.parse(sMatrix);
+      } catch (e) {
+        console.warn("Storage load notice:", e);
+      }
+      renderTabsBar();
+    }
+
+    function getIndexStep(sym) {
+      const s = (sym || currentUnderlying || 'NIFTY').toUpperCase();
+      if (s === 'BANKNIFTY' || s === 'SENSEX') return 100;
+      if (s === 'MIDCPNIFTY') return 25;
+      return 50; // NIFTY, FINNIFTY
+    }
+
+    function evaluateCellExpression(rawStr, colIndex, rowIndex) {
+      if (rawStr === null || rawStr === undefined) return '';
+      let str = String(rawStr).trim();
+      if (!str) return '';
+
+      // Col B diagonal shortcuts: "+100", "-50", or small number (<= 1000) representing diagonal offset
+      if (colIndex === 1) {
+        if (str.startsWith('+') || str.startsWith('-')) {
+          str = 'A ' + str;
+        } else if (/^-?\d+(\.\d+)?$/.test(str)) {
+          const num = parseFloat(str);
+          if (Math.abs(num) <= 1000) {
+            // Diagonal offset (e.g. 100, 50, -50), not an absolute strike like 23000
+            str = num >= 0 ? `A + ${num}` : `A - ${Math.abs(num)}`;
+          } else {
+            return num;
+          }
+        }
+      } else {
+        // Pure number for other columns
+        if (/^-?\d+(\.\d+)?$/.test(str)) {
+          return parseFloat(str);
+        }
+      }
+
+      // Remove leading '='
+      let expr = str.startsWith('=') ? str.substring(1).trim() : str;
+
+      // Trading tokens
+      const sym = document.getElementById('cfgUnderlying').value;
+      const step = getIndexStep(sym);
+      const spot = currentSpotPrice || 23063;
+      const atm = currentAtmStrike || Math.round(spot / step) * step;
+
+      expr = expr.replace(/\bATM\b/gi, atm);
+      expr = expr.replace(/\bSPOT\b/gi, spot);
+      expr = expr.replace(/\bSTEP\b/gi, step);
+
+      // Specific cell references: A1, B2, C3, etc.
+      expr = expr.replace(/\b([A-P])\$?(\d+)\b/gi, (m, colLetter, rowNum) => {
+        const cIdx = colLetter.toUpperCase().charCodeAt(0) - 65;
+        const rIdx = parseInt(rowNum, 10) - 1;
+        let val = 0;
+        if (sheet && sheet.data && sheet.data[rIdx] && sheet.data[rIdx][cIdx] !== undefined) {
+          val = parseFloat(String(sheet.getValueFromCoords(cIdx, rIdx)).replace(/[^0-9.-]/g, '')) || 0;
+        }
+        return val;
+      });
+
+      // Relative column references for current row: A, B, C, D, E...
+      'ABCDEFGHIJKLMNOP'.split('').forEach((ch, idx) => {
+        const regex = new RegExp(`\\b${ch}\\b`, 'gi');
+        if (regex.test(expr)) {
+          let val = 0;
+          if (sheet && sheet.data && sheet.data[rowIndex] && sheet.data[rowIndex][idx] !== undefined) {
+            val = parseFloat(String(sheet.getValueFromCoords(idx, rowIndex)).replace(/[^0-9.-]/g, '')) || 0;
+          }
+          expr = expr.replace(regex, val);
+        }
+      });
+
+      // Math functions (case-insensitive)
+      expr = expr.replace(/\bSUM\s*\(/gi, 'Math_sum(');
+      expr = expr.replace(/\bAVERAGE\s*\(/gi, 'Math_avg(');
+      expr = expr.replace(/\bAVG\s*\(/gi, 'Math_avg(');
+      expr = expr.replace(/\bROUND\s*\(/gi, 'Math_round(');
+      expr = expr.replace(/\bINT\s*\(/gi, 'Math.floor(');
+      expr = expr.replace(/\bABS\s*\(/gi, 'Math.abs(');
+      expr = expr.replace(/\bMIN\s*\(/gi, 'Math.min(');
+      expr = expr.replace(/\bMAX\s*\(/gi, 'Math.max(');
+      expr = expr.replace(/\bPOWER\s*\(/gi, 'Math.pow(');
+      expr = expr.replace(/\^/g, '**');
+
+      const Math_sum = (...args) => args.flat().reduce((a, b) => a + (parseFloat(b) || 0), 0);
+      const Math_avg = (...args) => args.flat().reduce((a, b) => a + (parseFloat(b) || 0), 0) / (args.flat().length || 1);
+      const Math_round = (v, d = 0) => Math.round(Number(v) * Math.pow(10, d)) / Math.pow(10, d);
+
+      try {
+        if (/^[0-9+\-*/().\s,><=!%_a-zA-Z]+$/.test(expr)) {
+          const evalFn = new Function('Math_sum', 'Math_avg', 'Math_round', 'Math', '"use strict"; return (' + expr + ');');
+          const res = evalFn(Math_sum, Math_avg, Math_round, Math);
+          if (typeof res === 'number' && !isNaN(res) && isFinite(res)) {
+            return Math.round(res * 100) / 100;
+          }
+        }
+      } catch (err) {
+        console.warn("Formula eval error:", expr, err);
+      }
+
+      const fallbackNum = parseFloat(str.replace(/[^0-9.-]/g, ''));
+      return !isNaN(fallbackNum) ? fallbackNum : str;
+    }
+
+    // --- Initialize Jspreadsheet CE v4 Grid ---
+    function initSpreadsheetGrid(initialData) {
+      const container = document.getElementById('spreadsheetGrid');
+      container.innerHTML = '';
+
+      sheet = jspreadsheet(container, {
+        data: initialData || [],
+        columns: gridColumns,
+        minDimensions: [16, 12],
+        tableOverflow: true,
+        tableHeight: 'calc(100vh - 280px)',
+        allowInsertRow: true,
+        allowManualInsertRow: true,
+        allowInsertColumn: true,
+        allowManualInsertColumn: true,
+        allowDeleteRow: true,
+        allowDeleteColumn: true,
+        wordWrap: false,
+        parseFormulas: true,
+        onbeforechange: function(instance, cell, x, y, value) {
+          const colIdx = parseInt(x, 10);
+          const rowIdx = parseInt(y, 10);
+          if (colIdx === 0 || colIdx === 1 || colIdx === 4) {
+            const evaluated = evaluateCellExpression(value, colIdx, rowIdx);
+            if (evaluated !== null && evaluated !== undefined && !isNaN(evaluated)) {
+              return evaluated;
+            }
+          }
+          return value;
+        },
+        onselection: function(instance, x1, y1, x2, y2, origin) {
+          selectedCoords = { x1, y1, x2, y2 };
+          const colLetter = String.fromCharCode(65 + x1);
+          const rowNum = y1 + 1;
+          document.getElementById('activeCellAddress').textContent = colLetter + rowNum;
+
+          // Retrieve formula if present, else cell value
+          let rawVal = '';
+          if (sheet.data && sheet.data[y1] && sheet.data[y1][x1] !== undefined) {
+            rawVal = sheet.data[y1][x1];
+          } else {
+            rawVal = sheet.getValueFromCoords(x1, y1);
+          }
+          document.getElementById('excelFormulaInput').value = rawVal !== null && rawVal !== undefined ? rawVal : '';
+          setupDragDropAutofill(sheet);
+        },
+        onafterchanges: function(instance, records) {
+          if (ignoreChangeEvents) return;
+          if (!records || records.length === 0) return;
+
+          // Check if any strike cells (Column A or B) were changed (via typing, paste, or drop-down drag)
+          let strikesChanged = false;
+          for (let r of records) {
+            const colIdx = parseInt(r.x, 10);
+            if (colIdx === 0 || colIdx === 1) {
+              strikesChanged = true;
+              break;
+            }
+          }
+
+          if (strikesChanged) {
+            syncChangedStrikes();
+          }
+          saveCurrentToStore();
+        }
+      });
+
+      updateRowCountBadge();
+      setupDragDropAutofill(sheet);
+    }
+
+    function updateRowCountBadge() {
+      const badge = document.getElementById('rowCountBadge');
+      if (badge && sheet && sheet.data) {
+        badge.textContent = sheet.data.length;
+      }
+    }
+
+    // --- Guaranteed Drag-and-Drop / Fill Down Engine ---
+    let isUserDragging = false;
+    let dragSource = null;
+    let dragCurrentTarget = null;
+    let dragHighlightedCells = [];
+
+    function clearDragHighlights() {
+      dragHighlightedCells.forEach(el => el.classList.remove('drag-fill-highlight'));
+      dragHighlightedCells = [];
+    }
+
+    function setupDragDropAutofill(sheetInstance) {
+      if (!sheetInstance) return;
+      const corner = sheetInstance.corner || document.querySelector('.jexcel_corner');
+      if (!corner) return;
+
+      corner.setAttribute('title', 'Excel Fill Handle: Drag down to drop down strikes/diagonal, or Double-click to drop down all rows!');
+
+      if (corner._dragWired) return;
+      corner._dragWired = true;
+
+      // Double-click: Instant Fill Down all the way to bottom row
+      corner.ondblclick = function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        const { x1, y1 } = selectedCoords;
+        const totalRows = (sheet && sheet.data) ? sheet.data.length : 0;
+        if (totalRows > y1 + 1) {
+          executeDropDown(x1, y1, totalRows - 1);
+        }
+      };
+
+      // Mousedown: Start dragging to drop down formula or values
+      corner.onmousedown = function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const { x1, y1 } = selectedCoords;
+        isUserDragging = true;
+        dragSource = { x: x1, y: y1 };
+        dragCurrentTarget = { x: x1, y: y1 };
+
+        clearDragHighlights();
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'crosshair';
+
+        window.addEventListener('mousemove', onDragAutofillMove);
+        window.addEventListener('mouseup', onDragAutofillUp);
+      };
+    }
+
+    function onDragAutofillMove(e) {
+      if (!isUserDragging || !dragSource || !sheet) return;
+
+      const elem = document.elementFromPoint(e.clientX, e.clientY);
+      if (elem) {
+        const td = elem.closest('td[data-x][data-y]');
+        if (td) {
+          const targetX = parseInt(td.getAttribute('data-x'), 10);
+          const targetY = parseInt(td.getAttribute('data-y'), 10);
+          dragCurrentTarget = { x: targetX, y: targetY };
+        }
+      }
+
+      clearDragHighlights();
+
+      const deltaX = Math.abs(dragCurrentTarget.x - dragSource.x);
+      const deltaY = Math.abs(dragCurrentTarget.y - dragSource.y);
+
+      if (deltaY >= deltaX) {
+        // Vertical drag across rows
+        const minY = Math.min(dragSource.y, dragCurrentTarget.y);
+        const maxY = Math.max(dragSource.y, dragCurrentTarget.y);
+        for (let r = minY; r <= maxY; r++) {
+          if (sheet.records && sheet.records[r] && sheet.records[r][dragSource.x]) {
+            const cellEl = sheet.records[r][dragSource.x];
+            cellEl.classList.add('drag-fill-highlight');
+            dragHighlightedCells.push(cellEl);
+          }
+        }
+      }
+    }
+
+    function onDragAutofillUp(e) {
+      if (!isUserDragging || !dragSource || !sheet) return;
+      isUserDragging = false;
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+
+      window.removeEventListener('mousemove', onDragAutofillMove);
+      window.removeEventListener('mouseup', onDragAutofillUp);
+
+      clearDragHighlights();
+
+      const elem = document.elementFromPoint(e.clientX, e.clientY);
+      if (elem) {
+        const td = elem.closest('td[data-x][data-y]');
+        if (td) {
+          dragCurrentTarget.x = parseInt(td.getAttribute('data-x'), 10);
+          dragCurrentTarget.y = parseInt(td.getAttribute('data-y'), 10);
+        }
+      }
+
+      const startX = dragSource.x;
+      const startY = dragSource.y;
+      const targetY = dragCurrentTarget.y;
+
+      if (targetY !== startY) {
+        executeDropDown(startX, startY, targetY);
+      }
+    }
+
+    // Core Drop Down & Diagonal Offset Engine
+    function executeDropDown(startX, startY, targetY) {
+      if (!sheet || !sheet.data || sheet.data.length === 0) return;
+      const totalRows = sheet.data.length;
+      if (targetY === undefined || targetY === null) {
+        targetY = totalRows - 1;
+      }
+      targetY = Math.max(0, Math.min(totalRows - 1, targetY));
+      if (targetY === startY) return;
+
+      const step = (targetY > startY) ? 1 : -1;
+      const indexStep = getIndexStep(currentUnderlying);
+
+      ignoreChangeEvents = true;
+
+      if (startX === 1) {
+        // === COLUMN B: DIAGONAL SPREAD PROPAGATION ===
+        // Determine diagonal offset (Strike 2 - Strike 1) of the starting row
+        const rawS1 = sheet.getValueFromCoords(0, startY);
+        const rawS2 = sheet.getValueFromCoords(1, startY);
+        const s1Start = parseFloat(String(rawS1).replace(/[^0-9.-]/g, '')) || 0;
+        let s2Start = parseFloat(String(rawS2).replace(/[^0-9.-]/g, '')) || s1Start;
+
+        const offset = s2Start - s1Start;
+
+        for (let r = startY + step; step > 0 ? (r <= targetY) : (r >= targetY); r += step) {
+          const curS1 = parseFloat(String(sheet.getValueFromCoords(0, r)).replace(/[^0-9.-]/g, '')) || 0;
+          if (curS1 > 500) {
+            const newS2 = Math.round(curS1 + offset);
+            sheet.setValueFromCoords(1, r, newS2, true);
+          }
+        }
+      } else if (startX === 0) {
+        // === COLUMN A: STRIKE 1 PROPAGATION (+INDEX STEP) ===
+        const rawS1 = sheet.getValueFromCoords(0, startY);
+        const s1Start = parseFloat(String(rawS1).replace(/[^0-9.-]/g, '')) || currentAtmStrike;
+
+        // Check if start row had a diagonal offset on Column B
+        const rawS2 = sheet.getValueFromCoords(1, startY);
+        const s2Start = parseFloat(String(rawS2).replace(/[^0-9.-]/g, ''));
+        const hasColBOffset = !isNaN(s2Start) && s2Start > 500 && (s2Start !== s1Start);
+        const colBOffset = hasColBOffset ? (s2Start - s1Start) : 0;
+
+        for (let r = startY + step; step > 0 ? (r <= targetY) : (r >= targetY); r += step) {
+          const rowDiff = r - startY;
+          const newS1 = Math.round(s1Start + rowDiff * indexStep);
+          sheet.setValueFromCoords(0, r, newS1, true);
+
+          // If user had a diagonal set on Col B, propagate diagonal to Col B as well
+          if (hasColBOffset) {
+            sheet.setValueFromCoords(1, r, Math.round(newS1 + colBOffset), true);
+          }
+        }
+      }
+
+      ignoreChangeEvents = false;
+
+      // Immediately fetch live market quotes for the new strike pairs
+      syncChangedStrikes();
+      saveCurrentToStore();
+      showToast(`⬇️ Dropped down strikes from row ${startY + 1} to row ${targetY + 1}!`);
+    }
+
+    // Drop down for active column button in formula bar
+    function executeDropDownForActiveCol() {
+      if (!sheet || !sheet.data || sheet.data.length === 0) return;
+      const { x1, y1 } = selectedCoords;
+      const totalRows = sheet.data.length;
+      if (y1 >= totalRows - 1) {
+        showToast("Selected row is already at the bottom!");
+        return;
+      }
+      executeDropDown(x1, y1, totalRows - 1);
+    }
+
+    // Apply quick diagonal offset across all rows
+    function applyQuickDiagonalToAll() {
+      if (!sheet || !sheet.data || sheet.data.length === 0) return;
+      const sel = document.getElementById('quickDiagonalOffsetSelect');
+      const offsetVal = sel ? parseFloat(sel.value) || 0 : 100;
+      const totalRows = sheet.data.length;
+
+      ignoreChangeEvents = true;
+      for (let r = 0; r < totalRows; r++) {
+        const rawS1 = sheet.getValueFromCoords(0, r);
+        const s1 = parseFloat(String(rawS1).replace(/[^0-9.-]/g, '')) || 0;
+        if (s1 > 500) {
+          const newS2 = Math.round(s1 + offsetVal);
+          sheet.setValueFromCoords(1, r, newS2, true);
+        }
+      }
+      ignoreChangeEvents = false;
+
+      syncChangedStrikes();
+      saveCurrentToStore();
+      showToast(`⚡ Applied ${offsetVal >= 0 ? '+' : ''}${offsetVal} diagonal offset to Column B across all ${totalRows} rows!`);
+    }
+
+    // --- Formula Bar Controls ---
+    function handleFormulaInputKey(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyFormulaFromBar();
+      } else if (e.key === 'Escape') {
+        cancelCellEdit();
+      }
+    }
+
+    function applyFormulaFromBar() {
+      if (!sheet) return;
+      const { x1, y1 } = selectedCoords;
+      const val = document.getElementById('excelFormulaInput').value.trim();
+      const evaluated = evaluateCellExpression(val, x1, y1);
+      const valToSet = (evaluated !== null && evaluated !== undefined && !isNaN(evaluated)) ? evaluated : val;
+      sheet.setValueFromCoords(x1, y1, valToSet);
+      if (x1 === 0 || x1 === 1) {
+        syncChangedStrikes();
+      }
+      showToast(`Applied ${val} ➜ ${valToSet} at ${String.fromCharCode(65 + x1)}${y1 + 1}`);
+    }
+
+    function cancelCellEdit() {
+      if (!sheet) return;
+      const { x1, y1 } = selectedCoords;
+      let rawVal = (sheet.data && sheet.data[y1] && sheet.data[y1][x1] !== undefined) ? sheet.data[y1][x1] : sheet.getValueFromCoords(x1, y1);
+      document.getElementById('excelFormulaInput').value = rawVal || '';
+    }
+
+    // Fill Down (Ctrl+D): Drops down from active row to bottom
+    function fillDownColumnFormula() {
+      if (!sheet || !sheet.data || sheet.data.length === 0) return;
+      const { x1, y1 } = selectedCoords;
+      const totalRows = sheet.data.length;
+      if (y1 >= totalRows - 1) {
+        showToast("Selected cell is already at the bottom row!");
+        return;
+      }
+      executeDropDown(x1, y1, totalRows - 1);
+    }
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        fillDownColumnFormula();
+      }
+    });
+
+    // --- Strike Change Synchronizer ---
+    let strikeDebounceTimer = null;
+    function syncChangedStrikes() {
+      clearTimeout(strikeDebounceTimer);
+      strikeDebounceTimer = setTimeout(async () => {
+        if (!sheet || !sheet.data) return;
+        const strikePairs = [];
+        const totalRows = sheet.data.length;
+
+        ignoreChangeEvents = true;
+        for (let r = 0; r < totalRows; r++) {
+          const rawS1 = sheet.getValueFromCoords(0, r);
+          const rawS2 = sheet.getValueFromCoords(1, r);
+          let s1 = evaluateCellExpression(rawS1, 0, r);
+          let s2 = evaluateCellExpression(rawS2, 1, r);
+          s1 = parseFloat(s1) || 0;
+          s2 = parseFloat(s2) || s1;
+
+          if (s1 > 500) {
+            strikePairs.push({ s1: s1, s2: s2, rowIdx: r });
+            // Ensure table displays clean evaluated numbers
+            sheet.setValueFromCoords(0, r, s1, true);
+            sheet.setValueFromCoords(1, r, s2, true);
+          }
+        }
+        ignoreChangeEvents = false;
+
+        if (strikePairs.length === 0) return;
+
+        const sym = document.getElementById('cfgUnderlying').value;
+        const fExp = document.getElementById('cfgFarExpiry').value;
+        const nExp = document.getElementById('cfgNearExpiry').value;
+
+        try {
+          const res = await fetch('/api/calendar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbol: sym,
+              farExpiry: fExp,
+              nearExpiry: nExp,
+              optionType: currentType,
+              customStrikes: strikePairs.map(p => ({ s1: p.s1, s2: p.s2 }))
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.ok && data.rows) {
+              updateQuotesFromResponse(data.rows);
+              saveCurrentToStore();
+            }
+          }
+        } catch (e) {
+          console.warn("Sync strikes error:", e);
+        }
+      }, 350);
+    }
+
+    // Update Quotes in Jspreadsheet (Preserving User Formulas in Col A/B/E)
+    function updateQuotesFromResponse(freshRows) {
+      if (!sheet || !sheet.data || !freshRows) return;
+      const rowMap = {};
+      freshRows.forEach(r => {
+        const k1 = Math.round(parseFloat(r.s1) || 0);
+        const k2 = Math.round(parseFloat(r.s2) || 0);
+        rowMap[k1 + '_' + k2] = r;
+        if (!rowMap[k1]) rowMap[k1] = r;
+      });
+
+      const totalRows = sheet.data.length;
+      ignoreChangeEvents = true;
+
+      for (let r = 0; r < totalRows; r++) {
+        const rawS1 = sheet.getValueFromCoords(0, r);
+        const rawS2 = sheet.getValueFromCoords(1, r);
+        const s1Num = Math.round(parseFloat(String(rawS1).replace(/[^0-9.-]/g, '')) || 0);
+        const s2Num = Math.round(parseFloat(String(rawS2).replace(/[^0-9.-]/g, '')) || s1Num);
+        const fresh = rowMap[s1Num + '_' + s2Num] || rowMap[s1Num];
+        if (!fresh) continue;
+
+        const fBid = parseFloat(fresh.farBid) || 0;
+        const nAsk = parseFloat(fresh.nearAsk) || 0;
+        const sp = computeSpreadWithRule(fBid, nAsk, r);
+
+        // Update Col C (Far Bid), Col D (Near Ask)
+        sheet.setValueFromCoords(2, r, fBid, true);
+        sheet.setValueFromCoords(3, r, nAsk, true);
+
+        // Col E: If user didn't write an explicit custom formula, set calculated spread LTP
+        const currentE = sheet.data[r][4];
+        if (!currentE || !String(currentE).startsWith('=')) {
+          sheet.setValueFromCoords(4, r, sp, true);
+        }
+
+        // Columns F through P: Greeks & Volumes
+        sheet.setValueFromCoords(5, r, fresh.deltaSpread, true);
+        sheet.setValueFromCoords(6, r, fresh.volSpread, true);
+        sheet.setValueFromCoords(7, r, fresh.vegaSpread, true);
+        sheet.setValueFromCoords(8, r, fresh.farDelta, true);
+        sheet.setValueFromCoords(9, r, fresh.nearDelta, true);
+        sheet.setValueFromCoords(10, r, fresh.farVolIv, true);
+        sheet.setValueFromCoords(11, r, fresh.nearVolIv, true);
+        sheet.setValueFromCoords(12, r, fresh.farVega, true);
+        sheet.setValueFromCoords(13, r, fresh.nearVega, true);
+        sheet.setValueFromCoords(14, r, fresh.farVol, true);
+        sheet.setValueFromCoords(15, r, fresh.nearVol, true);
+      }
+
+      ignoreChangeEvents = false;
+    }
+
+    // Spread Rule Helper
+    function computeSpreadWithRule(farBid, nearAsk, rowIndex) {
+      const sel = document.getElementById('spreadFormulaSelect');
+      const rule = sel ? sel.value : '1:1';
+      if (rule === '1:2') return (farBid - 2 * nearAsk).toFixed(2);
+      if (rule === '2:1') return (2 * farBid - nearAsk).toFixed(2);
+      return (farBid - nearAsk).toFixed(2);
+    }
+
+    function onSpreadRuleChange() {
+      if (!sheet || !sheet.data) return;
+      const totalRows = sheet.data.length;
+      ignoreChangeEvents = true;
+      for (let r = 0; r < totalRows; r++) {
+        const fBid = parseFloat(sheet.getValueFromCoords(2, r)) || 0;
+        const nAsk = parseFloat(sheet.getValueFromCoords(3, r)) || 0;
+        const sp = computeSpreadWithRule(fBid, nAsk, r);
+        sheet.setValueFromCoords(4, r, sp, true);
+      }
+      ignoreChangeEvents = false;
+      saveCurrentToStore();
+      showToast("Spread formula rule applied");
+    }
+
+    // --- Toolbar Actions ---
+    function addNewStrikeRow() {
+      if (!sheet) return;
+      const totalRows = sheet.data.length;
+      const lastS1 = totalRows > 0 ? parseFloat(sheet.getValueFromCoords(0, totalRows - 1)) || currentAtmStrike : currentAtmStrike;
+      const step = getIndexStep(currentUnderlying);
+      const nextS1 = lastS1 + step;
+      const nextS2 = nextS1;
+      const rowNum = totalRows + 1;
+
+      sheet.insertRow([nextS1, nextS2, 0, 0, `=C${rowNum}-D${rowNum}`, '--', '--', '--', '--', '--', '--', '--', '--', '--', '--', '--']);
+      updateRowCountBadge();
+      syncChangedStrikes();
+    }
+
+    function insertRowAboveSelection() {
+      if (!sheet) return;
+      const { y1 } = selectedCoords;
+      sheet.insertRow(null, y1, true);
+      updateRowCountBadge();
+      syncChangedStrikes();
+    }
+
+    function deleteSelectedRow() {
+      if (!sheet) return;
+      const { y1 } = selectedCoords;
+      sheet.deleteRow(y1, 1);
+      updateRowCountBadge();
+      syncChangedStrikes();
+    }
+
+    function resetToAtmStrikes() {
+      const pairKey = getPairKey();
+      delete customMatrixStore[pairKey];
+      try {
+        localStorage.setItem('calendar_matrix_store', JSON.stringify(customMatrixStore));
+      } catch (e) {}
+      fetchLiveMarketData(true);
+      showToast("Reset to ATM range");
+    }
+
+    function exportCsv() {
+      if (!sheet) return;
+      sheet.download(true);
+    }
+
+    // --- Saved Tabs Management ---
     function getPairKey() {
       const u = document.getElementById('cfgUnderlying').value;
       const f = document.getElementById('cfgFarExpiry').value;
@@ -889,103 +1609,30 @@
       const n = document.getElementById('cfgNearExpiry').value;
       const el = document.getElementById('activePairDisplay');
       if (el) {
-        let fDteStr = '';
-        let nDteStr = '';
-        if (farDte !== undefined && farDte !== null) fDteStr = ` <span style="color:#38bdf8; font-size:10px;">(${farDte}d DTE)</span>`;
-        if (nearDte !== undefined && nearDte !== null) nDteStr = ` <span style="color:#f59e0b; font-size:10px;">(${nearDte}d DTE)</span>`;
-        el.innerHTML = `${f}${fDteStr} <span style="color:#64748b;">/</span> ${n}${nDteStr}`;
+        let fDteStr = farDte !== undefined ? ` <span style="color:#38bdf8; font-size:10px;">(${farDte}d DTE)</span>` : '';
+        let nDteStr = nearDte !== undefined ? ` <span style="color:#f59e0b; font-size:10px;">(${nearDte}d DTE)</span>` : '';
+        el.innerHTML = `${f}${fDteStr} <span style="color:#64748b;">vs</span> ${n}${nDteStr}`;
       }
     }
 
-    // Dropdown Expiry Selection & Add Option
-    function handleSelectExpiryChange(target) {
-      const selId = target === 'far' ? 'cfgFarExpiry' : 'cfgNearExpiry';
-      const sel = document.getElementById(selId);
-      if (sel.value === '__ADD_CUSTOM__') {
-        openExpiryModal(target);
-        return;
-      }
-      onExpiryChange();
-    }
-
-    function openExpiryModal(target) {
-      currentPendingExpiryTarget = target;
-      const m = document.getElementById('expiryModal');
-      m.style.display = 'flex';
-      const inp = document.getElementById('customExpiryInput');
-      inp.value = '';
-      inp.focus();
-    }
-
-    function closeExpiryModal() {
-      document.getElementById('expiryModal').style.display = 'none';
-      // Reset select away from __ADD_CUSTOM__ if user cancelled
-      const selId = currentPendingExpiryTarget === 'far' ? 'cfgFarExpiry' : 'cfgNearExpiry';
-      const sel = document.getElementById(selId);
-      if (sel.value === '__ADD_CUSTOM__') {
-        sel.selectedIndex = 0;
-      }
-    }
-
-    function confirmAddExpiryModal() {
-      const inp = document.getElementById('customExpiryInput');
-      const val = inp.value.trim();
-      if (!val) return;
-      addExpiryOptionToDropdowns(val, currentPendingExpiryTarget);
-      closeExpiryModal();
-      onExpiryChange();
-      showToast(`✅ Expiry ${val} add ho gayi!`);
-    }
-
-    function addExpiryOptionToDropdowns(val, targetToSelect) {
-      ['cfgFarExpiry', 'cfgNearExpiry'].forEach(id => {
-        const sel = document.getElementById(id);
-        let exists = false;
-        for (let opt of sel.options) {
-          if (opt.value.toLowerCase() === val.toLowerCase()) { exists = true; break; }
-        }
-        if (!exists) {
-          const opt = document.createElement('option');
-          opt.value = val;
-          opt.textContent = `${val} (Custom Expiry)`;
-          // Insert right before the last '__ADD_CUSTOM__' option
-          const customOptIndex = sel.options.length - 1;
-          sel.insertBefore(opt, sel.options[customOptIndex] || null);
-        }
-      });
-
-      if (targetToSelect === 'far') {
-        document.getElementById('cfgFarExpiry').value = val;
-      } else if (targetToSelect === 'near') {
-        document.getElementById('cfgNearExpiry').value = val;
-      }
-      updateActivePairLabel();
-    }
-
-    // ==========================================
-    // 📑 Saved Expiry Combination Tabs Feature
-    // ==========================================
     function promptSaveCurrentAsTab() {
       saveCurrentToStore();
       const u = document.getElementById('cfgUnderlying').value;
       const f = document.getElementById('cfgFarExpiry').value;
       const n = document.getElementById('cfgNearExpiry').value;
-      const t = currentType;
 
       document.getElementById('modalUnderlyingLabel').textContent = u;
-      document.getElementById('modalTypeLabel').textContent = t;
-      document.getElementById('modalTypeLabel').style.color = t === 'CE' ? '#10b981' : '#f43f5e';
+      document.getElementById('modalTypeLabel').textContent = currentType;
+      document.getElementById('modalTypeLabel').style.color = currentType === 'CE' ? '#10b981' : '#f43f5e';
       document.getElementById('modalFarLabel').textContent = f;
       document.getElementById('modalNearLabel').textContent = n;
 
       const fShort = f.split(' ')[0] + ' ' + (f.split(' ')[1] || '');
       const nShort = n.split(' ')[0] + ' ' + (n.split(' ')[1] || '');
-      const defaultName = `${u} (${fShort} / ${nShort}) ${t}`;
-      const inp = document.getElementById('tabNameInput');
-      inp.value = defaultName;
+      document.getElementById('tabNameInput').value = `${u} ${fShort}/${nShort} (${currentType})`;
 
       document.getElementById('saveTabModal').style.display = 'flex';
-      setTimeout(() => { inp.focus(); inp.select(); }, 50);
+      setTimeout(() => document.getElementById('tabNameInput').focus(), 50);
     }
 
     function closeSaveTabModal() {
@@ -993,15 +1640,13 @@
     }
 
     function confirmSaveTabModal() {
-      const inp = document.getElementById('tabNameInput');
-      const name = inp.value.trim();
+      const name = document.getElementById('tabNameInput').value.trim();
       if (!name) return;
 
       const u = document.getElementById('cfgUnderlying').value;
       const f = document.getElementById('cfgFarExpiry').value;
       const n = document.getElementById('cfgNearExpiry').value;
-      const t = currentType;
-      const currentRows = readCurrentRowsFromDom();
+      const gridData = sheet ? sheet.getData() : [];
 
       const newTab = {
         id: 'tab_' + Date.now(),
@@ -1009,22 +1654,25 @@
         underlying: u,
         farExpiry: f,
         nearExpiry: n,
-        optionType: t,
-        rows: currentRows
+        optionType: currentType,
+        data: gridData
       };
 
       savedTabsStore.push(newTab);
       activeTabId = newTab.id;
+
+      try {
+        localStorage.setItem('calendar_saved_tabs', JSON.stringify(savedTabsStore));
+      } catch (e) {}
+
       closeSaveTabModal();
       renderTabsBar();
-      savePayload(true);
-      showToast(`✅ Tab "${newTab.name}" save ho gaya!`);
+      showToast(`✅ Tab "${newTab.name}" saved!`);
     }
 
     function renderTabsBar() {
       const container = document.getElementById('tabsScrollContainer');
       const countBadge = document.getElementById('savedTabCountBadge');
-      const notice = document.getElementById('emptyTabsNotice');
 
       if (!savedTabsStore || savedTabsStore.length === 0) {
         container.innerHTML = '<span style="font-size:11.5px; color:#64748b; font-style:italic;" id="emptyTabsNotice">Koi combination tab abhi save nahi kiya hai. Niche Far aur Near Expiry select karein aur "Save as Tab" dabayein!</span>';
@@ -1059,29 +1707,22 @@
 
       activeTabId = tab.id;
 
-      // Switch underlying
       document.getElementById('cfgUnderlying').value = tab.underlying;
       currentUnderlying = tab.underlying;
 
-      // Switch Expiries (ensure options exist)
       addExpiryOptionToDropdowns(tab.farExpiry, 'far');
       addExpiryOptionToDropdowns(tab.nearExpiry, 'near');
 
-      // Switch CE/PE
       currentType = tab.optionType;
       document.getElementById('tabCe').className = 'type-tab ' + (currentType === 'CE' ? 'active-ce' : '');
       document.getElementById('tabPe').className = 'type-tab ' + (currentType === 'PE' ? 'active-pe' : '');
-      const badge = document.getElementById('tableTitleBadge');
-      badge.textContent = currentType;
-      badge.style.background = currentType === 'CE' ? '#10b981' : '#f43f5e';
-      document.getElementById('tableTitleText').textContent = (currentType === 'CE' ? 'Call' : 'Put') + ' Calendar Spread Matrix (Far Exp vs Near Exp)';
 
       updateActivePairLabel();
       renderTabsBar();
 
-      // Load saved rows if present
-      if (tab.rows && tab.rows.length > 0) {
-        renderGrid(tab.rows);
+      if (tab.data && tab.data.length > 0) {
+        initSpreadsheetGrid(tab.data);
+        syncChangedStrikes();
       } else {
         fetchLiveMarketData(true);
       }
@@ -1098,21 +1739,23 @@
       if (activeTabId === tabId) {
         activeTabId = savedTabsStore.length > 0 ? savedTabsStore[0].id : null;
       }
+      try {
+        localStorage.setItem('calendar_saved_tabs', JSON.stringify(savedTabsStore));
+      } catch (e) {}
       renderTabsBar();
-      savePayload(true);
       showToast("Tab removed");
     }
 
     function saveCurrentToStore() {
+      if (!sheet) return;
       const currentKey = getPairKey();
-      const rows = readCurrentRowsFromDom();
-      if (rows && rows.length > 0) {
-        customMatrixStore[currentKey] = rows;
-        // Also update active tab if active
+      const gridData = sheet.getData();
+      if (gridData && gridData.length > 0) {
+        customMatrixStore[currentKey] = gridData;
         if (activeTabId) {
           const curTab = savedTabsStore.find(t => t.id === activeTabId);
           if (curTab) {
-            curTab.rows = rows;
+            curTab.data = gridData;
             curTab.underlying = document.getElementById('cfgUnderlying').value;
             curTab.farExpiry = document.getElementById('cfgFarExpiry').value;
             curTab.nearExpiry = document.getElementById('cfgNearExpiry').value;
@@ -1126,6 +1769,63 @@
       }
     }
 
+    // --- Expiry Dropdown Handling ---
+    function handleSelectExpiryChange(target) {
+      const sel = document.getElementById(target === 'far' ? 'cfgFarExpiry' : 'cfgNearExpiry');
+      if (sel.value === '__ADD_CUSTOM__') {
+        currentPendingExpiryTarget = target;
+        openExpiryModal();
+        return;
+      }
+      onExpiryChange();
+    }
+
+    function openExpiryModal() {
+      document.getElementById('expiryModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('customExpiryInput').focus(), 50);
+    }
+
+    function closeExpiryModal() {
+      document.getElementById('expiryModal').style.display = 'none';
+      const sel = document.getElementById(currentPendingExpiryTarget === 'far' ? 'cfgFarExpiry' : 'cfgNearExpiry');
+      if (sel.value === '__ADD_CUSTOM__') {
+        sel.selectedIndex = 0;
+      }
+    }
+
+    function confirmAddExpiryModal() {
+      const val = document.getElementById('customExpiryInput').value.trim();
+      if (!val) return;
+      addExpiryOptionToDropdowns(val, currentPendingExpiryTarget);
+      document.getElementById('customExpiryInput').value = '';
+      closeExpiryModal();
+      onExpiryChange();
+      showToast(`Custom Expiry "${val}" Added`);
+    }
+
+    function addExpiryOptionToDropdowns(newExp, selectTarget = 'far') {
+      ['cfgFarExpiry', 'cfgNearExpiry'].forEach(id => {
+        const sel = document.getElementById(id);
+        let exists = false;
+        for (let i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value === newExp) {
+            exists = true;
+            break;
+          }
+        }
+        if (!exists) {
+          const opt = document.createElement('option');
+          opt.value = newExp;
+          opt.textContent = `${newExp} (Custom Expiry)`;
+          const addOpt = sel.querySelector('option[value="__ADD_CUSTOM__"]');
+          if (addOpt) sel.insertBefore(opt, addOpt);
+          else sel.appendChild(opt);
+        }
+      });
+      const targetSel = document.getElementById(selectTarget === 'far' ? 'cfgFarExpiry' : 'cfgNearExpiry');
+      if (targetSel) targetSel.value = newExp;
+    }
+
     function onExpiryChange() {
       saveCurrentToStore();
       updateActivePairLabel();
@@ -1137,12 +1837,6 @@
       currentType = type;
       document.getElementById('tabCe').className = 'type-tab ' + (type === 'CE' ? 'active-ce' : '');
       document.getElementById('tabPe').className = 'type-tab ' + (type === 'PE' ? 'active-pe' : '');
-
-      const badge = document.getElementById('tableTitleBadge');
-      badge.textContent = type;
-      badge.style.background = type === 'CE' ? '#10b981' : '#f43f5e';
-      document.getElementById('tableTitleText').textContent = (type === 'CE' ? 'Call' : 'Put') + ' Calendar Spread Matrix (Far Exp vs Near Exp)';
-
       fetchLiveMarketData(true);
     }
 
@@ -1151,56 +1845,179 @@
       currentUnderlying = document.getElementById('cfgUnderlying').value;
       try {
         const r = await fetch(`/api/calendar/expiries?symbol=${encodeURIComponent(currentUnderlying)}`);
-        if (r.ok) {
-          const d = await r.json();
-          if (d && d.ok && d.expiries && d.expiries.length > 0) {
-            populateAvailableExpiries(d.expiries, true);
-          }
+        const d = await r.json();
+        if (d && d.ok && d.expiries) {
+          populateAvailableExpiries(d.expiries, true);
         }
       } catch (e) {
-        console.warn("Underlying expiries fetch notice:", e);
+        console.warn("Expiries fetch error:", e);
       }
       fetchLiveMarketData(true, true);
     }
 
-    // Live Streaming Auto-Tick Controller
+    function populateAvailableExpiries(expList, isUnderlyingChange = false) {
+      if (!expList || expList.length === 0) return;
+      ['cfgFarExpiry', 'cfgNearExpiry'].forEach((id) => {
+        const sel = document.getElementById(id);
+        const cur = isUnderlyingChange ? null : sel.value;
+        sel.innerHTML = '';
+        expList.forEach((eStr, i) => {
+          const opt = document.createElement('option');
+          opt.value = eStr;
+          const tag = i === 0 ? ' (Near)' : (i === 1 ? ' (Next)' : (i === 2 ? ' (Far)' : ' (Monthly)'));
+          opt.textContent = `${eStr}${tag}`;
+          sel.appendChild(opt);
+        });
+
+        const customOpt = document.createElement('option');
+        customOpt.value = '__ADD_CUSTOM__';
+        customOpt.textContent = '➕ Add Custom Date...';
+        customOpt.style.color = '#38bdf8';
+        customOpt.style.fontWeight = '700';
+        sel.appendChild(customOpt);
+
+        if (cur && expList.includes(cur)) {
+          sel.value = cur;
+        } else {
+          if (id === 'cfgFarExpiry') sel.value = expList.length > 1 ? expList[1] : expList[0];
+          if (id === 'cfgNearExpiry') sel.value = expList[0];
+        }
+      });
+      updateActivePairLabel();
+    }
+
+    // --- Live Data Engine ---
+    async function fetchLiveMarketData(forceFullRender = false, isUnderlyingChange = false) {
+      if (isFetching) return;
+      isFetching = true;
+
+      const sym = document.getElementById('cfgUnderlying').value;
+      const fExp = document.getElementById('cfgFarExpiry').value;
+      const nExp = document.getElementById('cfgNearExpiry').value;
+      const sRange = parseInt(document.getElementById('cfgStrikeRange').value) || 6;
+
+      // Collect custom strikes if already in sheet
+      const currentStrikes = [];
+      if (!forceFullRender && sheet && sheet.data) {
+        for (let r = 0; r < sheet.data.length; r++) {
+          const s1 = parseFloat(String(sheet.getValueFromCoords(0, r)).replace(/[^0-9.-]/g, '')) || 0;
+          const s2 = parseFloat(String(sheet.getValueFromCoords(1, r)).replace(/[^0-9.-]/g, '')) || s1;
+          if (s1 > 500) {
+            currentStrikes.push({ s1, s2 });
+          }
+        }
+      }
+
+      try {
+        const res = await fetch('/api/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            symbol: sym,
+            farExpiry: fExp,
+            nearExpiry: nExp,
+            optionType: currentType,
+            strikeRange: sRange,
+            customStrikes: currentStrikes.length > 0 ? currentStrikes : null
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.ok) {
+            if (data.spotPrice) currentSpotPrice = data.spotPrice;
+            if (data.atmStrike) currentAtmStrike = data.atmStrike;
+            else currentAtmStrike = Math.round(currentSpotPrice / getIndexStep(sym)) * getIndexStep(sym);
+
+            document.getElementById('spotBadge').textContent = `${sym} Spot: ₹${data.spotPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+            document.getElementById('syncLabel').textContent = data.isLive ? "Upstox Live Feed" : "Live Greeks Engine";
+
+            populateAvailableExpiries(data.availableExpiries, isUnderlyingChange);
+            updateActivePairLabel(data.farDte, data.nearDte);
+
+            const pairKey = getPairKey();
+            const existingSavedData = customMatrixStore[pairKey];
+
+            if (forceFullRender || !sheet) {
+              if (existingSavedData && existingSavedData.length > 0) {
+                initSpreadsheetGrid(existingSavedData);
+                updateQuotesFromResponse(data.rows);
+              } else {
+                // Convert server rows to Jspreadsheet 2D array
+                const initialArray = (data.rows || []).map((r, i) => {
+                  const rowNum = i + 1;
+                  const fBid = parseFloat(r.farBid) || 0;
+                  const nAsk = parseFloat(r.nearAsk) || 0;
+                  const sp = computeSpreadWithRule(fBid, nAsk, i);
+                  return [
+                    parseFloat(r.s1) || 0,
+                    parseFloat(r.s2 || r.s1) || 0,
+                    fBid,
+                    nAsk,
+                    `=C${rowNum}-D${rowNum}`,
+                    r.deltaSpread,
+                    r.volSpread,
+                    r.vegaSpread,
+                    r.farDelta,
+                    r.nearDelta,
+                    r.farVolIv,
+                    r.nearVolIv,
+                    r.farVega,
+                    r.nearVega,
+                    r.farVol,
+                    r.nearVol
+                  ];
+                });
+                initSpreadsheetGrid(initialArray);
+              }
+            } else {
+              // Pause quote updates if user is currently dragging or selecting
+              if (!isUserDragging) {
+                updateQuotesFromResponse(data.rows);
+              }
+            }
+
+            document.getElementById('lastTickTime').textContent = data.timestamp;
+          }
+        }
+      } catch (e) {
+        console.warn("Live calendar tick exception:", e);
+      } finally {
+        isFetching = false;
+      }
+    }
+
+    // --- Live Stream Ticking ---
     function toggleLiveStream() {
       isLiveStreaming = !isLiveStreaming;
       const btn = document.getElementById('btnLiveStream');
       const txt = document.getElementById('streamStateTxt');
       if (isLiveStreaming) {
+        txt.textContent = 'ON';
         btn.style.borderColor = '#10b981';
         btn.style.color = '#10b981';
-        txt.textContent = 'ON';
         startStreaming();
-        showToast("🟢 1-Second Live Feed Active");
       } else {
+        txt.textContent = 'OFF';
         btn.style.borderColor = '#64748b';
         btn.style.color = '#94a3b8';
-        txt.textContent = 'PAUSED';
-        stopStreaming();
-        showToast("⏸️ Live Feed Paused");
+        clearInterval(streamInterval);
+        streamInterval = null;
       }
     }
 
     function startStreaming() {
-      stopStreaming();
+      if (streamInterval) clearInterval(streamInterval);
       streamInterval = setInterval(() => {
-        if (!isFetching && isLiveStreaming) {
-          fetchLiveMarketData(false, false);
+        if (isLiveStreaming) {
+          fetchLiveMarketData(false);
         }
       }, 1000);
     }
 
-    function stopStreaming() {
-      if (streamInterval) clearInterval(streamInterval);
-      streamInterval = null;
-    }
-
-    // Upstox Modal
+    // --- Upstox Modal ---
     function openUpstoxModal() {
       document.getElementById('upstoxModal').style.display = 'flex';
-      document.getElementById('tokenStatusMsg').textContent = '';
     }
 
     function closeUpstoxModal() {
@@ -1211,10 +2028,10 @@
       const tok = document.getElementById('inputUpstoxToken').value.trim();
       const statusEl = document.getElementById('tokenStatusMsg');
       if (!tok) {
-        statusEl.innerHTML = '<span style="color:#ef4444;">Please paste an Access Token</span>';
+        statusEl.innerHTML = '<span style="color:#ef4444;">Please enter token</span>';
         return;
       }
-      statusEl.innerHTML = '<span style="color:#38bdf8;">Testing connection with Upstox API...</span>';
+      statusEl.innerHTML = '<span style="color:#38bdf8;">Validating token...</span>';
       try {
         const res = await fetch('/api/upstox/token', {
           method: 'POST',
@@ -1229,505 +2046,34 @@
           document.getElementById('btnUpstoxStatus').textContent = '🟢 Upstox Active';
           setTimeout(() => {
             closeUpstoxModal();
-            fetchLiveMarketData(true, false);
-          }, 1200);
+            fetchLiveMarketData(true);
+          }, 1000);
         } else {
           statusEl.innerHTML = `<span style="color:#ef4444;">❌ ${d.message}</span>`;
         }
       } catch (e) {
-        statusEl.innerHTML = `<span style="color:#ef4444;">Connection failed: ${e.message}</span>`;
+        statusEl.innerHTML = `<span style="color:#ef4444;">Connection error: ${e.message}</span>`;
       }
     }
 
-    // Primary Live Data Fetch Function
-    async function fetchLiveMarketData(forceFullRender = false, isUnderlyingChange = false) {
-      if (isFetching) return;
-      isFetching = true;
-
-      const sym = document.getElementById('cfgUnderlying').value;
-      const fExp = document.getElementById('cfgFarExpiry').value;
-      const nExp = document.getElementById('cfgNearExpiry').value;
-
-      try {
-        const res = await fetch('/api/calendar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            symbol: sym,
-            farExpiry: fExp,
-            nearExpiry: nExp,
-            optionType: currentType,
-            strikeRange: 6
-          })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.ok) {
-            updateEngineHeader(data);
-            populateAvailableExpiries(data.availableExpiries, isUnderlyingChange);
-            updateActivePairLabel(data.farDte, data.nearDte);
-
-            const pairKey = getPairKey();
-            const existingRows = customMatrixStore[pairKey];
-
-            if (forceFullRender || !existingRows || document.querySelectorAll('#gridBody tr').length === 0) {
-              renderGrid(data.rows);
-            } else {
-              updateGridInPlace(data.rows);
-            }
-
-            document.getElementById('lastTickTime').textContent = data.timestamp;
-            document.getElementById('syncLabel').textContent = data.isLive ? "🟢 Upstox Real-Time Live" : "🟢 Black-Scholes Real-Time Live";
-          }
-        }
-      } catch (e) {
-        console.warn("Live calendar tick exception:", e);
-      } finally {
-        isFetching = false;
-      }
+    function openFormulaHelpModal() {
+      document.getElementById('formulaHelpModal').style.display = 'flex';
     }
 
-    function updateEngineHeader(data) {
-      const badge = document.getElementById('engineBadge');
-      const spot = document.getElementById('spotBadge');
-      const sub = document.getElementById('engineSubtext');
-
-      spot.textContent = `Spot: ${data.spotPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
-      if (data.isLive) {
-        badge.textContent = "UPSTOX LIVE EXCHANGE FEED";
-        badge.style.background = "#10b981";
-        sub.textContent = `Direct exchange quotes from Upstox API v2 for ${data.symbol}. Real-time Greeks & spreads active.`;
-      } else {
-        badge.textContent = "BLACK-SCHOLES GREEK ENGINE";
-        badge.style.background = "#0284c7";
-        sub.textContent = `Live spot price calibrated with institutional Black-Scholes model (NSE/Sensibull 10% risk-free rate).`;
-      }
-    }
-
-    function populateAvailableExpiries(expList, isUnderlyingChange = false) {
-      if (!expList || expList.length === 0) return;
-      ['cfgFarExpiry', 'cfgNearExpiry'].forEach((id) => {
-        const sel = document.getElementById(id);
-        const currentVal = isUnderlyingChange ? null : sel.value;
-
-        // Clear select to rebuild cleanly with zero mock / zero AUTO
-        sel.innerHTML = '';
-
-        expList.forEach((eStr, i) => {
-          const opt = document.createElement('option');
-          opt.value = eStr;
-          const tag = i === 0 ? ' (Near / Current Expiry)' : (i === 1 ? ' (Next Weekly Expiry)' : (i === 2 ? ' (Far Weekly Expiry)' : (eStr.includes('Dec') || eStr.includes('Mar') || eStr.includes('Jun') || eStr.includes('Sep') ? ' (Quarterly Expiry)' : ' (Monthly Expiry)')));
-          opt.textContent = `${eStr}${tag}`;
-          sel.appendChild(opt);
-        });
-
-        const optCustom = document.createElement('option');
-        optCustom.value = '__ADD_CUSTOM__';
-        optCustom.textContent = '➕ Add Custom Expiry Date...';
-        optCustom.style.color = '#38bdf8';
-        optCustom.style.fontWeight = '700';
-        sel.appendChild(optCustom);
-
-        if (currentVal && currentVal !== 'AUTO' && currentVal !== '__ADD_CUSTOM__') {
-          let found = false;
-          for (let opt of sel.options) {
-            if (opt.value === currentVal) { found = true; break; }
-          }
-          if (found) {
-            sel.value = currentVal;
-          } else {
-            if (id === 'cfgFarExpiry') sel.value = expList.length > 1 ? expList[1] : expList[0];
-            if (id === 'cfgNearExpiry') sel.value = expList[0];
-          }
-        } else {
-          if (id === 'cfgFarExpiry') sel.value = expList.length > 1 ? expList[1] : expList[0];
-          if (id === 'cfgNearExpiry') sel.value = expList[0];
-        }
-      });
-      updateActivePairLabel();
-    }
-
-    // Full Render of Grid
-    function renderGrid(rows) {
-      const tbody = document.getElementById('gridBody');
-      tbody.innerHTML = '';
-      rows.forEach((r) => {
-        if (r.isSectionLabel) {
-          renderSectionLabelRow(r.label);
-          return;
-        }
-        const tr = document.createElement('tr');
-        if (r.isAtm) tr.className = 'row-atm';
-        tr.setAttribute('data-strike1', r.s1 || r.strike1 || '');
-        tr.innerHTML = `
-          <td class="col-strike" contenteditable="true" oninput="onStrikeInput(this)">${r.s1 || r.strike1 || '-'}</td>
-          <td class="col-strike" contenteditable="true" oninput="onStrikeInput(this)">${r.s2 || r.strike2 || r.s1 || r.strike1 || '-'}</td>
-          <td contenteditable="true" oninput="calcRow(this)">${r.farBid || '-'}</td>
-          <td contenteditable="true" oninput="calcRow(this)">${r.nearAsk || '-'}</td>
-          <td class="col-spread" contenteditable="true">${r.spread || r.spreadLtp || '-'}</td>
-          <td contenteditable="true">${r.farVol || '-'}</td>
-          <td contenteditable="true">${r.nearVol || '-'}</td>
-          <td class="col-delta-spread" contenteditable="true">${r.deltaSpread || '-'}</td>
-          <td class="col-vol-spread" contenteditable="true">${r.volSpread || '-'}</td>
-          <td contenteditable="true" oninput="calcGreeks(this)">${r.farDelta || '-'}</td>
-          <td contenteditable="true" oninput="calcGreeks(this)">${r.nearDelta || '-'}</td>
-          <td contenteditable="true" oninput="calcVol(this)">${r.farVolIv || r.farIv || '-'}</td>
-          <td contenteditable="true" oninput="calcVol(this)">${r.nearVolIv || r.nearIv || '-'}</td>
-          <td contenteditable="true" oninput="calcVega(this)">${r.farVega || '-'}</td>
-          <td contenteditable="true" oninput="calcVega(this)">${r.nearVega || '-'}</td>
-          <td class="col-vega-spread" contenteditable="true">${r.vegaSpread || '-'}</td>
-          <td style="text-align: center;"><span style="color:#ef4444; cursor:pointer;" onclick="deleteRow(this)">✕</span></td>
-        `;
-        tbody.appendChild(tr);
-      });
-      updateRowCount();
-    }
-
-    // In-Place Update (Never resets focus or wipes custom typing)
-    function updateGridInPlace(freshRows) {
-      const rowMap = {};
-      freshRows.forEach(r => { rowMap[r.s1] = r; });
-
-      const trs = document.querySelectorAll('#gridBody tr');
-      trs.forEach(tr => {
-        if (tr.classList.contains('section-label-row')) return;
-        const tds = tr.querySelectorAll('td');
-        const s1 = tds[0].textContent.trim();
-        const fresh = rowMap[s1];
-        if (!fresh) return;
-
-        if (tr.contains(document.activeElement)) return;
-
-        updateCellWithFlash(tds[2], fresh.farBid);
-        updateCellWithFlash(tds[3], fresh.nearAsk);
-        updateCellWithFlash(tds[4], fresh.spread);
-        tds[5].textContent = fresh.farVol;
-        tds[6].textContent = fresh.nearVol;
-        tds[7].textContent = fresh.deltaSpread;
-        tds[8].textContent = fresh.volSpread;
-        tds[9].textContent = fresh.farDelta;
-        tds[10].textContent = fresh.nearDelta;
-        tds[11].textContent = fresh.farVolIv;
-        tds[12].textContent = fresh.nearVolIv;
-        tds[13].textContent = fresh.farVega;
-        tds[14].textContent = fresh.nearVega;
-        tds[15].textContent = fresh.vegaSpread;
-
-        if (fresh.isAtm) tr.classList.add('row-atm');
-        else tr.classList.remove('row-atm');
-      });
-    }
-
-    function updateCellWithFlash(cell, newVal) {
-      if (!cell || cell === document.activeElement) return;
-      const oldVal = parseFloat(cell.textContent.replace(/[^0-9.-]/g, '')) || 0;
-      const parsedNew = parseFloat(String(newVal).replace(/[^0-9.-]/g, '')) || 0;
-
-      if (cell.textContent !== String(newVal)) {
-        cell.textContent = newVal;
-        cell.classList.remove('cell-uptick', 'cell-downtick');
-        void cell.offsetWidth;
-        if (parsedNew > oldVal) cell.classList.add('cell-uptick');
-        else if (parsedNew < oldVal) cell.classList.add('cell-downtick');
-      }
-    }
-
-    function renderSectionLabelRow(titleText = "🎯 [Custom Diagonal / Section Name - Click to Edit]") {
-      const tbody = document.getElementById('gridBody');
-      const tr = document.createElement('tr');
-      tr.className = 'section-label-row';
-      tr.innerHTML = `
-        <td colspan="16" contenteditable="true">${titleText}</td>
-        <td style="text-align: center;"><span style="color:#ef4444; cursor:pointer;" onclick="deleteRow(this)">✕</span></td>
-      `;
-      tbody.appendChild(tr);
-      updateRowCount();
-    }
-
-    function onStrikeInput(el) {
-      const tr = el.closest('tr');
-      if (tr.classList.contains('section-label-row')) return;
-      const cells = tr.querySelectorAll('td');
-
-      const s1Raw = cells[0].textContent.replace(/[^0-9.-]/g, '');
-      const s2Raw = cells[1].textContent.replace(/[^0-9.-]/g, '');
-      const s1 = parseFloat(s1Raw);
-      const s2 = parseFloat(s2Raw) || s1;
-
-      if (!isNaN(s1) && s1 > 500 && (!s2Raw || s2Raw === '-')) {
-        cells[1].textContent = s1;
-      }
-
-      if (!isNaN(s1) && s1 > 500) {
-        calcRow(cells[2]);
-        calcGreeks(cells[9]);
-        calcVol(cells[11]);
-        calcVega(cells[13]);
-      }
-      triggerSaveDebounced();
-    }
-
-    function calcRow(el) {
-      const tr = el.closest('tr');
-      if (tr.classList.contains('section-label-row')) return;
-      const cells = tr.querySelectorAll('td');
-      const farBid = parseFloat(cells[2].textContent.replace(/[^0-9.-]/g, '')) || 0;
-      const nearAsk = parseFloat(cells[3].textContent.replace(/[^0-9.-]/g, '')) || 0;
-      if (farBid > 0 || nearAsk > 0) {
-        cells[4].textContent = (farBid - nearAsk).toFixed(2);
-      }
-      triggerSaveDebounced();
-    }
-
-    function calcGreeks(el) {
-      const tr = el.closest('tr');
-      if (tr.classList.contains('section-label-row')) return;
-      const cells = tr.querySelectorAll('td');
-      const fDelta = parseFloat(cells[9].textContent.replace(/[^0-9.-]/g, '')) || 0;
-      const nDelta = parseFloat(cells[10].textContent.replace(/[^0-9.-]/g, '')) || 0;
-      const diff = (fDelta - nDelta).toFixed(3);
-      cells[7].textContent = (diff >= 0 ? '+' : '') + diff;
-      triggerSaveDebounced();
-    }
-
-    function calcVol(el) {
-      const tr = el.closest('tr');
-      if (tr.classList.contains('section-label-row')) return;
-      const cells = tr.querySelectorAll('td');
-      const fIv = parseFloat(cells[11].textContent.replace(/[^0-9.-]/g, '')) || 0;
-      const nIv = parseFloat(cells[12].textContent.replace(/[^0-9.-]/g, '')) || 0;
-      const diff = (fIv - nIv).toFixed(1);
-      cells[8].textContent = (diff >= 0 ? '+' : '') + diff + '%';
-      triggerSaveDebounced();
-    }
-
-    function calcVega(el) {
-      const tr = el.closest('tr');
-      if (tr.classList.contains('section-label-row')) return;
-      const cells = tr.querySelectorAll('td');
-      const fVega = parseFloat(cells[13].textContent.replace(/[^0-9.-]/g, '')) || 0;
-      const nVega = parseFloat(cells[14].textContent.replace(/[^0-9.-]/g, '')) || 0;
-      const diff = (fVega - nVega).toFixed(1);
-      cells[15].textContent = (diff >= 0 ? '+' : '') + diff;
-      triggerSaveDebounced();
-    }
-
-    function addNewStrikeRow() {
-      const tbody = document.getElementById('gridBody');
-      const tr = document.createElement('tr');
-      const lastRow = tbody.lastElementChild;
-      let nextS = 23600;
-      if (lastRow && !lastRow.classList.contains('section-label-row')) {
-        const prevS = parseInt(lastRow.children[0].textContent.replace(/[^0-9]/g, '')) || 23550;
-        nextS = prevS + (currentUnderlying === 'BANKNIFTY' ? 100 : 50);
-      }
-      tr.innerHTML = `
-        <td class="col-strike" contenteditable="true" oninput="onStrikeInput(this)">${nextS}</td>
-        <td class="col-strike" contenteditable="true" oninput="onStrikeInput(this)">${nextS}</td>
-        <td contenteditable="true" oninput="calcRow(this)">110.00</td>
-        <td contenteditable="true" oninput="calcRow(this)">45.00</td>
-        <td class="col-spread" contenteditable="true">65.00</td>
-        <td contenteditable="true">11000</td>
-        <td contenteditable="true">32000</td>
-        <td class="col-delta-spread" contenteditable="true">+0.035</td>
-        <td class="col-vol-spread" contenteditable="true">-1.2%</td>
-        <td contenteditable="true" oninput="calcGreeks(this)">0.380</td>
-        <td contenteditable="true" oninput="calcGreeks(this)">0.345</td>
-        <td contenteditable="true" oninput="calcVol(this)">11.8%</td>
-        <td contenteditable="true" oninput="calcVol(this)">13.0%</td>
-        <td contenteditable="true" oninput="calcVega(this)">17.5</td>
-        <td contenteditable="true" oninput="calcVega(this)">10.2</td>
-        <td class="col-vega-spread" contenteditable="true">+7.3</td>
-        <td style="text-align: center;"><span style="color:#ef4444; cursor:pointer;" onclick="deleteRow(this)">✕</span></td>
-      `;
-      tbody.appendChild(tr);
-      updateRowCount();
-      triggerSaveDebounced();
-    }
-
-    function addBlankRow() {
-      const tbody = document.getElementById('gridBody');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="col-strike" contenteditable="true" oninput="onStrikeInput(this)">-</td>
-        <td class="col-strike" contenteditable="true" oninput="onStrikeInput(this)">-</td>
-        <td contenteditable="true" oninput="calcRow(this)">-</td>
-        <td contenteditable="true" oninput="calcRow(this)">-</td>
-        <td class="col-spread" contenteditable="true">-</td>
-        <td contenteditable="true">-</td>
-        <td contenteditable="true">-</td>
-        <td class="col-delta-spread" contenteditable="true">-</td>
-        <td class="col-vol-spread" contenteditable="true">-</td>
-        <td contenteditable="true" oninput="calcGreeks(this)">-</td>
-        <td contenteditable="true" oninput="calcGreeks(this)">-</td>
-        <td contenteditable="true" oninput="calcVol(this)">-</td>
-        <td contenteditable="true" oninput="calcVol(this)">-</td>
-        <td contenteditable="true" oninput="calcVega(this)">-</td>
-        <td contenteditable="true" oninput="calcVega(this)">-</td>
-        <td class="col-vega-spread" contenteditable="true">-</td>
-        <td style="text-align: center;"><span style="color:#ef4444; cursor:pointer;" onclick="deleteRow(this)">✕</span></td>
-      `;
-      tbody.appendChild(tr);
-      updateRowCount();
-      triggerSaveDebounced();
-    }
-
-    function addSectionLabelRow() {
-      renderSectionLabelRow();
-      triggerSaveDebounced();
-    }
-
-    function deleteRow(btn) {
-      btn.closest('tr').remove();
-      updateRowCount();
-      triggerSaveDebounced();
-    }
-
-    function updateRowCount() {
-      const rows = document.querySelectorAll('#gridBody tr');
-      const countEl = document.getElementById('rowCountBadge');
-      if (countEl) countEl.textContent = rows.length;
-    }
-
-    let saveTimer = null;
-    function triggerSaveDebounced() {
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
-        savePayload(true);
-      }, 1500);
-    }
-
-    function readCurrentRowsFromDom() {
-      const rows = [];
-      document.querySelectorAll('#gridBody tr').forEach(tr => {
-        if (tr.classList.contains('section-label-row')) {
-          rows.push({
-            isSectionLabel: true,
-            label: tr.querySelector('td').textContent.trim()
-          });
-          return;
-        }
-        const tds = tr.querySelectorAll('td');
-        rows.push({
-          strike1: tds[0]?.textContent.trim() || '-',
-          strike2: tds[1]?.textContent.trim() || '-',
-          farBid: tds[2]?.textContent.trim() || '-',
-          nearAsk: tds[3]?.textContent.trim() || '-',
-          spreadLtp: tds[4]?.textContent.trim() || '-',
-          farVol: tds[5]?.textContent.trim() || '-',
-          nearVol: tds[6]?.textContent.trim() || '-',
-          deltaSpread: tds[7]?.textContent.trim() || '-',
-          volSpread: tds[8]?.textContent.trim() || '-',
-          farDelta: tds[9]?.textContent.trim() || '-',
-          nearDelta: tds[10]?.textContent.trim() || '-',
-          farIv: tds[11]?.textContent.trim() || '-',
-          nearIv: tds[12]?.textContent.trim() || '-',
-          farVega: tds[13]?.textContent.trim() || '-',
-          nearVega: tds[14]?.textContent.trim() || '-',
-          vegaSpread: tds[15]?.textContent.trim() || '-'
-        });
-      });
-      return rows;
-    }
-
-    function getFullPayload() {
-      saveCurrentToStore();
-      const currentRows = readCurrentRowsFromDom();
-
-      return {
-        underlying: document.getElementById('cfgUnderlying').value,
-        farExpiry: document.getElementById('cfgFarExpiry').value,
-        nearExpiry: document.getElementById('cfgNearExpiry').value,
-        optionType: currentType,
-        columns: [
-          "Strike 1", "Strike 2", "Bid (Far Exp)", "Ask (Near Exp)", "LTP (Spread Far-Near)",
-          "Far Exp Volume", "Near Exp Volume", "Delta (Spread)", "Volatility Spread",
-          "Far Exp Delta", "Near Exp Delta", "Vol Far Exp", "Vol Near Exp",
-          "Far Exp Vega", "Near Exp Vega", "Vega Spread"
-        ],
-        rows: currentRows,
-        matrixStore: customMatrixStore,
-        savedTabs: savedTabsStore,
-        activeTabId: activeTabId,
-        userNotes: document.getElementById('liveNotes').value.trim(),
-        timestamp: new Date().toLocaleTimeString()
-      };
-    }
-
-    async function savePayload(isAuto = false) {
-      const payload = getFullPayload();
-      localStorage.setItem('calendar_matrix_spec', JSON.stringify(payload));
-      try {
-        const res = await fetch('/api/calendar/feedback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-          const t = new Date().toLocaleTimeString();
-          document.getElementById('savedAtTag').textContent = `Last saved: ${t}`;
-          if (!isAuto) showToast("✅ Saved and Synced with Assistant!");
-        }
-      } catch (e) {
-        document.getElementById('savedAtTag').textContent = `Local Saved (${new Date().toLocaleTimeString()})`;
-      }
-    }
-
-    function saveAndSend() {
-      savePayload(false);
+    function closeFormulaHelpModal() {
+      document.getElementById('formulaHelpModal').style.display = 'none';
     }
 
     function showToast(msg) {
       const t = document.getElementById('toast');
       t.textContent = msg;
       t.style.display = 'flex';
-      setTimeout(() => { t.style.display = 'none'; }, 3000);
+      setTimeout(() => { t.style.display = 'none'; }, 2200);
     }
 
-    // Restore saved feedback if available
-    async function loadSavedFeedback() {
-      try {
-        // Load local tabs store
-        const lTabs = localStorage.getItem('calendar_saved_tabs');
-        if (lTabs) {
-          try { savedTabsStore = JSON.parse(lTabs); } catch(e){}
-        }
-
-        const res = await fetch('/api/calendar/feedback');
-        if (res.ok) {
-          const resData = await res.json();
-          const fb = resData.data;
-          if (fb) {
-            if (fb.matrixStore && typeof fb.matrixStore === 'object') {
-              customMatrixStore = fb.matrixStore;
-            }
-            if (fb.savedTabs && Array.isArray(fb.savedTabs)) {
-              savedTabsStore = fb.savedTabs;
-            }
-            if (fb.activeTabId) {
-              activeTabId = fb.activeTabId;
-            }
-            if (fb.userNotes) {
-              document.getElementById('liveNotes').value = fb.userNotes;
-            }
-            if (fb.underlying) {
-              document.getElementById('cfgUnderlying').value = fb.underlying;
-              currentUnderlying = fb.underlying;
-            }
-            if (fb.timestamp) {
-              document.getElementById('savedAtTag').textContent = `Last saved: ${fb.timestamp}`;
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("Feedback load notice:", e);
-      }
-      renderTabsBar();
-    }
-
+    // --- On DOM Ready ---
     window.addEventListener('DOMContentLoaded', async () => {
-      await loadSavedFeedback();
+      initStoresFromStorage();
       await fetchLiveMarketData(true);
       startStreaming();
     });

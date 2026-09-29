@@ -563,6 +563,12 @@
           <div class="admin-nav-item active" data-tab="telemetry" onclick="switchAdminTab('telemetry')">
             <span class="icon">📊</span> Overview &amp; Health
           </div>
+          <div class="admin-nav-item" data-tab="commands" onclick="switchAdminTab('commands')">
+            <span class="icon">⚡</span> Command Center
+          </div>
+          <div class="admin-nav-item" data-tab="logs" onclick="switchAdminTab('logs')">
+            <span class="icon">🚨</span> Error &amp; Event Logs
+          </div>
           <div class="admin-nav-item" data-tab="brokers" onclick="switchAdminTab('brokers')">
             <span class="icon">🔑</span> Master Broker APIs
           </div>
@@ -570,7 +576,7 @@
             <span class="icon">🔍</span> SEO &amp; Google Console
           </div>
           <div class="admin-nav-item" data-tab="cache" onclick="switchAdminTab('cache')">
-            <span class="icon">⚡</span> Cache &amp; Market Engine
+            <span class="icon">💾</span> Cache &amp; Storage
           </div>
           <div class="admin-nav-item" data-tab="security" onclick="switchAdminTab('security')">
             <span class="icon">🛡️</span> Security &amp; PIN
@@ -918,6 +924,165 @@
           </div>
         </section>
 
+        <!-- TAB 6: COMMAND CENTER -->
+        <section id="panelCommands" class="admin-panel-view">
+          <div class="admin-header">
+            <div>
+              <h1>⚡ Master Command Center</h1>
+              <p>Direct real-time backend operational commands, broker orchestrations, contract re-indexing, and live market quotes dispatcher.</p>
+            </div>
+          </div>
+
+          <!-- Active Broker Switcher Command Card -->
+          <div class="adm-card">
+            <div class="adm-card-header">
+              <h3>🔄 1-Click Active Broker Switcher</h3>
+              <span id="activeBrokerBadge" class="diag-badge info">Active: Checking...</span>
+            </div>
+            <p style="font-size:13px; color:var(--adm-muted); margin-bottom:16px;">
+              Instantly toggle the system's primary market feed provider without restarting the server daemon.
+            </p>
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+              <select id="cmdSelectBroker" class="adm-input" style="max-width:260px; padding:10px;">
+                <option value="ANGEL">Angel One SmartAPI</option>
+                <option value="KOTAK">Kotak Neo API</option>
+                <option value="UPSTOX">Upstox API v2</option>
+                <option value="FYERS">Fyers API v3</option>
+              </select>
+              <button type="button" class="btn-adm-primary" id="btnCmdSwitchBroker" onclick="runAdminCommand('switch_broker', { broker: document.getElementById('cmdSelectBroker').value })">
+                ⚡ Switch Active Broker
+              </button>
+            </div>
+          </div>
+
+          <!-- Master Action Grid -->
+          <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            
+            <!-- Command 1: Broker Session Reconnect -->
+            <div class="stat-box" style="display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+              <div>
+                <div class="stat-label">AUTHENTICATION &amp; SESSIONS</div>
+                <div style="font-size:16px; font-weight:700; margin-bottom:6px; color:#f8fafc;">🔌 Test &amp; Probe Broker</div>
+                <p style="font-size:12px; color:var(--adm-muted); margin:0;">
+                  Initiates a live session handshake test with your active broker (Angel One / Kotak Neo) to verify valid auth tokens.
+                </p>
+              </div>
+              <button type="button" class="btn-adm-primary" id="btnCmdReconnect" onclick="runAdminCommand('reconnect_broker')">
+                🔌 Probe Connection
+              </button>
+            </div>
+
+            <!-- Command 2: F&O Scrip Master Re-sync -->
+            <div class="stat-box" style="display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+              <div>
+                <div class="stat-label">CONTRACTS &amp; DERIVATIVES</div>
+                <div style="font-size:16px; font-weight:700; margin-bottom:6px; color:#f8fafc;">📑 Re-sync F&amp;O Scrip Master</div>
+                <p style="font-size:12px; color:var(--adm-muted); margin:0;">
+                  Reloads Kotak Neo / Angel One contract instrument tokens, strike multipliers, and expiry mappings directly from disk.
+                </p>
+              </div>
+              <button type="button" class="btn-adm-primary" style="background:#0284c7;" id="btnCmdResync" onclick="runAdminCommand('resync_scrip_master')">
+                📑 Reload Scrip Master
+              </button>
+            </div>
+
+            <!-- Command 3: Force Refresh Live Quotes -->
+            <div class="stat-box" style="display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+              <div>
+                <div class="stat-label">PARALLEL MARKET DISPATCHER</div>
+                <div style="font-size:16px; font-weight:700; margin-bottom:6px; color:#f8fafc;">⚡ Force Refresh All Quotes</div>
+                <p style="font-size:12px; color:var(--adm-muted); margin:0;">
+                  Dispatches parallel live quote requests for all 216 F&amp;O underlying stocks and indices, updating memory cache instantly.
+                </p>
+              </div>
+              <button type="button" class="btn-adm-primary" style="background:#059669;" id="btnCmdRefreshQuotes" onclick="runAdminCommand('refresh_quotes')">
+                🚀 Force Refresh Quotes
+              </button>
+            </div>
+
+            <!-- Command 4: Purge All Cache -->
+            <div class="stat-box" style="display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+              <div>
+                <div class="stat-label">MEMORY &amp; DISK PURGE</div>
+                <div style="font-size:16px; font-weight:700; margin-bottom:6px; color:#f8fafc;">🧹 Purge System Caches</div>
+                <p style="font-size:12px; color:var(--adm-muted); margin:0;">
+                  Clears out all temporary cache files in <code>.cache/</code> and resets in-memory live quote snapshots.
+                </p>
+              </div>
+              <button type="button" class="btn-adm-danger" id="btnCmdPurgeCache" onclick="runAdminCommand('purge_cache')">
+                🧹 Purge All Caches
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Command Execution Output Terminal Box -->
+          <div class="adm-card" style="margin-top:20px;">
+            <div class="adm-card-header">
+              <h3>💻 Command Console Output</h3>
+              <button type="button" class="btn-adm-logout" onclick="document.getElementById('cmdTerminalOutput').textContent = 'Console ready. Execute any command above to view response.'">Clear Console</button>
+            </div>
+            <pre id="cmdTerminalOutput" style="background:#040814; border:1px solid var(--adm-border); border-radius:8px; padding:16px; font-family:'JetBrains Mono', monospace; font-size:12px; color:#38bdf8; max-height:220px; overflow-y:auto; white-space:pre-wrap; margin:0;">Console ready. Execute any command above to view response.</pre>
+          </div>
+        </section>
+
+        <!-- TAB 7: LIVE ERROR & EVENT LOGS -->
+        <section id="panelLogs" class="admin-panel-view">
+          <div class="admin-header">
+            <div>
+              <h1>🚨 Live System &amp; Error Console</h1>
+              <p>Real-time server event diagnostics, broker API communication exceptions, and execution error logs.</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--adm-muted); cursor:pointer;">
+                <input type="checkbox" id="chkAutoRefreshLogs" checked onchange="toggleLogsAutoRefresh()"> Auto-refresh (5s)
+              </label>
+              <button type="button" class="btn-adm-primary" onclick="fetchAdminLogs()">🔄 Refresh Now</button>
+              <button type="button" class="btn-adm-danger" onclick="clearAdminLogs()">🧹 Clear Logs</button>
+            </div>
+          </div>
+
+          <!-- Filter Bar -->
+          <div class="adm-card" style="padding:14px 20px; margin-bottom:16px;">
+            <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:12px; font-weight:700; color:var(--adm-muted);">SEVERITY:</span>
+                <select id="logFilterLevel" class="adm-input" style="padding:6px 12px; width:auto;" onchange="renderFilteredLogs()">
+                  <option value="ALL">All Levels</option>
+                  <option value="ERROR">Errors Only (🔴)</option>
+                  <option value="WARNING">Warnings (🟡)</option>
+                  <option value="INFO">Info (🔵)</option>
+                </select>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:12px; font-weight:700; color:var(--adm-muted);">CATEGORY:</span>
+                <select id="logFilterCategory" class="adm-input" style="padding:6px 12px; width:auto;" onchange="renderFilteredLogs()">
+                  <option value="ALL">All Categories</option>
+                  <option value="KOTAK">Kotak Neo</option>
+                  <option value="ANGEL">Angel One</option>
+                  <option value="UPSTOX">Upstox</option>
+                  <option value="CACHE">Cache</option>
+                  <option value="BROKER">Broker Management</option>
+                  <option value="SERVER">Server / System</option>
+                </select>
+              </div>
+              <div style="flex:1; min-width:200px;">
+                <input type="text" id="logSearchQuery" class="adm-input" placeholder="Search logs by keyword..." style="padding:6px 12px;" oninput="renderFilteredLogs()">
+              </div>
+              <div id="logCountBadge" style="font-size:12px; color:var(--adm-muted); font-family:'JetBrains Mono', monospace;">
+                Showing 0 events
+              </div>
+            </div>
+          </div>
+
+          <!-- Logs Container -->
+          <div class="adm-card" style="padding:0; overflow:hidden;">
+            <div id="logEntriesContainer" style="max-height:600px; overflow-y:auto; font-family:'JetBrains Mono', monospace; font-size:12px;">
+              <div style="padding:32px; text-align:center; color:var(--adm-muted);">No logs captured yet.</div>
+            </div>
+          </div>
+        </section>
+
       </main>
     </div>
 
@@ -994,6 +1159,9 @@
         });
         const target = document.getElementById('panel' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
         if (target) target.classList.add('active');
+        if (tabName === 'logs') {
+          fetchAdminLogs();
+        }
       }
 
       // 1. Telemetry
@@ -1018,6 +1186,15 @@
               b.textContent = 'NOT CONFIGURED';
               b.style.background = 'rgba(239, 68, 68, 0.2)';
               b.style.color = '#f87171';
+            }
+
+            const activeBadge = document.getElementById('activeBrokerBadge');
+            if (activeBadge) {
+              activeBadge.textContent = 'Active: ' + (data.activeBroker || 'ANGEL');
+            }
+            const brokerSel = document.getElementById('cmdSelectBroker');
+            if (brokerSel && data.activeBroker) {
+              brokerSel.value = data.activeBroker;
             }
           }
         } catch(e) {}
@@ -1478,6 +1655,164 @@
         }
       }
 
+      // 6. Master Admin Commands
+      async function runAdminCommand(action, params = {}) {
+        const outEl = document.getElementById('cmdTerminalOutput');
+        const ts = new Date().toLocaleTimeString();
+        if (outEl) {
+          outEl.textContent = `[${ts}] ⏳ Executing command: '${action}'...`;
+        }
+
+        try {
+          const res = await fetch('/api/admin/command', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ action: action, ...params })
+          });
+          const result = await res.json();
+          const doneTs = new Date().toLocaleTimeString();
+          if (outEl) {
+            outEl.textContent = `[${doneTs}] Command: ${action}\n` + JSON.stringify(result, null, 2);
+          }
+          if (result.ok) {
+            showAdmAlert(`✓ ${result.message || 'Command executed successfully'}`, 'success');
+            if (action === 'switch_broker' && params.broker) {
+              const b = document.getElementById('activeBrokerBadge');
+              if (b) b.textContent = 'Active: ' + params.broker;
+              const sb = document.getElementById('statActiveBroker');
+              if (sb) sb.textContent = params.broker;
+            }
+            loadTelemetry();
+            fetchAdminLogs();
+          } else {
+            showAdmAlert(`❌ ${result.message || 'Command execution failed'}`, 'error');
+          }
+        } catch(e) {
+          if (outEl) {
+            outEl.textContent = `[${new Date().toLocaleTimeString()}] ❌ Execution Error:\n${e.message}`;
+          }
+          showAdmAlert('Command error: ' + e.message, 'error');
+        }
+      }
+
+      // 7. Live System & Error Console
+      let _cachedLogs = [];
+      let _logsAutoRefreshTimer = null;
+
+      async function fetchAdminLogs() {
+        try {
+          const res = await fetch('/api/admin/error-logs', { headers: getAuthHeaders() });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.ok && Array.isArray(data.logs)) {
+            _cachedLogs = data.logs;
+            renderFilteredLogs();
+          }
+        } catch(e) {
+          console.error('Failed to fetch admin error logs:', e);
+        }
+      }
+
+      function renderFilteredLogs() {
+        const container = document.getElementById('logEntriesContainer');
+        const countBadge = document.getElementById('logCountBadge');
+        if (!container) return;
+
+        const levelFilter = document.getElementById('logFilterLevel')?.value || 'ALL';
+        const catFilter = document.getElementById('logFilterCategory')?.value || 'ALL';
+        const query = (document.getElementById('logSearchQuery')?.value || '').toLowerCase().trim();
+
+        const filtered = _cachedLogs.filter(item => {
+          if (levelFilter !== 'ALL' && item.level !== levelFilter) return false;
+          if (catFilter !== 'ALL' && item.category !== catFilter) return false;
+          if (query) {
+            const str = `${item.category} ${item.message} ${item.details || ''}`.toLowerCase();
+            if (!str.includes(query)) return false;
+          }
+          return true;
+        });
+
+        if (countBadge) {
+          countBadge.textContent = `Showing ${filtered.length} of ${_cachedLogs.length} events`;
+        }
+
+        if (filtered.length === 0) {
+          container.innerHTML = '<div style="padding:32px; text-align:center; color:var(--adm-muted);">No matching log events found.</div>';
+          return;
+        }
+
+        container.innerHTML = filtered.map(log => {
+          let lvlColor = '#60a5fa';
+          let lvlBg = 'rgba(59, 130, 246, 0.15)';
+          let lvlIcon = '🔵';
+          if (log.level === 'ERROR') {
+            lvlColor = '#f87171';
+            lvlBg = 'rgba(239, 68, 68, 0.18)';
+            lvlIcon = '🔴';
+          } else if (log.level === 'WARNING') {
+            lvlColor = '#fbbf24';
+            lvlBg = 'rgba(245, 158, 11, 0.18)';
+            lvlIcon = '🟡';
+          }
+
+          const hasDetails = log.details && log.details !== '';
+          const detailsHtml = hasDetails 
+            ? `<div style="margin-top:6px; padding:6px 10px; background:#020617; border-radius:4px; font-size:11px; color:#94a3b8; border:1px solid rgba(255,255,255,0.05); white-space:pre-wrap;">${escapeHtml(log.details)}</div>`
+            : '';
+
+          return `
+            <div style="padding:12px 18px; border-bottom:1px solid var(--adm-border); display:flex; flex-direction:column; gap:4px; transition:background 0.15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px; background:${lvlBg}; color:${lvlColor}; letter-spacing:0.5px;">${lvlIcon} ${log.level}</span>
+                  <span style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px; background:rgba(255,255,255,0.06); color:#cbd5e1;">${log.category}</span>
+                  <span style="font-size:13px; font-weight:600; color:#f1f5f9;">${escapeHtml(log.message)}</span>
+                </div>
+                <span style="font-size:11px; color:var(--adm-muted);">${log.timestamp || ''}</span>
+              </div>
+              ${detailsHtml}
+            </div>
+          `;
+        }).join('');
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      async function clearAdminLogs() {
+        if (!confirm('Clear all captured error & system event logs?')) return;
+        try {
+          const res = await fetch('/api/admin/clear-logs', {
+            method: 'POST',
+            headers: getAuthHeaders()
+          });
+          const data = await res.json();
+          if (data.ok) {
+            _cachedLogs = [];
+            renderFilteredLogs();
+            showAdmAlert('✓ Error logs cleared', 'success');
+          }
+        } catch(e) {
+          showAdmAlert('Failed to clear logs: ' + e.message, 'error');
+        }
+      }
+
+      function toggleLogsAutoRefresh() {
+        const chk = document.getElementById('chkAutoRefreshLogs');
+        if (chk && chk.checked) {
+          if (!_logsAutoRefreshTimer) {
+            _logsAutoRefreshTimer = setInterval(fetchAdminLogs, 5000);
+          }
+        } else {
+          if (_logsAutoRefreshTimer) {
+            clearInterval(_logsAutoRefreshTimer);
+            _logsAutoRefreshTimer = null;
+          }
+        }
+      }
+
       // Auto-unlock if session key exists
       if (adminSecretKey) {
         fetch('/api/admin/verify', {
@@ -1492,6 +1827,8 @@
             loadDiagnostics();
             loadMasterBrokers();
             loadSeoConfig();
+            fetchAdminLogs();
+            toggleLogsAutoRefresh();
           }
         }).catch(() => {});
       }

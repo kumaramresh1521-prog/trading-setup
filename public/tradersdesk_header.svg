@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 196 28" height="28" fill="none">
+  <!-- Traders (White) -->
+  <text x="0" y="21" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="21" font-weight="800" fill="#f8fafc" letter-spacing="-0.3">Traders</text>
+
+  <!-- Des (Electric Cyan) -->
+  <text x="86" y="21" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="21" font-weight="800" fill="#38bdf8" letter-spacing="-0.3">Des</text>
+
+  <!-- Custom Breakout 'k' with Arrow -->
+  <g transform="translate(130, 4)">
+    <!-- Vertical stem of 'k' -->
+    <rect x="0" y="2" width="3.4" height="15" rx="0.8" fill="#38bdf8" />
+    <!-- Lower diagonal leg -->
+    <path d="M 2.5 10.5 L 9.8 17" stroke="#38bdf8" stroke-width="3.4" stroke-linecap="round" />
+    <!-- Upper diagonal breakout arrow -->
+    <path d="M 2.2 11 L 11.5 2.5" stroke="#38bdf8" stroke-width="3.4" stroke-linecap="round" />
+    <!-- Arrowhead -->
+    <path d="M 6.8 2 L 13 2 L 13 8.2" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- .in Emerald Pill Badge -->
+  <g transform="translate(152, 5.5)">
+    <rect x="0" y="0" width="38" height="17" rx="4.5" fill="#10b981" />
+    <text x="19" y="12.5" font-family="'JetBrains Mono', 'Inter', monospace" font-size="11.5" font-weight="900" fill="#030712" text-anchor="middle" letter-spacing="0.2">.in</text>
+  </g>
+</svg>

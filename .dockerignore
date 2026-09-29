@@ -1,9 +1,11 @@
 .cache/
+cache/
 .env
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.bak
 .git/
 .gitignore
 scratch/

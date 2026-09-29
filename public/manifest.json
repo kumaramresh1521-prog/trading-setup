@@ -1,16 +1,16 @@
 {
-  "name": "Breadth Lab & Institutional Market Intelligence",
-  "short_name": "BreadthLab",
-  "description": "Institutional Market Breadth, Options Greeks Desk, Smart Money EOD Tracker & Verified Broker Research",
+  "name": "TradersDesk.in — Institutional Derivatives & Quant Terminal",
+  "short_name": "TradersDesk",
+  "description": "Institutional-grade Indian equity derivatives, sub-second Options Greeks, Max Pain, Smart Money positioning & Market Breadth analytics.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0e17",
-  "theme_color": "#2563eb",
+  "background_color": "#090e17",
+  "theme_color": "#090e17",
   "icons": [
     {
-      "src": "/favicon.ico",
+      "src": "/favicon.svg",
       "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "type": "image/svg+xml"
     }
   ]
 }

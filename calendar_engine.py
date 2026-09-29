@@ -88,31 +88,47 @@ def get_available_expiries_for_symbol(symbol: str = "NIFTY") -> List[str]:
     return expiries
 
 
+def get_live_spot_price(symbol: str) -> float:
+    sym = (symbol or "NIFTY").upper().strip()
+    try:
+        import server
+        quotes = server.get_live_market_index_quotes()
+        norm_key = server.normalize_index_key(sym)
+        sp = float((quotes.get(norm_key) or {}).get("spot") or 0.0)
+        if sp > 0:
+            return sp
+    except Exception:
+        pass
+    try:
+        from futures_engine import get_futures_master
+        recs = get_futures_master()
+        for r in recs:
+            if r.get("symbol") == sym:
+                sp = float(r.get("spotPrice") or 0.0)
+                if sp > 0:
+                    return sp
+    except Exception:
+        pass
+    return INDEX_SPOT_DEFAULTS.get(sym, 23450.0)
+
+
 def get_calendar_matrix(
     symbol: str = "NIFTY",
     far_expiry: str = "AUTO",
     near_expiry: str = "AUTO",
     option_type: str = "CE",
     strike_range: int = 6,
-    custom_strikes: Optional[List[float]] = None,
+    custom_strikes: Optional[List[Any]] = None,
 ) -> Dict[str, Any]:
     """
-    Fetches real-time pricing and exact Black-Scholes Greeks for calendar spreads.
+    Fetches real-time pricing and exact Black-Scholes Greeks for calendar & diagonal spreads.
     Prioritizes Upstox API v2 live option chains; falls back to live spot + Black-Scholes model.
+    Supports both standard calendar spreads (s1 == s2) and diagonal spreads (s1 != s2).
     """
     sym = (symbol or "NIFTY").upper().strip()
     opt_type = (option_type or "CE").upper().strip()
     inst_key = INDEX_KEY_MAP.get(sym, "NSE_INDEX|Nifty 50")
     step = INDEX_STEP.get(sym, 50)
-
-    cache_key = f"{sym}|{far_expiry}|{near_expiry}|{opt_type}|{strike_range}"
-    now_ts = time.time()
-    cached = _CALENDAR_CACHE.get(cache_key)
-    if cached and (now_ts - cached["ts"]) < 1.0:
-        return cached["data"]
-
-    upstox_tok = os.getenv("UPSTOX_ACCESS_TOKEN", "").strip()
-    is_upstox_live = bool(upstox_tok and len(upstox_tok) > 20)
 
     # 1. Resolve Real Available Exchange Expiries (NSE / Upstox / Angel Scrip Master)
     expiries = get_available_expiries_for_symbol(sym)
@@ -128,10 +144,13 @@ def get_calendar_matrix(
     else:
         target_far = far_expiry.split("(")[0].strip()
 
+    upstox_tok = os.getenv("UPSTOX_ACCESS_TOKEN", "").strip()
+    is_upstox_live = bool(upstox_tok and len(upstox_tok) > 20)
+
     # 2. Query Live Upstox Option Chains if Token Configured
     far_chain = None
     near_chain = None
-    spot_price = INDEX_SPOT_DEFAULTS.get(sym, 23450.0)
+    spot_price = get_live_spot_price(sym)
     data_source = "BLACK_SCHOLES_MATHEMATICAL_ENGINE"
 
     if is_upstox_live:
@@ -151,11 +170,36 @@ def get_calendar_matrix(
     # 3. ATM Strike determination
     atm_strike = round(spot_price / step) * step
 
-    # 4. Determine Strikes to evaluate
+    # 4. Determine Strike Pairs (s1: Far Strike, s2: Near Strike)
+    strike_pairs: List[tuple[float, float]] = []
     if custom_strikes and len(custom_strikes) > 0:
-        strikes = sorted(list(set(custom_strikes)))
+        for item in custom_strikes:
+            if isinstance(item, dict):
+                s1 = float(item.get("s1") or item.get("strike1") or 0)
+                s2 = float(item.get("s2") or item.get("strike2") or s1)
+            elif isinstance(item, (int, float)):
+                s1 = float(item)
+                s2 = float(item)
+            elif isinstance(item, str):
+                if ":" in item:
+                    parts = item.split(":")
+                    s1 = float(parts[0].replace(",", "").strip())
+                    s2 = float(parts[1].replace(",", "").strip())
+                else:
+                    val = float(item.replace(",", "").strip())
+                    s1 = val
+                    s2 = val
+            elif isinstance(item, (list, tuple)) and len(item) >= 2:
+                s1 = float(item[0])
+                s2 = float(item[1])
+            else:
+                continue
+            if s1 > 0 and s2 > 0:
+                strike_pairs.append((s1, s2))
     else:
-        strikes = [atm_strike + i * step for i in range(-strike_range, strike_range + 1)]
+        for i in range(-strike_range, strike_range + 1):
+            s = atm_strike + i * step
+            strike_pairs.append((s, s))
 
     # Time to expiry fractions (T)
     t_near = options_math.time_to_expiry_years(target_near)
@@ -181,41 +225,41 @@ def get_calendar_matrix(
 
     base_iv = 0.13  # 13% base IV for Nifty
 
-    for s in strikes:
-        is_atm = abs(s - atm_strike) < (step / 2.0)
+    for s1, s2 in strike_pairs:
+        is_atm = abs(s1 - atm_strike) < (step / 2.0)
 
-        # Far leg data
-        f_row = far_lookup.get(s, {})
+        # Far leg data (evaluated on s1)
+        f_row = far_lookup.get(s1, {})
         f_opt = f_row.get(opt_key, {})
         f_md = f_opt.get("market_data", {})
         f_greeks = f_opt.get("option_greeks", {})
 
-        # Near leg data
-        n_row = near_lookup.get(s, {})
+        # Near leg data (evaluated on s2)
+        n_row = near_lookup.get(s2, {})
         n_opt = n_row.get(opt_key, {})
         n_md = n_opt.get("market_data", {})
         n_greeks = n_opt.get("option_greeks", {})
 
-        # Extract or Compute Far Leg Values
+        # Extract or Compute Far Leg Values (on s1)
         far_ltp = float(f_md.get("ltp") or 0.0)
         far_bid = float(f_md.get("bid_price") or (far_ltp - 0.5 if far_ltp > 0 else 0.0))
         far_vol = int(f_md.get("volume") or 0)
 
-        # Extract or Compute Near Leg Values
+        # Extract or Compute Near Leg Values (on s2)
         near_ltp = float(n_md.get("ltp") or 0.0)
         near_ask = float(n_md.get("ask_price") or (near_ltp + 0.5 if near_ltp > 0 else 0.0))
         near_vol = int(n_md.get("volume") or 0)
 
         # Black-Scholes Mathematical computation if market quote is 0 (or pre-market/tokenless)
         if far_bid <= 0 or far_ltp <= 0:
-            far_price_th = options_math.black_scholes_price(spot_price, s, t_far, 0.10, base_iv * 0.98, opt_type)
-            far_bid = round(max(5.0, far_price_th * 0.98), 2)
-            far_vol = 14000 + int(abs(s - atm_strike) * 12)
+            far_price_th = options_math.black_scholes_price(spot_price, s1, t_far, 0.10, base_iv * 0.98, opt_type)
+            far_bid = round(max(0.5, far_price_th * 0.98), 2)
+            far_vol = 14000 + int(abs(s1 - atm_strike) * 12)
 
         if near_ask <= 0 or near_ltp <= 0:
-            near_price_th = options_math.black_scholes_price(spot_price, s, t_near, 0.10, base_iv * 1.05, opt_type)
-            near_ask = round(max(3.0, near_price_th * 1.02), 2)
-            near_vol = 38000 + int(abs(s - atm_strike) * 25)
+            near_price_th = options_math.black_scholes_price(spot_price, s2, t_near, 0.10, base_iv * 1.05, opt_type)
+            near_ask = round(max(0.5, near_price_th * 1.02), 2)
+            near_vol = 38000 + int(abs(s2 - atm_strike) * 25)
 
         # Greeks extraction or computation
         f_delta = float(f_greeks.get("delta") or 0.0)
@@ -227,13 +271,13 @@ def get_calendar_matrix(
 
         # Fallback to Black-Scholes Greeks engine
         if f_delta == 0.0:
-            g_far = options_math.black_scholes_greeks(spot_price, s, t_far, 0.10, base_iv * 0.98, opt_type)
+            g_far = options_math.black_scholes_greeks(spot_price, s1, t_far, 0.10, base_iv * 0.98, opt_type)
             f_delta = g_far["delta"]
             f_vega = g_far["vega"]
             f_iv = g_far["iv"]
 
         if n_delta == 0.0:
-            g_near = options_math.black_scholes_greeks(spot_price, s, t_near, 0.10, base_iv * 1.05, opt_type)
+            g_near = options_math.black_scholes_greeks(spot_price, s2, t_near, 0.10, base_iv * 1.05, opt_type)
             n_delta = g_near["delta"]
             n_vega = g_near["vega"]
             n_iv = g_near["iv"]
@@ -244,9 +288,12 @@ def get_calendar_matrix(
         vol_spread = round(f_iv - n_iv, 1)
         vega_spread = round(f_vega - n_vega, 1)
 
+        s1_str = str(int(s1)) if s1.is_integer() else f"{s1:.1f}"
+        s2_str = str(int(s2)) if s2.is_integer() else f"{s2:.1f}"
+
         rows.append({
-            "s1": str(int(s)),
-            "s2": str(int(s)),
+            "s1": s1_str,
+            "s2": s2_str,
             "farBid": f"{far_bid:.2f}",
             "nearAsk": f"{near_ask:.2f}",
             "spread": f"{spread_ltp:.2f}",
@@ -282,5 +329,29 @@ def get_calendar_matrix(
         "timestamp": datetime.now(IST).strftime("%H:%M:%S"),
     }
 
-    _CALENDAR_CACHE[cache_key] = {"ts": now_ts, "data": result}
     return result
+
+
+def calculate_single_spread_strike(
+    symbol: str = "NIFTY",
+    far_expiry: str = "AUTO",
+    near_expiry: str = "AUTO",
+    option_type: str = "CE",
+    s1: float = 23500.0,
+    s2: float = 23500.0,
+) -> Dict[str, Any]:
+    """
+    Calculates exact live prices, spread, and Greeks for an individual strike or diagonal pair.
+    """
+    matrix = get_calendar_matrix(
+        symbol=symbol,
+        far_expiry=far_expiry,
+        near_expiry=near_expiry,
+        option_type=option_type,
+        custom_strikes=[{"s1": s1, "s2": s2}],
+    )
+    rows = matrix.get("rows", [])
+    if rows:
+        return {"ok": True, "row": rows[0], "spotPrice": matrix.get("spotPrice", 0.0)}
+    return {"ok": False, "message": "Failed to calculate strike"}
+

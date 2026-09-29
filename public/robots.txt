@@ -1,4 +1,4 @@
-# Breadth Lab - Search Engine Crawler Directives
+# TradersDesk.in - Search Engine Crawler Directives
 User-agent: *
 Allow: /
 Allow: /about.html
@@ -9,4 +9,4 @@ Allow: /page2.html
 Allow: /calendar.html
 Disallow: /api/
 
-Sitemap: https://breadthlab.com/sitemap.xml
+Sitemap: https://tradersdesk.in/sitemap.xml

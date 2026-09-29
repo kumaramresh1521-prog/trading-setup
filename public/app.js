@@ -128,6 +128,8 @@ const els = {
   // Options Desk canvases
   optOiCanvas: document.getElementById("optOiCanvas"),
   optIvCanvas: document.getElementById("optIvCanvas"),
+  optOiTooltip: document.getElementById("optOiTooltip"),
+  optIvTooltip: document.getElementById("optIvTooltip"),
 
   // Quant Straddle Desk
   quantStraddleSection: document.getElementById("quantStraddleSection"),
@@ -733,24 +735,44 @@ function resizeCanvas() {
   if (latestData) drawChart(latestData.timeline);
 }
 
+/* ---------- Theme-aware colour helper for canvas charts ---------- */
+function getChartColors() {
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  return {
+    bg:        isDark ? '#0c121e'                 : '#f8fafc',
+    grid:      isDark ? '#1e293d'                 : '#e2e8f0',
+    gridZero:  isDark ? 'rgba(255,255,255,0.28)'  : 'rgba(0,0,0,0.25)',
+    gridFaint: isDark ? 'rgba(255,255,255,0.05)'  : 'rgba(0,0,0,0.06)',
+    axis:      isDark ? 'rgba(255,255,255,0.12)'  : 'rgba(0,0,0,0.18)',
+    label:     isDark ? '#94a3b8'                 : '#475569',
+    crosshair: isDark ? 'rgba(255,255,255,0.55)'  : 'rgba(0,0,0,0.40)',
+    dot:    '#3b82f6',
+    line:   '#38bdf8',
+    lineAlt:'#f59e0b',
+    green:  '#10b981',
+    red:    '#f43f5e',
+  };
+}
+
 function drawChart(timeline) {
   const canvas = els.canvas;
   const ctx = canvas.getContext("2d");
   const scale = window.devicePixelRatio || 1;
   const width = canvas.width / scale;
   const height = canvas.height / scale;
+  const C = getChartColors();
   chartGeometry = null;
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
+  ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, width, height);
 
   const pad = { left: 45, right: 15, top: 15, bottom: 25 };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
 
-  ctx.strokeStyle = "#1e293d";
+  ctx.strokeStyle = C.grid;
   ctx.lineWidth = 1;
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = C.label;
   ctx.font = "10px 'JetBrains Mono', monospace";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
@@ -766,7 +788,7 @@ function drawChart(timeline) {
   });
   ctx.setLineDash([]);
 
-  ctx.strokeStyle = "#cbd5e1";
+  ctx.strokeStyle = C.axis;
   ctx.beginPath();
   ctx.moveTo(pad.left, pad.top);
   ctx.lineTo(pad.left, height - pad.bottom);
@@ -774,7 +796,7 @@ function drawChart(timeline) {
   ctx.stroke();
 
   if (!timeline || timeline.length < 2) {
-    ctx.fillStyle = "#94a3b8";
+    ctx.fillStyle = C.label;
     ctx.textAlign = "center";
     ctx.fillText("No breadth data", width / 2, height / 2);
     hideTooltip();
@@ -842,7 +864,7 @@ function drawChart(timeline) {
   ctx.restore();
 
   // Time labels
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = C.label;
   ctx.font = "10px 'JetBrains Mono', monospace";
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
@@ -855,23 +877,30 @@ function drawChart(timeline) {
 
 function drawHover(ctx, index) {
   if (!chartGeometry || !latestData) return;
-  const { timeline, xFor, yFor, pad, plotH } = chartGeometry;
+  const { timeline, xFor, yFor, pad, plotH, width } = chartGeometry;
   if (index < 0 || index >= timeline.length) return;
   const point = timeline[index];
   const x = xFor(index);
   const y = yFor(point.breadth);
+  const C = getChartColors();
 
   ctx.save();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+  ctx.strokeStyle = C.crosshair;
   ctx.lineWidth = 1;
   ctx.setLineDash([3, 3]);
+  // Vertical crosshair
   ctx.beginPath();
   ctx.moveTo(x, pad.top);
   ctx.lineTo(x, pad.top + plotH);
   ctx.stroke();
+  // Horizontal crosshair
+  ctx.beginPath();
+  ctx.moveTo(pad.left, y);
+  ctx.lineTo(width - pad.right, y);
+  ctx.stroke();
   ctx.setLineDash([]);
 
-  ctx.fillStyle = "#3b82f6";
+  ctx.fillStyle = C.dot;
   ctx.beginPath();
   ctx.arc(x, y, 4, 0, Math.PI * 2);
   ctx.fill();
@@ -927,9 +956,10 @@ function drawNiftyChart(points) {
   const scale = window.devicePixelRatio || 1;
   const width = canvas.width / scale;
   const height = canvas.height / scale;
+  const C = getChartColors();
   niftyChartGeometry = null;
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
+  ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, width, height);
 
   const pad = { left: 60, right: 15, top: 15, bottom: 25 };
@@ -937,7 +967,7 @@ function drawNiftyChart(points) {
   const plotH = height - pad.top - pad.bottom;
 
   if (!points || points.length < 2) {
-    ctx.fillStyle = "#94a3b8";
+    ctx.fillStyle = C.label;
     ctx.textAlign = "center";
     ctx.font = "11px 'JetBrains Mono', monospace";
     ctx.fillText("No Index data", width / 2, height / 2);
@@ -956,9 +986,9 @@ function drawNiftyChart(points) {
   const yFor = (value) => pad.top + plotH - ((value - yMin) / (yMax - yMin)) * plotH;
   niftyChartGeometry = { pad, plotW, plotH, width, height, xFor, yFor, points };
 
-  ctx.strokeStyle = "#1e293d";
+  ctx.strokeStyle = C.grid;
   ctx.lineWidth = 1;
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = C.label;
   ctx.font = "10px 'JetBrains Mono', monospace";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
@@ -972,7 +1002,7 @@ function drawNiftyChart(points) {
     ctx.fillText(number(value, 0), pad.left - 5, y);
   }
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.strokeStyle = C.axis;
   ctx.beginPath();
   ctx.moveTo(pad.left, pad.top);
   ctx.lineTo(pad.left, height - pad.bottom);
@@ -990,7 +1020,7 @@ function drawNiftyChart(points) {
   ctx.lineWidth = 2.2;
   ctx.stroke();
 
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = C.label;
   ctx.font = "10px 'JetBrains Mono', monospace";
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
@@ -1003,20 +1033,34 @@ function drawNiftyChart(points) {
 
 function drawNiftyHover(index) {
   if (!niftyChartGeometry) return;
-  const { points, xFor, yFor, pad, plotH } = niftyChartGeometry;
+  const { points, xFor, yFor, pad, plotH, width } = niftyChartGeometry;
   const point = points[index];
   if (!point) return;
   const ctx = els.niftyCanvas.getContext("2d");
   const x = xFor(index);
   const y = yFor(point.close);
+  const C = getChartColors();
 
   ctx.save();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+  ctx.strokeStyle = C.crosshair;
+  ctx.lineWidth = 1;
   ctx.setLineDash([3, 3]);
+  // Vertical crosshair
   ctx.beginPath();
   ctx.moveTo(x, pad.top);
   ctx.lineTo(x, pad.top + plotH);
   ctx.stroke();
+  // Horizontal crosshair
+  ctx.beginPath();
+  ctx.moveTo(pad.left, y);
+  ctx.lineTo(width - pad.right, y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // Dot on line
+  ctx.fillStyle = C.dot;
+  ctx.beginPath();
+  ctx.arc(x, y, 4, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 
   els.niftyTooltip.innerHTML = `
@@ -1068,9 +1112,10 @@ function drawNiftyAdChart(timeline) {
   const scale = window.devicePixelRatio || 1;
   const width = canvas.width / scale;
   const height = canvas.height / scale;
+  const C = getChartColors();
   niftyAdGeometry = null;
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
+  ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, width, height);
 
   if (!timeline || !timeline.length) {
@@ -1109,15 +1154,15 @@ function drawNiftyAdChart(timeline) {
     ctx.lineTo(width - pad.right, y);
 
     if (lvl === 0) {
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
+      ctx.strokeStyle = C.gridZero !== undefined ? C.gridZero : C.axis;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 3]);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = "#94a3b8";
+      ctx.fillStyle = C.label;
       ctx.fillText("0", pad.left - 6, y);
     } else {
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+      ctx.strokeStyle = C.gridFaint;
       ctx.lineWidth = 0.5;
       ctx.setLineDash([]);
       ctx.stroke();
@@ -1180,7 +1225,7 @@ function drawNiftyAdChart(timeline) {
   ctx.restore();
 
   // Time labels on X-axis
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = C.label;
   ctx.font = "10px 'JetBrains Mono', monospace";
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
@@ -1213,21 +1258,30 @@ function updateNiftyAdHoverFromClientX(clientX) {
 
 function drawNiftyAdHover(index) {
   if (!niftyAdGeometry) return;
-  const { points, xFor, yForNet, pad, plotH } = niftyAdGeometry;
+  const { points, xFor, yForNet, pad, plotH, width } = niftyAdGeometry;
   if (index < 0 || index >= points.length) return;
   const p = points[index];
   const x = xFor(index);
   const net = (p.x || 0) - (p.o || 0);
   const y = yForNet(net);
+  const C = getChartColors();
 
   const ctx = els.niftyAdCanvas.getContext("2d");
   ctx.save();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+  ctx.strokeStyle = C.crosshair;
+  ctx.lineWidth = 1;
   ctx.setLineDash([3, 3]);
+  // Vertical crosshair
   ctx.beginPath();
   ctx.moveTo(x, pad.top);
   ctx.lineTo(x, pad.top + plotH);
   ctx.stroke();
+  // Horizontal crosshair
+  ctx.beginPath();
+  ctx.moveTo(pad.left, y);
+  ctx.lineTo(width - pad.right, y);
+  ctx.stroke();
+  ctx.setLineDash([]);
   ctx.restore();
 
   // Hover dot on Net Spread curve
@@ -1284,8 +1338,9 @@ function drawAdChart(timeline) {
   const scale = window.devicePixelRatio || 1;
   const width = canvas.width / scale;
   const height = canvas.height / scale;
+  const C = getChartColors();
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
+  ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, width, height);
 
   if (!timeline || !timeline.length) {
@@ -1321,7 +1376,7 @@ function drawAdChart(timeline) {
   linePath(points.map(p => p.x || 0), "#10b981");
   linePath(points.map(p => p.o || 0), "#f43f5e");
 
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = C.label;
   ctx.font = "9px 'JetBrains Mono', monospace";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
@@ -1329,7 +1384,7 @@ function drawAdChart(timeline) {
     const val = Math.round((maxVal / 4) * i);
     const y = yFor(val);
     ctx.fillText(val, pad.left - 5, y);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+    ctx.strokeStyle = C.gridFaint;
     ctx.lineWidth = 0.5;
     ctx.beginPath();
     ctx.moveTo(pad.left, y);
@@ -1355,19 +1410,29 @@ function updateAdHoverFromClientX(clientX) {
 
 function drawAdHover(index) {
   if (!adChartGeometry) return;
-  const { points, xFor, yFor, pad, plotH } = adChartGeometry;
+  const { points, xFor, yFor, pad, plotH, width } = adChartGeometry;
   if (index < 0 || index >= points.length) return;
   const p = points[index];
   const x = xFor(index);
+  const yAdv = yFor(p.x || 0);
+  const C = getChartColors();
 
   const ctx = els.adCanvas.getContext("2d");
   ctx.save();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+  ctx.strokeStyle = C.crosshair;
+  ctx.lineWidth = 1;
   ctx.setLineDash([3, 3]);
+  // Vertical crosshair
   ctx.beginPath();
   ctx.moveTo(x, pad.top);
   ctx.lineTo(x, pad.top + plotH);
   ctx.stroke();
+  // Horizontal crosshair (at advance line)
+  ctx.beginPath();
+  ctx.moveTo(pad.left, yAdv);
+  ctx.lineTo(width - pad.right, yAdv);
+  ctx.stroke();
+  ctx.setLineDash([]);
   ctx.restore();
 
   if (els.adTooltip) {
@@ -1596,16 +1661,13 @@ function updateNiftySummary(data) {
 
   const indexName = data.index?.name || selectedIndexLabel();
   let statusBadge = "";
-  if (data.isSimulated || data.dataSource === "sample") {
+  if (data.isSimulated || data.quality === "simulated" || data.dataSource === "sample") {
     const broker = data.brokerName || "Broker";
-    const err = String(data.brokerError || "").toLowerCase();
-    if (err.includes("401") || err.includes("invalid token") || err.includes("token expired") || err.includes("udapi100050")) {
-      statusBadge = ` [⚠️ ${broker} Token Expired]`;
-    } else if (data.brokerError) {
-      statusBadge = ` [⚠️ ${broker} Offline]`;
-    } else {
-      statusBadge = ` [Simulated]`;
-    }
+    statusBadge = ` [🔴 Simulated Demo (${broker} Offline)]`;
+  } else if (data.quality === "cached") {
+    statusBadge = ` [🟡 Cached Close]`;
+  } else if (data.quality === "live_partial") {
+    statusBadge = ` [🟡 Live Partial (${data.coverage || ''})]`;
   }
   els.niftyChartTitle.textContent = `${indexName} Spot${statusBadge}`;
   const interval = data.interval.replaceAll("_", " ").toLowerCase();
@@ -2729,36 +2791,57 @@ function drawSynchronizedCrosshairs(idx) {
   const hx = xFor(idx);
   const ctxP = els.wpcrPriceCanvas.getContext("2d");
   const ctxR = els.wpcrPcrCanvas.getContext("2d");
+  const C = getChartColors();
 
-  // Vertical Hairline on Top Canvas (Price)
+  // Vertical & Horizontal Hairlines on Top Canvas (Price)
   ctxP.save();
-  ctxP.strokeStyle = "rgba(100, 116, 139, 0.75)";
+  ctxP.strokeStyle = C.crosshair;
   ctxP.lineWidth = 1;
   ctxP.setLineDash([3, 3]);
+
+  // Vertical
   ctxP.beginPath();
   ctxP.moveTo(hx, pad.top);
   ctxP.lineTo(hx, pad.top + plotHP);
   ctxP.stroke();
+
+  // Horizontal Crosshair on Price
+  const ySpot = yForSpot(pt.spot);
+  ctxP.beginPath();
+  ctxP.moveTo(pad.left, ySpot);
+  ctxP.lineTo(w - pad.right, ySpot);
+  ctxP.stroke();
+  ctxP.setLineDash([]);
 
   // Marker on Price Curve
   ctxP.fillStyle = "#5b7e45";
   ctxP.strokeStyle = "#ffffff";
   ctxP.lineWidth = 1.5;
   ctxP.beginPath();
-  ctxP.arc(hx, yForSpot(pt.spot), 4.5, 0, Math.PI * 2);
+  ctxP.arc(hx, ySpot, 4.5, 0, Math.PI * 2);
   ctxP.fill();
   ctxP.stroke();
   ctxP.restore();
 
-  // Vertical Hairline on Bottom Canvas (PCR & WPCR)
+  // Vertical & Horizontal Hairlines on Bottom Canvas (PCR & WPCR)
   ctxR.save();
-  ctxR.strokeStyle = "rgba(100, 116, 139, 0.75)";
+  ctxR.strokeStyle = C.crosshair;
   ctxR.lineWidth = 1;
   ctxR.setLineDash([3, 3]);
+
+  // Vertical
   ctxR.beginPath();
   ctxR.moveTo(hx, pad.top);
   ctxR.lineTo(hx, pad.top + plotHR);
   ctxR.stroke();
+
+  // Horizontal Crosshair on WPCR
+  const yWpcr = yForPcr(pt.wpcr || 0.603);
+  ctxR.beginPath();
+  ctxR.moveTo(pad.left, yWpcr);
+  ctxR.lineTo(w - pad.right, yWpcr);
+  ctxR.stroke();
+  ctxR.setLineDash([]);
 
   // Marker on Red PCR Line
   ctxR.fillStyle = "#dc2626";
@@ -2774,7 +2857,7 @@ function drawSynchronizedCrosshairs(idx) {
   ctxR.strokeStyle = "#ffffff";
   ctxR.lineWidth = 1.5;
   ctxR.beginPath();
-  ctxR.arc(hx, yForPcr(pt.wpcr || 0.603), 4.5, 0, Math.PI * 2);
+  ctxR.arc(hx, yWpcr, 4.5, 0, Math.PI * 2);
   ctxR.fill();
   ctxR.stroke();
   ctxR.restore();
@@ -2784,7 +2867,7 @@ function drawSynchronizedCrosshairs(idx) {
     const ttP = els.wpcrPriceTooltip;
     ttP.style.display = "block";
     const tipLeft = Math.max(10, Math.min(w - 180, hx - 40));
-    const tipTop = Math.max(10, yForSpot(pt.spot) - 34);
+    const tipTop = Math.max(10, ySpot - 34);
     ttP.style.left = `${tipLeft}px`;
     ttP.style.top = `${tipTop}px`;
     ttP.innerHTML = `
@@ -2797,7 +2880,7 @@ function drawSynchronizedCrosshairs(idx) {
     const ttR = els.wpcrPcrTooltip;
     ttR.style.display = "block";
     const tipLeft = Math.max(10, Math.min(w - 160, hx - 40));
-    const tipTop = Math.max(8, yForPcr(pt.wpcr || 0.603) - 46);
+    const tipTop = Math.max(8, yWpcr - 46);
     ttR.style.left = `${tipLeft}px`;
     ttR.style.top = `${tipTop}px`;
     ttR.innerHTML = `
@@ -2855,14 +2938,15 @@ function drawWpcrCapitalChart() {
 
   const width = canvas.width / scale;
   const height = canvas.height / scale;
+  const C = getChartColors();
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
+  ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, width, height);
 
   const items = wpcrDataGlobal.strikeCapitalBreakdown || [];
   if (!items.length) {
-    ctx.fillStyle = "#94a3b8";
+    ctx.fillStyle = C.label;
     ctx.textAlign = "center";
     ctx.font = "11px 'JetBrains Mono', monospace";
     ctx.fillText("No Strike Capital Breakdown Data", width / 2, height / 2);
@@ -2882,9 +2966,9 @@ function drawWpcrCapitalChart() {
   wpcrChartGeometry = { pad, plotW, plotH, width, height, items, maxCap, barSlotW, barW };
 
   // Gridlines
-  ctx.strokeStyle = "#1e293d";
+  ctx.strokeStyle = C.grid;
   ctx.lineWidth = 0.8;
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = C.label;
   ctx.font = "10px 'JetBrains Mono', monospace";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
@@ -2917,7 +3001,7 @@ function drawWpcrCapitalChart() {
     ctx.fillRect(slotCenterX + 1, pad.top + plotH - putBarH, barW, putBarH);
 
     // Strike label
-    ctx.fillStyle = s.isAtm ? "#2563eb" : "#64748b";
+    ctx.fillStyle = s.isAtm ? "#2563eb" : C.label;
     ctx.font = s.isAtm ? "bold 10px 'JetBrains Mono', monospace" : "9.5px 'JetBrains Mono', monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
@@ -2945,27 +3029,41 @@ function updateWpcrHoverFromClientX(clientX) {
 
 function drawWpcrHover(index) {
   if (!wpcrChartGeometry || !els.wpcrCapitalCanvas) return;
-  const { pad, plotH, items, barSlotW } = wpcrChartGeometry;
+  const { pad, plotH, width, items, maxCap, barSlotW } = wpcrChartGeometry;
   if (index < 0 || index >= items.length) return;
   const s = items[index];
   const slotCenterX = pad.left + (index + 0.5) * barSlotW;
   const ctx = els.wpcrCapitalCanvas.getContext("2d");
+  const C = getChartColors();
+
+  const maxBarH = (Math.max(s.callCapitalCr, s.putCapitalCr) / maxCap) * plotH;
+  const barTopY = pad.top + plotH - maxBarH;
 
   ctx.save();
-  ctx.strokeStyle = "rgba(37, 99, 235, 0.4)";
+  ctx.strokeStyle = C.crosshair;
+  ctx.lineWidth = 1;
   ctx.setLineDash([3, 3]);
+
+  // Vertical Crosshair
   ctx.beginPath();
   ctx.moveTo(slotCenterX, pad.top);
   ctx.lineTo(slotCenterX, pad.top + plotH);
   ctx.stroke();
+
+  // Horizontal Crosshair
+  ctx.beginPath();
+  ctx.moveTo(pad.left, barTopY);
+  ctx.lineTo(width - pad.right, barTopY);
+  ctx.stroke();
+  ctx.setLineDash([]);
   ctx.restore();
 
   if (els.wpcrCanvasTooltip) {
     els.wpcrCanvasTooltip.innerHTML = `
-      <div style="font-weight:800; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:3px; margin-bottom:3px;">🎯 Strike: ${s.strike} ${s.isAtm ? "(ATM)" : ""}</div>
-      <span style="color:#f87171;">Call Capital: <b>₹${number(s.callCapitalCr, 2)} Cr</b> (LTP ₹${number(s.callLtp, 1)})</span>
-      <span style="color:#34d399;">Put Capital: <b>₹${number(s.putCapitalCr, 2)} Cr</b> (LTP ₹${number(s.putLtp, 1)})</span>
-      <span style="color:#38bdf8;">Net Capital Bias: <b>${s.netCapitalCr >= 0 ? "+" : ""}₹${number(s.netCapitalCr, 2)} Cr</b> (${s.dominantSide})</span>
+      <div style="font-weight:800; border-bottom:1px solid var(--border-subtle); padding-bottom:3px; margin-bottom:3px; color:var(--text-primary);">🎯 Strike: ${s.strike} ${s.isAtm ? "(ATM)" : ""}</div>
+      <span style="color:#ef4444;">Call Capital: <b>₹${number(s.callCapitalCr, 2)} Cr</b> (LTP ₹${number(s.callLtp, 1)})</span>
+      <span style="color:#10b981;">Put Capital: <b>₹${number(s.putCapitalCr, 2)} Cr</b> (LTP ₹${number(s.putLtp, 1)})</span>
+      <span style="color:#2563eb;">Net Capital Bias: <b>${s.netCapitalCr >= 0 ? "+" : ""}₹${number(s.netCapitalCr, 2)} Cr</b> (${s.dominantSide})</span>
     `;
     const canvasRect = els.wpcrCapitalCanvas.getBoundingClientRect();
     const tipRect = els.wpcrCanvasTooltip.getBoundingClientRect();
@@ -3128,6 +3226,7 @@ function renderSmartMoneyDashboard(data) {
 
   // 4. Render Derivatives Participant Matrix Table
   renderParticipantTable(data.participants || []);
+  renderPoiDesk(data);
 
   // 5. Dynamic Real Session Buttons
   if (els.smQuickDates && data.availableSessions && data.availableSessions.length) {
@@ -3271,7 +3370,449 @@ function switchP1FiiSubtab(tabKey) {
       t.panel.style.display = isActive ? "block" : "none";
     }
   });
+
+  // Load POI desk on visit to OI tab
+  if (tabKey === "oi") {
+    if (smartMoneyDataGlobal) {
+      renderPoiDesk(smartMoneyDataGlobal);
+    } else {
+      loadPoiDeskData(false);
+    }
+    startPoiAutoRefresh(120000);
+  }
 }
+
+/* ==========================================================================
+   ⚡ Trendlyne-Style Participant-Wise OI Desk
+   ========================================================================== */
+let _poiData = null;           // latest fetched smart-money payload
+let _poiSegment = "futIdx";    // active segment: futIdx | optCe | optPe | futStk
+let _poiAutoRefreshTimer = null;
+let _poiLoaded = false;        // flag: has been loaded at least once
+
+// Segment field mapping from smart-money participants array
+const _POI_SEG_MAP = {
+  futIdx: { longKey: "futIdxLong",  shortKey: "futIdxShort",  netKey: "futIdxNet",    chgKey: "futIdxDayChg",    label: "Index Futures" },
+  optCe:  { longKey: "optCallLong", shortKey: "optCallShort", netKey: "optCallNet",   chgKey: "optCallDayChg",   label: "Index Calls (CE)" },
+  optPe:  { longKey: "optPutLong",  shortKey: "optPutShort",  netKey: "optPutNet",    chgKey: "optPutDayChg",    label: "Index Puts (PE)" },
+  futStk: { longKey: "futStkLong",  shortKey: "futStkShort",  netKey: "futStkNet",    chgKey: "futStkDayChg",    label: "Stock Futures" },
+};
+
+// Participant display config
+const _POI_PARTS = [
+  { key: "FII",    label: "FII / FPI",      color: "#38bdf8" },
+  { key: "PRO",    label: "PRO (Prop)",      color: "#f59e0b" },
+  { key: "CLIENT", label: "Client (Retail)", color: "#94a3b8" },
+  { key: "DII",    label: "DII",             color: "#10b981" },
+  { key: "TOTAL",  label: "TOTAL",           color: "#a78bfa" },
+];
+
+function _poiBuildupSignal(netDelta, longDelta, shortDelta) {
+  if (!netDelta && netDelta !== 0) return { label: "--", color: "#64748b" };
+  const oiRising = (longDelta || 0) + (shortDelta || 0) > 0;
+  if (netDelta > 2000 && oiRising)    return { label: "LONG BUILD",  bg: "#10b981", color: "#030712" };
+  if (netDelta < -2000 && oiRising)   return { label: "SHORT BUILD", bg: "#ef4444", color: "#fff" };
+  if (netDelta < -2000 && !oiRising)  return { label: "LONG UNWIND", bg: "#f59e0b", color: "#030712" };
+  if (netDelta > 2000 && !oiRising)   return { label: "SHORT COVER", bg: "#8b5cf6", color: "#fff" };
+  return { label: "MINOR Δ", bg: "#334155", color: "#94a3b8" };
+}
+
+async function loadPoiDeskData(forceRefresh = false) {
+  const refreshBtn = document.getElementById("poiRefreshBtn");
+  const lastUpdEl  = document.getElementById("poiLastUpdated");
+  if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.textContent = "Loading..."; }
+  if (lastUpdEl)  lastUpdEl.textContent = "Fetching...";
+
+  try {
+    const res = await fetch("/api/smart-money", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh: forceRefresh }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.ok && !data.participants) throw new Error(data.message || "No data");
+    _poiData = data;
+    _poiLoaded = true;
+    renderPoiDesk(data);
+    if (lastUpdEl) lastUpdEl.textContent = "Updated: " + (data.date || "--");
+    _poiAutoUpdateBadge();
+  } catch (err) {
+    console.error("[POI Desk]", err);
+    if (lastUpdEl) lastUpdEl.textContent = "Error loading";
+  } finally {
+    if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.textContent = "🔄 Refresh Now"; }
+  }
+}
+
+function _poiAutoUpdateBadge() {
+  const badge = document.getElementById("poiAutoRefreshBadge");
+  if (badge) badge.style.display = _poiAutoRefreshTimer ? "inline-block" : "none";
+}
+
+function startPoiAutoRefresh(intervalMs = 120000) {
+  stopPoiAutoRefresh();
+  if (!_isMarketOpenState) return; // only auto-refresh during live hours
+  _poiAutoRefreshTimer = setInterval(() => loadPoiDeskData(false), intervalMs);
+  _poiAutoUpdateBadge();
+}
+
+function stopPoiAutoRefresh() {
+  if (_poiAutoRefreshTimer) { clearInterval(_poiAutoRefreshTimer); _poiAutoRefreshTimer = null; }
+  _poiAutoUpdateBadge();
+}
+
+function renderPoiDesk(data) {
+  if (!data) return;
+  const parts     = data.participants || [];
+  const trapRadar = data.trapRadar || {};
+  const fiiM      = data.fiiMetrics || {};
+
+  // Build participant lookup by type key
+  const lookup = {};
+  parts.forEach(p => { lookup[p.type] = p; });
+
+  const sessionEl = document.getElementById("poiSessionLabel");
+  if (sessionEl) sessionEl.textContent = "Session: " + (data.date || "--");
+
+  _renderPoiSignalCards(data, fiiM, trapRadar);
+  _renderPoiTrendlyneMatrix(lookup);          // ← NEW transposed table
+  _renderPoiDivergenceRadar(data, trapRadar, fiiM);
+}
+
+function _renderPoiSignalCards(data, fiiM, trapRadar) {
+  const row = document.getElementById("poiSignalRow");
+  if (!row) return;
+
+  const zoneBg = fiiM.zone === "BALANCED_RANGE" ? "#334155"
+    : fiiM.zone === "OVERSOLD_SPRINGBOARD" ? "#10b981" : "#ef4444";
+  const zoneTxt = fiiM.zone === "BALANCED_RANGE" ? "#fff" : "#030712";
+
+  const trapBg = (trapRadar.level || "").includes("BULL_TRAP") ? "#ef4444"
+    : (trapRadar.level || "").includes("BEAR_TRAP") ? "#f59e0b"
+    : (trapRadar.level || "").includes("ACCUMULATION") ? "#10b981"
+    : (trapRadar.level || "").includes("DISTRIBUTION") ? "#ef4444"
+    : "#334155";
+
+  const gpBias = (data.gameplan || {}).bias || "";
+  const gpBg = gpBias.includes("BULLISH") ? "#10b981"
+    : gpBias.includes("BEARISH") ? "#ef4444"
+    : gpBias.includes("SHORT_COVERING") ? "#8b5cf6"
+    : "#334155";
+
+  row.innerHTML = `
+    <div class="sm-card" style="padding:12px 14px; border-left:3px solid #38bdf8; background:var(--bg-card); border-top:1px solid var(--border-default); border-right:1px solid var(--border-default); border-bottom:1px solid var(--border-default); border-radius:var(--radius-md);">
+      <div style="font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.7px; margin-bottom:4px;">FII Index Futures Zone</div>
+      <div style="font-size:18px; font-weight:800; color:#38bdf8; font-family:'JetBrains Mono',monospace;">${fiiM.longPct || "--"}% Long</div>
+      <div style="margin-top:6px;"><span style="background:${zoneBg}; color:${zoneTxt}; font-size:10px; font-weight:800; padding:2px 8px; border-radius:3px;">${fiiM.zoneBadge || "--"}</span></div>
+      <div style="font-size:11px; color:#94a3b8; margin-top:5px; line-height:1.4;">${fiiM.zoneDesc || ""}</div>
+    </div>
+    <div class="sm-card" style="padding:12px 14px; border-left:3px solid ${trapBg}; background:var(--bg-card); border-top:1px solid var(--border-default); border-right:1px solid var(--border-default); border-bottom:1px solid var(--border-default); border-radius:var(--radius-md);">
+      <div style="font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.7px; margin-bottom:4px;">Trap Radar</div>
+      <div style="margin-top:2px;"><span style="background:${trapBg}; color:#030712; font-size:10px; font-weight:800; padding:2px 8px; border-radius:3px;">${trapRadar.badge || "--"}</span></div>
+      <div style="font-size:12px; font-weight:700; color:#e2e8f0; margin-top:6px;">${trapRadar.title || "--"}</div>
+      <div style="font-size:11px; color:#94a3b8; margin-top:4px; line-height:1.4;">${(trapRadar.desc || "").substring(0, 120)}...</div>
+    </div>
+    <div class="sm-card" style="padding:12px 14px; border-left:3px solid ${gpBg}; background:var(--bg-card); border-top:1px solid var(--border-default); border-right:1px solid var(--border-default); border-bottom:1px solid var(--border-default); border-radius:var(--radius-md);">
+      <div style="font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.7px; margin-bottom:4px;">Market Gameplan Bias</div>
+      <div style="margin-top:2px;"><span style="background:${gpBg}; color:#030712; font-size:10px; font-weight:800; padding:2px 8px; border-radius:3px;">${gpBias.replace(/_/g, " ")}</span></div>
+      <div style="font-size:11px; color:#94a3b8; margin-top:6px; line-height:1.4;">${((data.gameplan || {}).summary || "").substring(0, 140)}...</div>
+    </div>
+  `;
+}
+
+let _poiShowDayChange = false; // By default: compact view without Change & Change %
+
+/* ─── Trendlyne-style transposed matrix ────────────────────────────────────
+   ROWS  = instrument types  (Future Index Long, Short, Net, ...)
+   COLS  = participants      (CLIENT, DII, FII, PRO, TOTAL)
+   Default: Clean 6-column EOD layout (Change & Change % removed as requested)
+   Toggleable: Full 16-column detailed view with Day Change & Day Change %
+   ─────────────────────────────────────────────────────────────────────────*/
+function _renderPoiTrendlyneMatrix(lookup) {
+  const thead = document.getElementById("poiMainTableHead");
+  const tbody = document.getElementById("poiMainTableBody");
+  const table = document.getElementById("poiMainTable");
+  if (!thead || !tbody) return;
+
+  if (table) {
+    table.style.minWidth = _poiShowDayChange ? "1150px" : "100%";
+  }
+
+  // Participant columns in exact Trendlyne order
+  const PARTS = [
+    { key: "CLIENT", label: "RETAIL",  colLabel: "RETAIL CLIENTS", color: "#94a3b8" },
+    { key: "DII",    label: "DII",     colLabel: "DII",            color: "#10b981" },
+    { key: "FII",    label: "FII",     colLabel: "FII",            color: "#38bdf8" },
+    { key: "PRO",    label: "PRO",     colLabel: "PRO",            color: "#f59e0b" },
+    { key: "TOTAL",  label: "TOTAL",   colLabel: "TOTAL",          color: "#a78bfa" },
+  ];
+
+  // Helper to extract first valid number from fallback keys
+  const getNum = (p, keys, calcFallback = null) => {
+    if (!p) return 0;
+    for (const k of keys) {
+      if (p[k] !== undefined && p[k] !== null && p[k] !== "") {
+        const n = Number(p[k]);
+        if (!isNaN(n)) return n;
+      }
+    }
+    if (typeof calcFallback === "function") return calcFallback(p);
+    return 0;
+  };
+
+  // Instrument type rows with comprehensive fallback keys
+  const ROWS = [
+    // Future Index
+    { label: "Future Index Long",  keys: ["futIdxLong"],  chgKeys: ["futIdxLongDayChg"],  pctKeys: ["futIdxLongDayChgPct"],  isNet: false, isLong: true },
+    { label: "Future Index Short", keys: ["futIdxShort"], chgKeys: ["futIdxShortDayChg"], pctKeys: ["futIdxShortDayChgPct"], isNet: false, isLong: false },
+    { 
+      label: "Net Future Index",   
+      keys: ["futIdxNet"],   
+      chgKeys: ["futIdxNetDayChg", "futIdxDayChg", "futIdxDayChange"],   
+      pctKeys: ["futIdxNetDayChgPct"],   
+      isNet: true,
+      calc: (p) => getNum(p, ["futIdxLong"]) - getNum(p, ["futIdxShort"])
+    },
+
+    // Future Stock
+    { label: "Future Stock Long",  keys: ["futStkLong"],  chgKeys: ["futStkLongDayChg"],  pctKeys: ["futStkLongDayChgPct"],  isNet: false, isLong: true },
+    { label: "Future Stock Short", keys: ["futStkShort"], chgKeys: ["futStkShortDayChg"], pctKeys: ["futStkShortDayChgPct"], isNet: false, isLong: false },
+    { 
+      label: "Net Future Stock",   
+      keys: ["futStkNet"],   
+      chgKeys: ["futStkNetDayChg", "futStkDayChg"],   
+      pctKeys: ["futStkNetDayChgPct"],   
+      isNet: true,
+      calc: (p) => getNum(p, ["futStkLong"]) - getNum(p, ["futStkShort"])
+    },
+
+    // Option Index Call
+    { label: "Option Index Call Long",  keys: ["optIdxCallLong", "optCallLong"],  chgKeys: ["optIdxCallLongDayChg", "optCallLongDayChg"],  pctKeys: ["optIdxCallLongDayChgPct", "optCallLongDayChgPct"],  isNet: false, isLong: true },
+    { label: "Option Index Call Short", keys: ["optIdxCallShort", "optCallShort"], chgKeys: ["optIdxCallShortDayChg", "optCallShortDayChg"], pctKeys: ["optIdxCallShortDayChgPct", "optCallShortDayChgPct"], isNet: false, isLong: false },
+    { 
+      label: "Net Option Index Call",   
+      keys: ["optIdxCallNet", "optCallNet"],   
+      chgKeys: ["optIdxCallNetDayChg", "optCallDayChg"],   
+      pctKeys: ["optIdxCallNetDayChgPct"],   
+      isNet: true,
+      calc: (p) => getNum(p, ["optIdxCallLong", "optCallLong"]) - getNum(p, ["optIdxCallShort", "optCallShort"])
+    },
+
+    // Option Index Put
+    { label: "Option Index Put Long",  keys: ["optIdxPutLong", "optPutLong"],   chgKeys: ["optIdxPutLongDayChg", "optPutLongDayChg"],   pctKeys: ["optIdxPutLongDayChgPct", "optPutLongDayChgPct"],   isNet: false, isLong: true },
+    { label: "Option Index Put Short", keys: ["optIdxPutShort", "optPutShort"],  chgKeys: ["optIdxPutShortDayChg", "optPutShortDayChg"],  pctKeys: ["optIdxPutShortDayChgPct", "optPutShortDayChgPct"],  isNet: false, isLong: false },
+    { 
+      label: "Net Option Index Put",   
+      keys: ["optIdxPutNet", "optPutNet"],    
+      chgKeys: ["optIdxPutNetDayChg", "optPutDayChg"],    
+      pctKeys: ["optIdxPutNetDayChgPct"],    
+      isNet: true,
+      calc: (p) => getNum(p, ["optIdxPutLong", "optPutLong"]) - getNum(p, ["optIdxPutShort", "optPutShort"])
+    },
+
+    // Option Stock Call
+    { label: "Option Stock Call Long",  keys: ["optStkCallLong"],  chgKeys: ["optStkCallLongDayChg"],  pctKeys: ["optStkCallLongDayChgPct"],  isNet: false, isLong: true },
+    { label: "Option Stock Call Short", keys: ["optStkCallShort"], chgKeys: ["optStkCallShortDayChg"], pctKeys: ["optStkCallShortDayChgPct"], isNet: false, isLong: false },
+    { 
+      label: "Net Option Stock Call",   
+      keys: ["optStkCallNet"],   
+      chgKeys: ["optStkCallNetDayChg"],   
+      pctKeys: ["optStkCallNetDayChgPct"],   
+      isNet: true,
+      calc: (p) => getNum(p, ["optStkCallLong"]) - getNum(p, ["optStkCallShort"])
+    },
+
+    // Option Stock Put
+    { label: "Option Stock Put Long",  keys: ["optStkPutLong"],   chgKeys: ["optStkPutLongDayChg"],   pctKeys: ["optStkPutLongDayChgPct"],   isNet: false, isLong: true },
+    { label: "Option Stock Put Short", keys: ["optStkPutShort"],  chgKeys: ["optStkPutShortDayChg"],  pctKeys: ["optStkPutShortDayChgPct"],  isNet: false, isLong: false },
+    { 
+      label: "Net Option Stock Put",   
+      keys: ["optStkPutNet"],    
+      chgKeys: ["optStkPutNetDayChg"],    
+      pctKeys: ["optStkPutNetDayChgPct"],    
+      isNet: true,
+      calc: (p) => getNum(p, ["optStkPutLong"]) - getNum(p, ["optStkPutShort"])
+    },
+
+    // Total Contracts
+    { label: "Total Long Contracts",   keys: ["totalLong"],       chgKeys: ["totalLongDayChg"],       pctKeys: ["totalLongDayChgPct"],       isNet: false, isLong: true },
+    { label: "Total Short Contracts",  keys: ["totalShort"],      chgKeys: ["totalShortDayChg"],      pctKeys: ["totalShortDayChgPct"],      isNet: false, isLong: false },
+    { 
+      label: "Net Total Contracts",    
+      keys: ["totalNet"],        
+      chgKeys: ["totalNetDayChg"],        
+      pctKeys: ["totalNetDayChgPct"],        
+      isNet: true,
+      calc: (p) => getNum(p, ["totalLong"]) - getNum(p, ["totalShort"])
+    },
+  ];
+
+  // Divider lines after Index Fut, Stock Fut, Index Call, Index Put, Stock Call, Stock Put
+  const dividerIndices = new Set([2, 5, 8, 11, 14, 17]);
+
+  // Formatters
+  const fmtVal = (v) => {
+    if (v === null || v === undefined) return "0";
+    return Number(v).toLocaleString("en-IN");
+  };
+  const fmtChg = (v) => {
+    if (v === null || v === undefined) return "0";
+    const n = Number(v);
+    return `${n > 0 ? "+" : ""}${n.toLocaleString("en-IN")}`;
+  };
+  const fmtPct = (p) => {
+    if (p === null || p === undefined) return "0.0%";
+    const n = Number(p);
+    return `${n > 0 ? "+" : ""}${n.toFixed(1)}%`;
+  };
+
+  const mono = "font-family:'JetBrains Mono',monospace;";
+
+  // ── THEAD Construction ──────────────────────────────────────────────────
+  if (!_poiShowDayChange) {
+    // Clean Compact 6-column header
+    let trHead = `<tr>
+      <th style="padding:10px 14px; text-align:left; min-width:200px; color:var(--text-secondary); background:var(--bg-card); position:sticky; left:0; z-index:3; border-right:1px solid var(--table-border); font-size:12px; font-weight:800;">CLIENT TYPE</th>`;
+    PARTS.forEach((pd, idx) => {
+      const borderLeft = idx > 0 ? "border-left:1px solid var(--table-border);" : "";
+      trHead += `<th style="padding:10px 14px; text-align:right; color:${pd.color}; font-size:12px; font-weight:800; ${borderLeft}">${pd.label}</th>`;
+    });
+    trHead += `</tr>`;
+    thead.innerHTML = trHead;
+  } else {
+    // Full 16-column header with Change & %
+    const TH1 = "padding:8px 10px; background:var(--table-th-bg); border-bottom:1px solid var(--table-border); font-size:11px; font-weight:800; white-space:nowrap; text-align:center;";
+    const TH2 = "padding:6px 8px; background:var(--table-th-bg); border-bottom:1px solid var(--table-border); font-size:10.5px; font-weight:700; white-space:nowrap; text-align:right;";
+
+    let row1 = `<tr>
+      <th rowspan="2" style="${TH1} text-align:left; vertical-align:middle; min-width:180px; color:var(--text-secondary); position:sticky; left:0; z-index:3; background:var(--bg-card); border-right:1px solid var(--table-border);">CLIENT TYPE</th>`;
+    let row2 = `<tr>`;
+
+    PARTS.forEach((pd, idx) => {
+      const borderLeft = idx > 0 ? "border-left:1px solid var(--table-border);" : "";
+      row1 += `<th colspan="3" style="${TH1} color:${pd.color}; ${borderLeft}">${pd.label}</th>`;
+      row2 += `
+        <th style="${TH2} color:var(--text-primary); ${borderLeft}">${pd.colLabel}</th>
+        <th style="${TH2} color:var(--text-muted);">${pd.label} CHANGE</th>
+        <th style="${TH2} color:var(--text-muted);">${pd.label} CHANGE %</th>`;
+    });
+
+    row1 += `</tr>`;
+    row2 += `</tr>`;
+    thead.innerHTML = row1 + row2;
+  }
+
+  // ── TBODY Construction ──────────────────────────────────────────────────
+  tbody.innerHTML = "";
+
+  ROWS.forEach((rd, rIdx) => {
+    const isNet = rd.isNet;
+    const rowBg = isNet ? "rgba(56, 189, 248, 0.08)" : "transparent";
+    const labelColor = isNet ? "#38bdf8" : "var(--text-primary)";
+    const labelWeight = isNet ? "800" : "500";
+
+    let tds = "";
+
+    PARTS.forEach((pd, pIdx) => {
+      const p = lookup[pd.key] || {};
+      const val = getNum(p, rd.keys, rd.calc);
+      const borderLeft = pIdx > 0 ? "border-left:1px solid rgba(255,255,255,0.06);" : "";
+
+      if (!_poiShowDayChange) {
+        // Clean single column per participant
+        let valColor = "var(--text-primary)";
+        if (isNet) {
+          valColor = val > 0 ? "#10b981" : (val < 0 ? "#ef4444" : "var(--text-muted)");
+        } else if (rd.isLong) {
+          valColor = "var(--text-primary)";
+        } else if (rd.isLong === false) {
+          valColor = "var(--text-primary)";
+        }
+
+        tds += `<td style="padding:9px 14px; ${mono} font-size:12px; text-align:right; color:${valColor}; font-weight:${isNet ? "800" : "500"}; ${borderLeft}">${fmtVal(val)}</td>`;
+      } else {
+        // Detailed 3 sub-columns per participant
+        const chg = getNum(p, rd.chgKeys);
+        const pct = getNum(p, rd.pctKeys);
+
+        const valColor = isNet ? (val >= 0 ? "var(--text-primary)" : "#ef4444") : "var(--text-primary)";
+        const chgColor = chg > 0 ? "#10b981" : (chg < 0 ? "#ef4444" : "var(--text-muted)");
+        const pctColor = pct > 0 ? "#10b981" : (pct < 0 ? "#ef4444" : "var(--text-muted)");
+
+        tds += `
+          <td style="padding:7px 9px; ${mono} font-size:11.5px; text-align:right; color:${valColor}; font-weight:${isNet ? "700" : "500"}; ${borderLeft}">${fmtVal(val)}</td>
+          <td style="padding:7px 9px; ${mono} font-size:11.5px; text-align:right; color:${chgColor}; font-weight:${isNet ? "700" : "500"};">${fmtChg(chg)}</td>
+          <td style="padding:7px 9px; ${mono} font-size:11.5px; text-align:right; color:${pctColor}; font-weight:${isNet ? "700" : "500"};">${fmtPct(pct)}</td>`;
+      }
+    });
+
+    const tr = document.createElement("tr");
+    tr.style.cssText = `background:${rowBg}; border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.15s;`;
+    tr.addEventListener("mouseenter", () => tr.style.background = isNet ? "rgba(56, 189, 248, 0.14)" : "rgba(255,255,255,0.03)");
+    tr.addEventListener("mouseleave", () => tr.style.background = rowBg);
+
+    tr.innerHTML = `
+      <td style="padding:9px 12px; font-size:12px; color:${labelColor}; font-weight:${labelWeight}; border-right:1px solid var(--table-border); white-space:nowrap; position:sticky; left:0; z-index:2; background:${isNet ? "rgba(15, 23, 42, 0.95)" : "var(--bg-card);"}">${rd.label}</td>
+      ${tds}
+    `;
+    tbody.appendChild(tr);
+
+    // Section separator line
+    if (dividerIndices.has(rIdx)) {
+      const sep = document.createElement("tr");
+      const colSpanCount = _poiShowDayChange ? 16 : 6;
+      sep.innerHTML = `<td colspan="${colSpanCount}" style="height:3px; background:rgba(255,255,255,0.04); border-bottom:1px solid var(--table-border);"></td>`;
+      tbody.appendChild(sep);
+    }
+  });
+}
+
+function _renderPoiDivergenceRadar(data, trapRadar, fiiM) {
+  const badge = document.getElementById("poiDivBadge");
+  const title = document.getElementById("poiDivTitle");
+  const desc  = document.getElementById("poiDivDesc");
+  const card  = document.getElementById("poiDivergenceCard");
+
+  const level = (trapRadar.level || "BALANCED");
+  const borderColor = level.includes("BULL_TRAP") || level.includes("DISTRIBUTION") ? "#ef4444"
+    : level.includes("BEAR_TRAP") || level.includes("ACCUMULATION") ? "#10b981"
+    : level.includes("SHORT_COVERING") ? "#8b5cf6"
+    : "#38bdf8";
+  if (card) card.style.borderLeftColor = borderColor;
+
+  if (badge) {
+    badge.textContent = (trapRadar.badge || "Analyzing").replace(/🚨|🟢|🔴|⚪/g, "").trim();
+    badge.style.background = borderColor;
+    badge.style.color = "#030712";
+  }
+  if (title) title.textContent = trapRadar.title || "--";
+  if (desc)  desc.textContent  = trapRadar.desc || "--";
+}
+
+// Refresh & Toggle button wiring
+(function _wirePoiButtons() {
+  const refBtn = document.getElementById("poiRefreshBtn");
+  if (refBtn) {
+    refBtn.addEventListener("click", () => loadPoiDeskData(true));
+  }
+
+  const toggleBtn = document.getElementById("poiToggleChangeBtn");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      _poiShowDayChange = !_poiShowDayChange;
+      toggleBtn.textContent = _poiShowDayChange ? "📊 Compact View (EOD Only)" : "📈 Show Day Change & %";
+      toggleBtn.className = _poiShowDayChange ? "ctrl-btn primary" : "ctrl-btn";
+      const sub = document.getElementById("poiTableSubheading");
+      if (sub) {
+        sub.textContent = _poiShowDayChange 
+          ? "Official NSE bhav copy · Absolute OI | Day Δ | Day Δ%" 
+          : "Official NSE bhav copy · Cumulative open interest contracts across Market Participants";
+      }
+      if (_poiData) renderPoiDesk(_poiData);
+    });
+  }
+})();
 
 function renderFiiDerivativesFlow(flowData) {
   if (!flowData) return;
@@ -3503,7 +4044,8 @@ function drawSmartMoneyHistoryChart(history) {
   const height = canvas.height / scale;
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
+  const chartCols = typeof getChartColors === "function" ? getChartColors() : { bg: "#0c121e" };
+  ctx.fillStyle = chartCols.bg;
   ctx.fillRect(0, 0, width, height);
 
   const pad = { top: 26, right: 45, bottom: 32, left: 55 };
@@ -4071,7 +4613,7 @@ function closeDeliveryDrilldown() {
 // =============================================================================
 
 let mtaData        = null; // primary data store
-let mtaDailyTotals = null; // from https://mtf.trading/mtf_daily_totals.json
+let mtaDailyTotals = null; // aggregated 100% from official NSE regulatory archives
 let mtaActiveSubTab = 'overview';
 let mtaTimeframe    = '6M';
 let mtaStockFilter  = 'all';
@@ -4162,76 +4704,11 @@ async function loadMtfData(options = {}) {
     }
   }
 
-  // Also fetch daily totals from mtf.trading (non-blocking)
-  mtaFetchDailyTotals();
-}
-
-// ── Process mtf.trading daily totals into date-grouped series (Crores) ────────
-function mtaProcessDailyTotals(raw) {
-  if (!Array.isArray(raw)) return [];
-  const byDate = {};
-  raw.forEach(r => {
-    const d = r.date || r.dt;
-    if (!d) return;
-    if (!byDate[d]) {
-      byDate[d] = { date: d, nse: 0, bse: 0, combined: 0, fresh: 0, liquid: 0, securities: 0 };
-    }
-    const endCr = (Number(r.end_outstanding) || 0) / 100.0;
-    const freshCr = (Number(r.fresh_exposure || r.exposure_taken) || 0) / 100.0;
-    const liquidCr = (Number(r.exposure_liquidated) || 0) / 100.0;
-    if (r.exchange === 'NSE') {
-      byDate[d].nse = endCr;
-      byDate[d].fresh = freshCr;
-      byDate[d].liquid = liquidCr;
-      byDate[d].securities = Number(r.securities_count) || 0;
-    } else if (r.exchange === 'BSE') {
-      byDate[d].bse = endCr;
-      if (!byDate[d].fresh && freshCr > 0) byDate[d].fresh = freshCr;
-      if (!byDate[d].liquid && liquidCr > 0) byDate[d].liquid = liquidCr;
-    }
-  });
-  const sortedDates = Object.keys(byDate).sort();
-  return sortedDates.map(d => {
-    const item = byDate[d];
-    item.combined = item.nse + item.bse;
-    return item;
-  });
-}
-
-// ── Fetch mtf.trading daily totals ──────────────────────────────────────────
-async function mtaFetchDailyTotals() {
-  try {
-    const resp = await fetch('https://mtf.trading/mtf_daily_totals.json');
-    if (!resp.ok) return;
-    const json = await resp.json();
-    const raw = Array.isArray(json) ? json : (json.data || json.records || []);
-    mtaDailyTotals = mtaProcessDailyTotals(raw);
-
-    // Update Overview and Hero with latest daily totals if available
-    if (mtaDailyTotals && mtaDailyTotals.length) {
-      const latest = mtaDailyTotals[mtaDailyTotals.length - 1];
-      const freshEl = document.getElementById('mtaFreshExposure');
-      if (freshEl && latest.fresh > 0) freshEl.textContent = mtaCr(latest.fresh);
-
-      const fEl = document.getElementById('mtaDtFresh');
-      const lEl = document.getElementById('mtaDtLiquidated');
-      const nEl = document.getElementById('mtaDtNet');
-      const sEl = document.getElementById('mtaDtSecurities');
-      if (fEl && latest.fresh > 0) fEl.textContent = mtaCr(latest.fresh);
-      if (lEl && latest.liquid > 0) lEl.textContent = mtaCr(latest.liquid);
-      if (nEl) {
-        const net = latest.fresh - latest.liquid;
-        nEl.textContent = (net >= 0 ? '+' : '') + mtaCr(net);
-        nEl.className = 'mta-session-val ' + (net >= 0 ? 'text-green' : 'text-red');
-      }
-      if (sEl && latest.securities > 0) sEl.textContent = Number(latest.securities).toLocaleString('en-IN');
-    }
-
-    // Render sparkline and trend stats
+  // 100% Official NSE Regulatory Data (No third-party mtf.trading calls)
+  if (data && data.dailyTotals && Array.isArray(data.dailyTotals)) {
+    mtaDailyTotals = data.dailyTotals;
     mtaRenderSparkline();
     if (mtaActiveSubTab === 'trend') mtaRenderTrendChart();
-  } catch (e) {
-    console.warn('mtf.trading daily totals fetch note:', e.message);
   }
 }
 
@@ -6010,23 +6487,39 @@ function toggleTheme() {
   const btn = document.getElementById('themeToggleBtn');
   if (btn) btn.textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
 
-  // Re-render chart desks to match theme
+  // Re-render all canvas charts to pick up new theme colors
+  if (latestData) {
+    drawChart(latestData.timeline);
+    drawNiftyAdChart(latestData.timeline || []);
+    drawAdChart(latestData.timeline || []);
+  }
+  if (niftyData) drawNiftyChart(niftyData.points || []);
+  if (typeof drawStraddleChart === 'function') drawStraddleChart();
+  if (typeof drawOptOiChart === 'function') drawOptOiChart();
+  if (typeof drawOptIvChart === 'function') drawOptIvChart();
+  if (typeof drawWpcrCapitalChart === 'function' && wpcrChartMode === "strike_bars") {
+    drawWpcrCapitalChart();
+  } else if (typeof drawWpcrTimeSeriesChart === 'function') {
+    drawWpcrTimeSeriesChart();
+  }
   if (mtaActiveSubTab === 'trend' && typeof mtaRenderTrendChart === 'function') {
     mtaRenderTrendChart();
+  }
+  // Re-render Upstox visualizer if visible
+  if (typeof window.upstoxOptionChain !== 'undefined' && window.upstoxOptionChain.renderVisualizer) {
+    window.upstoxOptionChain.renderVisualizer();
   }
 }
 
 // Auto-restore saved theme on startup
 (function initTheme() {
-  const saved = localStorage.getItem('breadth_theme');
-  if (saved === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    document.body.setAttribute('data-theme', 'dark');
-    window.addEventListener('DOMContentLoaded', () => {
-      const btn = document.getElementById('themeToggleBtn');
-      if (btn) btn.textContent = '☀️ Light';
-    });
-  }
+  const saved = localStorage.getItem('breadth_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.body.setAttribute('data-theme', saved);
+  window.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) btn.textContent = saved === 'dark' ? '☀️ Light' : '🌙 Dark';
+  });
 })();
 
 function switchTab(tab) {
@@ -6316,13 +6809,14 @@ function drawStraddleChart() {
   straddleChartGeometry = null;
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
+  const C = getChartColors();
+  ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, width, height);
 
   const strikes = straddleDataGlobal.strikes || {};
   const currentStrikeData = strikes[String(selectedStraddleStrike)] || strikes[selectedStraddleStrike] || strikes[String(straddleDataGlobal.atmStrike)] || strikes[straddleDataGlobal.atmStrike];
   if (!currentStrikeData || !currentStrikeData.timeline || !currentStrikeData.timeline.length) {
-    ctx.fillStyle = "#94a3b8";
+    ctx.fillStyle = C.label;
     ctx.textAlign = "center";
     ctx.font = "11px 'JetBrains Mono', monospace";
     ctx.fillText("No Straddle intraday timeline data", width / 2, height / 2);
@@ -6372,9 +6866,9 @@ function drawStraddleChart() {
   straddleChartGeometry = { pad, plotW, plotH, width, height, timeline, minVal, maxVal, xFor, yFor, currentStrikeData };
 
   // Draw Horizontal Gridlines & Y-Axis Labels
-  ctx.strokeStyle = "#1e293d";
+  ctx.strokeStyle = C.grid;
   ctx.lineWidth = 0.8;
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = C.label;
   ctx.font = "10px 'JetBrains Mono', monospace";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
@@ -6396,14 +6890,14 @@ function drawStraddleChart() {
   if (minVal <= 0 && maxVal >= 0) {
     const zeroY = yFor(0);
     ctx.save();
-    ctx.strokeStyle = "rgba(100, 116, 139, 0.45)";
+    ctx.strokeStyle = C.gridZero;
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 2]);
     ctx.beginPath();
     ctx.moveTo(pad.left, zeroY);
     ctx.lineTo(width - pad.right, zeroY);
     ctx.stroke();
-    ctx.fillStyle = "#94a3b8";
+    ctx.fillStyle = C.label;
     ctx.font = "9px 'JetBrains Mono', monospace";
     ctx.textAlign = "right";
     ctx.fillText("₹0 (Zero Line)", width - pad.right - 4, zeroY - 3);
@@ -6413,7 +6907,7 @@ function drawStraddleChart() {
   // Draw Multi-Day Session Separator Lines
   if (selectedStraddleDays > 1) {
     ctx.save();
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.45)";
+    ctx.strokeStyle = C.gridFaint;
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 3]);
     timeline.forEach((pt, idx) => {
@@ -6538,7 +7032,7 @@ function drawStraddleChart() {
   }
 
   // Time labels
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = C.label;
   ctx.font = "10px 'JetBrains Mono', monospace";
   ctx.textBaseline = "top";
   
@@ -6571,19 +7065,39 @@ function updateStraddleHoverFromClientX(clientX) {
 
 function drawStraddleHover(index) {
   if (!straddleChartGeometry) return;
-  const { pad, plotH, timeline, xFor, yFor, currentStrikeData } = straddleChartGeometry;
+  const { pad, plotH, width, timeline, xFor, yFor, currentStrikeData } = straddleChartGeometry;
   if (index < 0 || index >= timeline.length) return;
   const p = timeline[index];
   const x = xFor(index);
   const ctx = els.straddleCanvas.getContext("2d");
+  const C = getChartColors();
+
+  // Find primary Y value for horizontal crosshair
+  let primaryY = null;
+  if (p.straddle != null) primaryY = yFor(p.straddle);
+  else if (p.vwap != null) primaryY = yFor(p.vwap);
+  else if (p.call != null) primaryY = yFor(p.call);
+  else if (p.put != null) primaryY = yFor(p.put);
 
   ctx.save();
-  ctx.strokeStyle = "rgba(124, 58, 237, 0.4)";
+  ctx.strokeStyle = C.crosshair;
+  ctx.lineWidth = 1;
   ctx.setLineDash([3, 3]);
+
+  // Vertical Crosshair
   ctx.beginPath();
   ctx.moveTo(x, pad.top);
   ctx.lineTo(x, pad.top + plotH);
   ctx.stroke();
+
+  // Horizontal Crosshair
+  if (primaryY !== null) {
+    ctx.beginPath();
+    ctx.moveTo(pad.left, primaryY);
+    ctx.lineTo(width - pad.right, primaryY);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
 
   // Draw points on active lines
   const showStraddle = els.toggleStraddleLine ? els.toggleStraddleLine.checked : true;
@@ -6631,20 +7145,20 @@ function drawStraddleHover(index) {
     const curDecayPts = (p.straddle - openPrem);
     const curDecayPct = openPrem ? (curDecayPts / openPrem * 100) : 0;
     const decayText = `${signedNumber(curDecayPts)} (${signedNumber(curDecayPct, "%")})`;
-    const decayColor = curDecayPts < 0 ? "#10b981" : (curDecayPts > 0 ? "#f43f5e" : "#94a3b8");
+    const decayColor = curDecayPts < 0 ? "#10b981" : (curDecayPts > 0 ? "#f43f5e" : C.label);
 
     const diffVal = p.diff != null ? p.diff : ((p.call != null && p.put != null) ? (p.call - p.put) : 0);
-    const diffColor = diffVal > 0 ? "#38bdf8" : (diffVal < 0 ? "#f87171" : "#94a3b8");
+    const diffColor = diffVal > 0 ? "#38bdf8" : (diffVal < 0 ? "#f87171" : C.label);
     const decayLabel = selectedStraddleDays > 1 ? "Period decay" : "Decay from open";
 
     els.straddleTooltip.innerHTML = `
-      <div style="font-weight:800; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:3px; margin-bottom:3px;">🕒 ${time} | Strike: ${selectedStraddleStrike} (${selectedStraddleDays}D)</div>
-      <span style="color:#c084fc;">Straddle (CE+PE): <b>₹${number(p.straddle, 2)}</b></span>
-      <span style="color:#34d399;">Call (CE): <b>₹${number(p.call, 2)}</b></span>
-      <span style="color:#fb7185;">Put (PE): <b>₹${number(p.put, 2)}</b></span>
+      <div style="font-weight:800; border-bottom:1px solid var(--border-subtle); padding-bottom:3px; margin-bottom:3px; color:var(--text-primary);">🕒 ${time} | Strike: ${selectedStraddleStrike} (${selectedStraddleDays}D)</div>
+      <span style="color:#7c3aed;">Straddle (CE+PE): <b>₹${number(p.straddle, 2)}</b></span>
+      <span style="color:#10b981;">Call (CE): <b>₹${number(p.call, 2)}</b></span>
+      <span style="color:#ef4444;">Put (PE): <b>₹${number(p.put, 2)}</b></span>
       <span style="color:${diffColor};">CE - PE Diff: <b>${signedNumber(diffVal)}</b></span>
-      <span style="color:#fbbf24;">VWAP: <b>₹${number(p.vwap, 2)}</b></span>
-      <span style="color:#38bdf8;">Spot: <b>${number(p.spot, 2)}</b></span>
+      <span style="color:#d97706;">VWAP: <b>₹${number(p.vwap, 2)}</b></span>
+      <span style="color:#2563eb;">Spot: <b>${number(p.spot, 2)}</b></span>
       <span style="color:${decayColor};">${decayLabel}: <b>${decayText}</b></span>
     `;
 
@@ -6970,7 +7484,16 @@ async function loadOptionChain(opts = {}) {
     }
     if (els.optLastUpdatedTime) {
       const now = new Date();
-      els.optLastUpdatedTime.textContent = `Last tick: ${now.toLocaleTimeString()}`;
+      let qBadge = "🟢 LIVE FEED";
+      let qColor = "#10b981";
+      if (data.isSimulated || data.quality === "simulated") {
+        qBadge = "🔴 SIMULATED (Broker Offline)";
+        qColor = "#ef4444";
+      } else if (data.quality === "cached") {
+        qBadge = "🟡 CACHED CLOSE";
+        qColor = "#f59e0b";
+      }
+      els.optLastUpdatedTime.innerHTML = `<span style="font-weight:700; color:${qColor};">${qBadge}</span> | ${now.toLocaleTimeString()}`;
     }
     resetAutoRefreshTimer();
     
@@ -6988,20 +7511,28 @@ async function loadOptionChain(opts = {}) {
   }
 }
 
+let optOiGeometry = null;
+let optOiHoverIndex = null;
+let optOiLastChain = null;
+
 function drawOptOiChart(chain) {
+  if (chain) optOiLastChain = chain;
+  chain = optOiLastChain;
   const canvas = els.optOiCanvas;
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   const scale = window.devicePixelRatio || 1;
   const width = canvas.width / scale;
   const height = canvas.height / scale;
+  const C = getChartColors();
+
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
+  ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, width, height);
 
   if (!chain || chain.length === 0) return;
 
-  const pad = { left: 40, right: 15, top: 15, bottom: 30 };
+  const pad = { left: 45, right: 15, top: 15, bottom: 30 };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
 
@@ -7009,9 +7540,9 @@ function drawOptOiChart(chain) {
   const maxPutOi = Math.max(...chain.map(r => r.put?.oi || 0), 1000);
   const maxOi = Math.max(maxCallOi, maxPutOi);
 
-  ctx.strokeStyle = "#1e293d";
+  ctx.strokeStyle = C.grid;
   ctx.lineWidth = 1;
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = C.label;
   ctx.font = "9px 'JetBrains Mono', monospace";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
@@ -7032,6 +7563,8 @@ function drawOptOiChart(chain) {
   const strikeColW = (plotW - totalGapW) / strikeCount;
   const subBarW = (strikeColW - 1) / 2;
 
+  optOiGeometry = { pad, plotW, plotH, width, height, chain, maxOi, strikeColW, barGap, subBarW };
+
   chain.forEach((row, i) => {
     const x = pad.left + i * (strikeColW + barGap);
     const callH = ((row.call?.oi || 0) / maxOi) * plotH;
@@ -7044,29 +7577,112 @@ function drawOptOiChart(chain) {
     ctx.fillRect(x + subBarW + 1, pad.top + plotH - putH, subBarW, putH);
 
     if (strikeCount < 10 || i % 2 === 0) {
-      ctx.fillStyle = "#cbd5e1";
+      ctx.fillStyle = C.label;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
       ctx.font = "9px 'JetBrains Mono', monospace";
       ctx.fillText(row.strike, x + strikeColW / 2, pad.top + plotH + 5);
     }
   });
+
+  if (optOiHoverIndex !== null) drawOptOiHover(optOiHoverIndex);
 }
 
+function updateOptOiHoverFromClientX(clientX) {
+  if (!optOiGeometry || !els.optOiCanvas) return;
+  const rect = els.optOiCanvas.getBoundingClientRect();
+  const x = clientX - rect.left;
+  const { pad, plotW, chain } = optOiGeometry;
+  if (x < pad.left || x > pad.left + plotW) {
+    hideOptOiTooltip();
+    return;
+  }
+  const idx = Math.floor(((x - pad.left) / plotW) * chain.length);
+  optOiHoverIndex = Math.max(0, Math.min(chain.length - 1, idx));
+  drawOptOiChart();
+}
+
+function hideOptOiTooltip() {
+  optOiHoverIndex = null;
+  if (els.optOiTooltip) els.optOiTooltip.style.display = "none";
+  drawOptOiChart();
+}
+
+function drawOptOiHover(index) {
+  if (!optOiGeometry || !els.optOiCanvas) return;
+  const { pad, plotH, width, chain, maxOi, strikeColW, barGap } = optOiGeometry;
+  if (index < 0 || index >= chain.length) return;
+  const row = chain[index];
+  const colX = pad.left + index * (strikeColW + barGap);
+  const colCenterX = colX + strikeColW / 2;
+  const callH = ((row.call?.oi || 0) / maxOi) * plotH;
+  const putH = ((row.put?.oi || 0) / maxOi) * plotH;
+  const maxY = pad.top + plotH - Math.max(callH, putH);
+
+  const ctx = els.optOiCanvas.getContext("2d");
+  const C = getChartColors();
+
+  ctx.save();
+  ctx.strokeStyle = C.crosshair;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+
+  // Vertical Crosshair
+  ctx.beginPath();
+  ctx.moveTo(colCenterX, pad.top);
+  ctx.lineTo(colCenterX, pad.top + plotH);
+  ctx.stroke();
+
+  // Horizontal Crosshair
+  ctx.beginPath();
+  ctx.moveTo(pad.left, maxY);
+  ctx.lineTo(width - pad.right, maxY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  if (els.optOiTooltip) {
+    const callOi = row.call?.oi || 0;
+    const putOi = row.put?.oi || 0;
+    const pcr = callOi ? (putOi / callOi).toFixed(2) : "--";
+    els.optOiTooltip.innerHTML = `
+      <div style="font-weight:800; border-bottom:1px solid var(--border-subtle); padding-bottom:3px; margin-bottom:3px; color:var(--text-primary);">🎯 Strike: ${row.strike}</div>
+      <span style="color:#10b981;">Call OI: <b>${callOi.toLocaleString('en-IN')}</b></span>
+      <span style="color:#ef4444;">Put OI: <b>${putOi.toLocaleString('en-IN')}</b></span>
+      <span style="color:#38bdf8;">Strike PCR: <b>${pcr}</b></span>
+    `;
+    const rect = els.optOiCanvas.getBoundingClientRect();
+    const tipRect = els.optOiTooltip.getBoundingClientRect();
+    const left = Math.min(Math.max(colCenterX + 14, 10), rect.width - (tipRect.width || 120) - 10);
+    const top = Math.min(Math.max(pad.top + 10, 10), rect.height - (tipRect.height || 70) - 10);
+    els.optOiTooltip.style.left = `${left}px`;
+    els.optOiTooltip.style.top = `${top}px`;
+    els.optOiTooltip.style.display = "block";
+  }
+}
+
+let optIvGeometry = null;
+let optIvHoverIndex = null;
+let optIvLastChain = null;
+
 function drawOptIvChart(chain) {
+  if (chain) optIvLastChain = chain;
+  chain = optIvLastChain;
   const canvas = els.optIvCanvas;
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   const scale = window.devicePixelRatio || 1;
   const width = canvas.width / scale;
   const height = canvas.height / scale;
+  const C = getChartColors();
+
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
+  ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, width, height);
 
   if (!chain || chain.length === 0) return;
 
-  const pad = { left: 40, right: 15, top: 15, bottom: 30 };
+  const pad = { left: 45, right: 15, top: 15, bottom: 30 };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
 
@@ -7077,9 +7693,9 @@ function drawOptIvChart(chain) {
   const maxIv = Math.max(minIv + 2, Math.max(...allIvs, 30));
   const ivSpan = maxIv - minIv;
 
-  ctx.strokeStyle = "#1e293d";
+  ctx.strokeStyle = C.grid;
   ctx.lineWidth = 1;
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = C.label;
   ctx.font = "9px 'JetBrains Mono', monospace";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
@@ -7095,8 +7711,10 @@ function drawOptIvChart(chain) {
   }
 
   const strikeCount = chain.length;
-  const xFor = (i) => pad.left + (i / (strikeCount - 1)) * plotW;
+  const xFor = (i) => pad.left + (i / Math.max(1, strikeCount - 1)) * plotW;
   const yFor = (val) => pad.top + plotH - ((val - minIv) / ivSpan) * plotH;
+
+  optIvGeometry = { pad, plotW, plotH, width, height, chain, minIv, maxIv, ivSpan, xFor, yFor };
 
   ctx.strokeStyle = "#10b981";
   ctx.lineWidth = 2;
@@ -7127,13 +7745,98 @@ function drawOptIvChart(chain) {
   chain.forEach((row, i) => {
     if (strikeCount < 10 || i % 2 === 0) {
       const x = xFor(i);
-      ctx.fillStyle = "#cbd5e1";
+      ctx.fillStyle = C.label;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
       ctx.font = "9px 'JetBrains Mono', monospace";
       ctx.fillText(row.strike, x, pad.top + plotH + 5);
     }
   });
+
+  if (optIvHoverIndex !== null) drawOptIvHover(optIvHoverIndex);
+}
+
+function updateOptIvHoverFromClientX(clientX) {
+  if (!optIvGeometry || !els.optIvCanvas) return;
+  const rect = els.optIvCanvas.getBoundingClientRect();
+  const x = clientX - rect.left;
+  const { pad, plotW, chain } = optIvGeometry;
+  if (x < pad.left || x > pad.left + plotW) {
+    hideOptIvTooltip();
+    return;
+  }
+  const idx = Math.round(((x - pad.left) / plotW) * (chain.length - 1));
+  optIvHoverIndex = Math.max(0, Math.min(chain.length - 1, idx));
+  drawOptIvChart();
+}
+
+function hideOptIvTooltip() {
+  optIvHoverIndex = null;
+  if (els.optIvTooltip) els.optIvTooltip.style.display = "none";
+  drawOptIvChart();
+}
+
+function drawOptIvHover(index) {
+  if (!optIvGeometry || !els.optIvCanvas) return;
+  const { pad, plotH, width, chain, xFor, yFor } = optIvGeometry;
+  if (index < 0 || index >= chain.length) return;
+  const row = chain[index];
+  const x = xFor(index);
+  const callIv = row.call?.iv || 0;
+  const putIv = row.put?.iv || 0;
+  const primaryIv = callIv > 0 ? callIv : putIv;
+  const y = primaryIv > 0 ? yFor(primaryIv) : pad.top + plotH / 2;
+
+  const ctx = els.optIvCanvas.getContext("2d");
+  const C = getChartColors();
+
+  ctx.save();
+  ctx.strokeStyle = C.crosshair;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+
+  // Vertical Crosshair
+  ctx.beginPath();
+  ctx.moveTo(x, pad.top);
+  ctx.lineTo(x, pad.top + plotH);
+  ctx.stroke();
+
+  // Horizontal Crosshair
+  ctx.beginPath();
+  ctx.moveTo(pad.left, y);
+  ctx.lineTo(width - pad.right, y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Dots
+  if (callIv > 0) {
+    ctx.fillStyle = "#10b981";
+    ctx.beginPath();
+    ctx.arc(x, yFor(callIv), 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (putIv > 0) {
+    ctx.fillStyle = "#ef4444";
+    ctx.beginPath();
+    ctx.arc(x, yFor(putIv), 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  if (els.optIvTooltip) {
+    els.optIvTooltip.innerHTML = `
+      <div style="font-weight:800; border-bottom:1px solid var(--border-subtle); padding-bottom:3px; margin-bottom:3px; color:var(--text-primary);">🎯 Strike: ${row.strike}</div>
+      <span style="color:#10b981;">Call IV: <b>${callIv ? callIv.toFixed(1) + '%' : '--'}</b></span>
+      <span style="color:#ef4444;">Put IV: <b>${putIv ? putIv.toFixed(1) + '%' : '--'}</b></span>
+    `;
+    const rect = els.optIvCanvas.getBoundingClientRect();
+    const tipRect = els.optIvTooltip.getBoundingClientRect();
+    const left = Math.min(Math.max(x + 14, 10), rect.width - (tipRect.width || 120) - 10);
+    const top = Math.min(Math.max(y - 30, 10), rect.height - (tipRect.height || 60) - 10);
+    els.optIvTooltip.style.left = `${left}px`;
+    els.optIvTooltip.style.top = `${top}px`;
+    els.optIvTooltip.style.display = "block";
+  }
 }
 
 /* ==========================================================================
@@ -7704,7 +8407,7 @@ function renderFilteredRadarTable() {
 async function loadStatus() {
   const res = await fetch("/api/status");
   const data = await res.json();
-  const today = data.now ? String(data.now).slice(0, 10) : new Date().toISOString().slice(0, 10);
+  const today = data.marketDate || (data.now ? String(data.now).slice(0, 10) : new Date().toISOString().slice(0, 10));
   if (els.dateInput) els.dateInput.value = today;
   if (els.endDateInput) els.endDateInput.value = today;
   if (els.participantOiDate) els.participantOiDate.value = today;
@@ -7747,10 +8450,10 @@ async function loadStatus() {
     els.dataSource.value = "broker";
     applyDataSourceDefaults("broker");
   } else {
-    els.apiStatus.textContent = "🟢 Live Market (Real-time Feed)";
-    els.apiStatus.className = "status ready";
-    els.dataSource.value = "broker";
-    applyDataSourceDefaults("broker");
+    els.apiStatus.textContent = "⚪ Broker Offline (Demo Mode)";
+    els.apiStatus.className = "status not-configured";
+    els.dataSource.value = "sample";
+    applyDataSourceDefaults("sample");
   }
 }
 
@@ -7877,6 +8580,16 @@ if (els.straddleCanvas) {
     hideStraddleTooltip();
     drawStraddleChart();
   });
+}
+
+if (els.optOiCanvas) {
+  els.optOiCanvas.addEventListener("mousemove", (event) => updateOptOiHoverFromClientX(event.clientX));
+  els.optOiCanvas.addEventListener("mouseleave", () => hideOptOiTooltip());
+}
+
+if (els.optIvCanvas) {
+  els.optIvCanvas.addEventListener("mousemove", (event) => updateOptIvHoverFromClientX(event.clientX));
+  els.optIvCanvas.addEventListener("mouseleave", () => hideOptIvTooltip());
 }
 
 // Tab navigation listeners
@@ -8363,7 +9076,8 @@ function drawFiiDiiCashChart(items, view) {
   const height = canvas.height / scale;
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#0c121e";
+  const fiiChartCols = typeof getChartColors === "function" ? getChartColors() : { bg: "#0c121e" };
+  ctx.fillStyle = fiiChartCols.bg;
   ctx.fillRect(0, 0, width, height);
 
   if (!items || !items.length) {
@@ -8588,27 +9302,29 @@ function getUserBrokerStorageKey() {
 
 async function loadBrokerSettings() {
   try {
-    // 1. Check if the active user has their own saved broker credentials in private storage
-    const userBrokerKey = getUserBrokerStorageKey();
-    let userBrokerData = null;
+    // Purge any legacy raw secrets from localStorage for security
     try {
-      const saved = localStorage.getItem(userBrokerKey);
-      if (saved) userBrokerData = JSON.parse(saved);
+      localStorage.removeItem(getUserBrokerStorageKey());
     } catch(e) {}
 
-    // Fallback: Check if user cloud workspace has brokerSettings
-    if (!userBrokerData && window.AuthSync?.workspace?.brokerSettings) {
-      userBrokerData = window.AuthSync.workspace.brokerSettings;
-    }
+    // Fetch secure masked configuration from server
+    let serverSettings = null;
+    try {
+      const resp = await fetch("/api/settings");
+      if (resp.ok) {
+        serverSettings = await resp.json();
+      }
+    } catch (e) {}
 
-    // Default: If new user / no custom broker entered yet, EVERYTHING IS BLANK by default!
-    const data = userBrokerData || {
-      activeBroker: "ANGEL",
+    const savedActiveBroker = localStorage.getItem("bl_active_broker") || "ANGEL";
+    const data = serverSettings || {
+      activeBroker: savedActiveBroker,
       angel: { apiKey: "", clientCode: "", pin: "", totpSecret: "", totpCode: "", configured: false },
       upstox: { accessToken: "", apiKey: "", apiSecret: "", configured: false },
       kotak: { accessToken: "", consumerKey: "", consumerSecret: "", mobileNo: "", mpin: "", configured: false },
       fyers: { appId: "", accessToken: "", configured: false }
     };
+    if (!data.activeBroker) data.activeBroker = savedActiveBroker;
 
     // Active Broker selection
     const active = (data.activeBroker || "ANGEL").toUpperCase();
@@ -8736,16 +9452,12 @@ async function saveBrokerSettings() {
     },
   };
 
-  // 1. Save locally for this user
+  // 1. Purge raw unencrypted credentials from browser localStorage for security
   const userBrokerKey = getUserBrokerStorageKey();
   try {
-    localStorage.setItem(userBrokerKey, JSON.stringify(payload));
+    localStorage.removeItem(userBrokerKey);
+    localStorage.setItem("bl_active_broker", activeBroker);
   } catch(e) {}
-
-  // 2. Sync to cloud workspace
-  if (window.AuthSync && typeof window.AuthSync.saveWorkspace === "function") {
-    window.AuthSync.saveWorkspace({ brokerSettings: payload });
-  }
 
   const saveBtns = [
     document.getElementById("btnSaveAllSettings"),
@@ -9378,24 +10090,27 @@ const INST_NAV_MAP = {
   resources:   "tools",
 };
 
-// All institutional nav buttons
+// All institutional nav buttons (6 primary pillars + legacy)
 const INST_NAV_BTN_IDS = [
-  "navDashboard", "navFutures", "navOptions", "navUpstoxChain", "navAnalytics",
-  "navFiiDii", "navMtf", "navDelivery", "navResources"
+  "navDashboard", "navBreadth", "navDerivatives", "navSmartMoney", "navAlgoDesk", "navTools",
+  "navFutures", "navOptions", "navUpstoxChain", "navAnalytics", "navFiiDii", "navMtf", "navDelivery", "navResources"
 ];
 
 // Map from old tab key → which inst-nav-btn to highlight
 const INST_NAV_ACTIVE_MAP = {
   dashboard:   "navDashboard",
-  breadth:     "navAnalytics",
+  breadth:     "navBreadth",
   futures:     "navFutures",
   options:     "navOptions",
   upstoxChain: "navUpstoxChain",
   smartMoney:  "navFiiDii",
+  smartmoney:  "navFiiDii",
+  fiidii:      "navFiiDii",
   mtf:         "navMtf",
   delivery:    "navDelivery",
   tools:       "navResources",
   settings:    "navResources",
+  resources:   "navResources",
 };
 
 function instNav(key, subview) {
@@ -9537,24 +10252,37 @@ function updateDashboardIndices(indices) {
       const elSpot = document.getElementById("dashNiftySpot");
       const elChg = document.getElementById("dashNiftyChg");
       const elPcr = document.getElementById("dashNiftyPcr");
-      const elWpcr = document.getElementById("dashNiftyWpcr");
+      const elMaxPain = document.getElementById("dashNiftyMaxPain");
       if (elSpot && spot) elSpot.textContent = Number(spot).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       if (elChg) { elChg.textContent = chgText; elChg.className = chgClass; }
       if (elPcr && pcr) elPcr.textContent = Number(pcr).toFixed(2);
-      if (elWpcr && wpcr) elWpcr.textContent = Number(wpcr).toFixed(2);
+      if (elMaxPain) {
+        const mp = idx.maxPain || idx.strikeAtMaxPain || (spot ? Math.round(spot / 50) * 50 : null);
+        elMaxPain.textContent = mp ? Number(mp).toLocaleString("en-IN") : "--";
+      }
 
-      // Topbar Pulse Nifty
+      // Topbar Pulse Nifty (safely update if present)
       const pulseNifty = document.getElementById("pulseNiftyVal");
       if (pulseNifty && spot) {
         pulseNifty.textContent = `${Number(spot).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${isPos ? "+" : ""}${Number(chg || 0).toFixed(2)})`;
         pulseNifty.style.color = isPos ? "#10b981" : "#ef4444";
       }
-
-      // KPI wPCR
-      const kpiWpcr = document.getElementById("dashKpiWpcr");
-      if (kpiWpcr && wpcr) {
-        kpiWpcr.textContent = Number(wpcr).toFixed(2);
-        kpiWpcr.style.color = Number(wpcr) >= 1.0 ? "#10b981" : (Number(wpcr) <= 0.7 ? "#ef4444" : "inherit");
+    } else if (key === "indiavix" || sym === "INDIA VIX" || sym === "VIX") {
+      const kpiVix = document.getElementById("dashKpiVix");
+      const kpiVixSub = document.getElementById("dashKpiVixSub");
+      if (kpiVix && spot) {
+        kpiVix.textContent = Number(spot).toFixed(2);
+        const vixNum = Number(spot);
+        if (vixNum < 13) {
+          kpiVix.style.color = "#10b981";
+          if (kpiVixSub) kpiVixSub.textContent = "Low Volatility (Calm)";
+        } else if (vixNum <= 18) {
+          kpiVix.style.color = "#38bdf8";
+          if (kpiVixSub) kpiVixSub.textContent = "Normal Regime";
+        } else {
+          kpiVix.style.color = "#ef4444";
+          if (kpiVixSub) kpiVixSub.textContent = "High Volatility (Fear)";
+        }
       }
     } else if (key === "banknifty" || sym === "BANKNIFTY") {
       const elSpot = document.getElementById("dashBankNiftySpot");
@@ -9706,6 +10434,16 @@ async function loadDashboardData(force = false) {
 }
 
 function initInstNavState() {
+  // Check URL query param or hash for deep linking (e.g. ?tab=upstoxChain)
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab') || (window.location.hash ? window.location.hash.replace('#', '') : null);
+    if (tabParam && (INST_NAV_MAP[tabParam] || tabParam === 'dashboard')) {
+      instNav(tabParam);
+      return;
+    }
+  } catch (_) {}
+
   // On initial load, show dashboard
   const panelDashboard = document.getElementById("panelDashboard");
   // Hide all existing panels first
@@ -9752,8 +10490,10 @@ let _pulseSecondsRemaining = 3;
 let _dashboardAutoRefreshCounter = 0;
 let _globalPulseTimer = null;
 
+let _isMarketOpenState = false;
+
 function flashPulseElement(el, isUp) {
-  if (!el) return;
+  if (!el || !_isMarketOpenState) return;
   const cls = isUp ? 'tick-flash-up' : 'tick-flash-down';
   el.classList.remove('tick-flash-up', 'tick-flash-down');
   void el.offsetWidth;
@@ -9768,7 +10508,22 @@ async function fetchGlobalMarketPulse() {
     const data = await res.json();
     if (!data.ok || !data.indices) return;
 
+    _isMarketOpenState = !!data.marketOpen;
     const indices = data.indices;
+
+    // Update index card badges: ● LIVE vs ● CLOSED
+    ['dashNiftyBadge', 'dashBankNiftyBadge', 'dashFinNiftyBadge', 'dashSensexBadge'].forEach(bId => {
+      const bEl = document.getElementById(bId);
+      if (bEl) {
+        if (_isMarketOpenState) {
+          bEl.textContent = '● LIVE';
+          bEl.className = 'idx-badge live';
+        } else {
+          bEl.textContent = '● CLOSED';
+          bEl.className = 'idx-badge closed';
+        }
+      }
+    });
 
     // 1. NIFTY 50
     const n50 = indices.nifty50;
@@ -9873,6 +10628,7 @@ async function fetchGlobalMarketPulse() {
     if (vix) {
       const pVix = document.getElementById('pulseVixVal');
       const dVix = document.getElementById('dashKpiVix');
+      const dVixSub = document.getElementById('dashKpiVixSub');
       const isUp = vix.tickDir === 'UP' || vix.isPositive;
       const prev = _lastPulseSpots['indiavix'];
       const changed = prev !== undefined && prev !== vix.spot;
@@ -9882,8 +10638,19 @@ async function fetchGlobalMarketPulse() {
         pVix.style.color = vix.isPositive ? '#ef4444' : '#10b981';
         if (changed) flashPulseElement(pVix, isUp);
       }
-      if (dVix) {
-        dVix.textContent = vix.spot.toFixed(2);
+      if (dVix && vix.spot) {
+        dVix.textContent = Number(vix.spot).toFixed(2);
+        const vixNum = Number(vix.spot);
+        if (vixNum < 13) {
+          dVix.style.color = '#10b981';
+          if (dVixSub) dVixSub.textContent = 'Low Vol (Calm)';
+        } else if (vixNum <= 18) {
+          dVix.style.color = '#38bdf8';
+          if (dVixSub) dVixSub.textContent = 'Normal Regime';
+        } else {
+          dVix.style.color = '#ef4444';
+          if (dVixSub) dVixSub.textContent = 'High Vol (Fear)';
+        }
         if (changed) flashPulseElement(dVix, isUp);
       }
       _lastPulseSpots['indiavix'] = vix.spot;
@@ -9892,11 +10659,17 @@ async function fetchGlobalMarketPulse() {
     // Update status badge
     const apiStat = document.getElementById('apiStatus');
     if (apiStat) {
-      apiStat.textContent = '● Live Feed';
-      apiStat.style.color = '#10b981';
+      if (_isMarketOpenState) {
+        apiStat.textContent = '● Live Feed';
+        apiStat.style.color = '#10b981';
+      } else {
+        apiStat.textContent = '● Market Closed';
+        apiStat.style.color = '#94a3b8';
+      }
     }
 
-    _pulseSecondsRemaining = 3;
+    // Polling rate: 3s during live market hours, 60s when market is closed
+    _pulseSecondsRemaining = _isMarketOpenState ? 3 : 60;
   } catch (err) {
     console.debug('Market pulse poll error:', err);
   }
@@ -9920,11 +10693,14 @@ function startGlobalMarketPulse() {
 
     const pDash = document.getElementById('panelDashboard');
     if (pDash && (pDash.classList.contains('active') || pDash.style.display === 'block')) {
-      _dashboardAutoRefreshCounter += 1;
-      if (_dashboardAutoRefreshCounter >= 12) {
-        _dashboardAutoRefreshCounter = 0;
-        if (typeof loadDashboardData === 'function') {
-          loadDashboardData();
+      // ONLY auto-refresh every 12s IF market is active! Do NOT auto-refresh when market is closed!
+      if (_isMarketOpenState) {
+        _dashboardAutoRefreshCounter += 1;
+        if (_dashboardAutoRefreshCounter >= 12) {
+          _dashboardAutoRefreshCounter = 0;
+          if (typeof loadDashboardData === 'function') {
+            loadDashboardData();
+          }
         }
       }
     }

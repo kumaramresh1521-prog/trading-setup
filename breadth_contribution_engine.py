@@ -349,9 +349,17 @@ def compute_breadth_contribution(
             change = round(spot - prev_close, 2)
             change_pct = round((change / prev_close) * 100.0, 2) if prev_close else 0.0
 
-        # 3. Merge every minute from 09:15 to 15:30 with forward fill
+        # 3. Merge every minute from 09:15 to 15:30 with forward and backward fill
         all_minutes = sorted(set(list(b_map.keys()) + list(n_map.keys())))
-        last_b = None
+        
+        # Determine initial breadth point for proper backfilling
+        first_b_point = None
+        for t in all_minutes:
+            if t in b_map:
+                first_b_point = b_map[t]
+                break
+
+        last_b = first_b_point
         last_n = None
 
         for t_str in all_minutes:
@@ -360,7 +368,7 @@ def compute_breadth_contribution(
             if t_str in n_map:
                 last_n = n_map[t_str]
 
-            b_obj = last_b or {}
+            b_obj = last_b or first_b_point or {}
             n_obj = last_n or {}
 
             pt_spot = float(n_obj.get("close", spot))
@@ -368,18 +376,32 @@ def compute_breadth_contribution(
             pt_high = float(n_obj.get("high", pt_spot))
             pt_low = float(n_obj.get("low", pt_spot))
 
+            # Default breadth to support_ratio_pct if no breadth data at all, rather than 50.0
+            def_breadth = round(support_ratio_pct, 2)
+            tot_stk = len(raw_stocks) or 50
+            def_adv = len(supporting) or 25
+            def_dec = len(dragging) or 25
+
+            b_val = b_obj.get("breadth")
+            if b_val is None:
+                b_val = def_breadth
+
+            b_ma = b_obj.get("ma")
+            b_x = b_obj.get("x") if b_obj.get("x") is not None else def_adv
+            b_o = b_obj.get("o") if b_obj.get("o") is not None else def_dec
+
             timeline.append({
                 "time": f"{effective_date}T{t_str}:00+05:30",
                 "displayTime": t_str,
                 "date": effective_date,
-                "breadth": b_obj.get("breadth", 50.0),
-                "breadthRatio": b_obj.get("breadth", 50.0),
-                "ma": b_obj.get("ma"),
-                "x": b_obj.get("x", 25),
-                "o": b_obj.get("o", 25),
-                "advancers": b_obj.get("x", 25),
-                "decliners": b_obj.get("o", 25),
-                "netAdvancers": (b_obj.get("x", 25) or 25) - (b_obj.get("o", 25) or 25),
+                "breadth": round(float(b_val), 2),
+                "breadthRatio": round(float(b_val), 2),
+                "ma": round(float(b_ma), 2) if b_ma is not None else None,
+                "x": b_x,
+                "o": b_o,
+                "advancers": b_x,
+                "decliners": b_o,
+                "netAdvancers": b_x - b_o,
                 "spot": pt_spot,
                 "close": pt_spot,
                 "high": pt_high,

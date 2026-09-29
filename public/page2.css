@@ -2476,3 +2476,335 @@ html, body.page2-body {
     height: 150px !important;
   }
 }
+
+/* ==========================================================================
+   NIFTYTRADER IMPLIED VOLATILITY (IV) CHART SUITE STYLES
+   ========================================================================== */
+.nt-iv-control-card {
+  margin-bottom: 14px;
+}
+
+.nt-iv-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.nt-iv-title-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.nt-iv-controls-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nt-segmented-pill {
+  display: inline-flex;
+  align-items: center;
+  background: var(--p2-bg-surface, #0f172a);
+  border: 1px solid var(--p2-border, #334155);
+  border-radius: 6px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.nt-pill-btn {
+  background: transparent;
+  border: none;
+  color: var(--p2-text-muted, #94a3b8);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.nt-pill-btn:hover {
+  color: var(--p2-text-bright, #f8fafc);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nt-pill-btn.active {
+  background: var(--p2-teal, #00e5ff);
+  color: #020617;
+  font-weight: 700;
+}
+
+/* Volatility Intelligence KPI Grid */
+.nt-iv-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 1280px) {
+  .nt-iv-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .nt-iv-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.nt-iv-kpi-card {
+  background: var(--p2-bg-card, #111827);
+  border: 1px solid var(--p2-border, #1f2937);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 96px;
+  transition: all 0.2s ease;
+}
+
+.nt-iv-kpi-card:hover {
+  border-color: rgba(0, 229, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.nt-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.nt-kpi-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--p2-text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nt-kpi-val {
+  font-size: 18px;
+  font-weight: 800;
+  font-family: var(--font-mono, monospace);
+  color: var(--p2-text-bright, #f8fafc);
+  line-height: 1.2;
+}
+
+.nt-kpi-sub {
+  font-size: 10px;
+  color: var(--p2-text-muted, #94a3b8);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nt-ivr-bar {
+  height: 5px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 4px 0 2px;
+}
+
+.nt-ivr-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ef4444 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.nt-kpi-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.nt-kpi-status-dot.green {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+/* Strategy Banner */
+.nt-iv-strategy-banner {
+  background: rgba(0, 229, 255, 0.04);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-left: 4px solid var(--p2-teal, #00e5ff);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.nt-strategy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.nt-strategy-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nt-strategy-icon {
+  font-size: 16px;
+}
+
+.nt-strategy-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--p2-text-bright, #f8fafc);
+}
+
+.nt-strategy-badges {
+  display: flex;
+  gap: 6px;
+}
+
+.nt-strategy-text {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--p2-text-muted, #94a3b8);
+  margin: 0;
+}
+
+/* Chart Legend Wrap */
+.nt-chart-legend-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.nt-legend-pill {
+  font-size: 10.5px;
+  color: var(--p2-text-muted, #94a3b8);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.legend-spot {
+  background: #38bdf8;
+}
+
+.legend-atm-iv {
+  background: #a855f7;
+}
+
+.legend-call-iv {
+  background: #f43f5e;
+}
+
+.legend-put-iv {
+  background: #10b981;
+}
+
+.legend-atm-marker {
+  background: #e2e8f0;
+  border-top: 2px dashed #e2e8f0;
+}
+
+.legend-zone-low {
+  background: rgba(16, 185, 129, 0.25);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+}
+
+.legend-zone-normal {
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.legend-zone-high {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.nt-table-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Educational Volatility Playbook */
+.nt-iv-playbook-card {
+  margin-top: 14px;
+}
+
+.nt-iv-playbook-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+@media (max-width: 992px) {
+  .nt-iv-playbook-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.nt-playbook-col {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid var(--p2-border, #1e293b);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+
+.nt-playbook-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--p2-text-bright, #f8fafc);
+  margin-bottom: 6px;
+}
+
+.nt-playbook-desc {
+  font-size: 11px;
+  color: var(--p2-text-muted, #94a3b8);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.nt-playbook-formula {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  color: var(--p2-teal, #00e5ff);
+  margin: 6px 0;
+  border: 1px dashed rgba(0, 229, 255, 0.3);
+}
+
+.nt-playbook-list {
+  padding-left: 16px;
+  margin: 0;
+  font-size: 11px;
+  color: var(--p2-text-muted, #94a3b8);
+  line-height: 1.6;
+}
+
