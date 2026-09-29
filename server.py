@@ -7195,7 +7195,10 @@ def build_indices_overview(payload: dict) -> dict:
     _INDICES_OVERVIEW_CACHE["data"] = data
     _INDICES_OVERVIEW_CACHE["timestamp"] = time.time()
 _BREADTH_CONTRIB_CACHE = {}
+_BREADTH_RECOMPUTE_LOCK = threading.Lock()
+_BREADTH_RECOMPUTING = set()
 _CONSTITUENTS_CACHE = {"timestamp": 0.0, "data": {}}
+
 
 def get_live_constituent_quotes(symbols: list[str]) -> dict[str, dict]:
     """
@@ -7282,162 +7285,190 @@ def get_live_constituent_quotes(symbols: list[str]) -> dict[str, dict]:
     return quotes
 
 
+def _compute_breadth_contribution_task(idx: str, effective_date: str):
+    cache_key = f"{(idx or 'nifty50').lower()}_{effective_date}"
+    try:
+        is_bank = "bank" in (idx or "").lower()
+        norm_idx = "banknifty" if is_bank else "nifty50"
+        live_quotes = get_live_market_index_quotes()
+        live_q = live_quotes.get(norm_idx)
+
+        b_broker_src = "broker" if is_active_broker_configured() else "sample"
+        n_broker_src = "angel" if is_active_broker_configured() else "sample"
+
+        # Parallel Execution: Build breadth timeline & Nifty spot candles concurrently
+        b_res = {}
+        n_res = {}
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            future_b = pool.submit(build_breadth, {
+                "date": effective_date,
+                "endDate": effective_date,
+                "dataSource": b_broker_src,
+                "universe": norm_idx,
+                "interval": "ONE_MINUTE",
+                "chartMode": "carry",
+                "warmupSessions": 2,
+                "pnfBasis": "hl",
+                "boxPercent": 0.15,
+                "reversalBoxes": 3,
+                "maxSymbols": 12 if is_bank else 50,
+                "maWindow": 20,
+                "fastRefresh": True,
+                "symbols": "",
+                "startTime": "09:15",
+                "endTime": "15:30"
+            })
+            future_n = pool.submit(build_nifty, {
+                "date": effective_date,
+                "dataSource": n_broker_src,
+                "index": norm_idx,
+                "interval": "ONE_MINUTE",
+                "includeOptionChain": False,
+                "fastRefresh": True,
+                "startTime": "09:15",
+                "endTime": "15:30"
+            })
+            try:
+                b_res = future_b.result(timeout=60)
+            except Exception as exc:
+                print(f"[breadth_contrib] build_breadth error: {exc}")
+            try:
+                n_res = future_n.result(timeout=60)
+            except Exception as exc:
+                print(f"[breadth_contrib] build_nifty error: {exc}")
+
+        raw_b = b_res.get("timeline") or []
+        real_b = [
+            pt for pt in raw_b
+            if str(pt.get("time", pt.get("date", "")))[:10] == effective_date
+            and "09:15" <= str(pt.get("time", ""))[11:16] <= "15:30"
+        ]
+        if not real_b:
+            real_b = [pt for pt in raw_b if effective_date in str(pt.get("time", ""))]
+
+        if real_b:
+            first_today = real_b[0]
+            last_today = real_b[-1]
+            real_b_summary = {
+                "latestBreadth": last_today.get("breadth"),
+                "openBreadth": first_today.get("breadth"),
+                "breadthChange": round((last_today.get("breadth") or 0) - (first_today.get("breadth") or 0), 2),
+                "latestTime": last_today.get("time"),
+                "latestX": last_today.get("x", 0),
+                "latestO": last_today.get("o", 0),
+                "x": last_today.get("x", 0),
+                "o": last_today.get("o", 0),
+                "totalSymbols": b_res.get("universeCount", 50),
+                "loadedSymbols": b_res.get("symbolsLoaded", 50),
+            }
+        else:
+            real_b_summary = b_res.get("summary") or {}
+
+        raw_n = n_res.get("points") or []
+        real_n = [
+            pt for pt in raw_n
+            if str(pt.get("time", pt.get("date", "")))[:10] == effective_date
+            and "09:15" <= str(pt.get("time", ""))[11:16] <= "15:30"
+        ]
+        if not real_n:
+            real_n = [pt for pt in raw_n if effective_date in str(pt.get("time", ""))]
+
+        constituents_list = (
+            breadth_contribution_engine.BANKNIFTY_CONSTITUENTS
+            if is_bank
+            else breadth_contribution_engine.NIFTY50_CONSTITUENTS
+        )
+        symbols = [s["symbol"] for s in constituents_list]
+        live_stock_quotes = get_live_constituent_quotes(symbols)
+
+        data = breadth_contribution_engine.compute_breadth_contribution(
+            index_key=norm_idx,
+            date_str=effective_date,
+            real_breadth_timeline=real_b,
+            real_nifty_points=real_n,
+            breadth_summary=real_b_summary,
+            real_index_quote=live_q,
+            live_stock_quotes=live_stock_quotes
+        )
+
+        # Save to in-memory cache and on-disk cache if valid
+        tl = data.get("timeline") or []
+        vals = set(p.get("breadth") for p in tl if p.get("breadth") is not None)
+        has_valid_breadth = len(vals) > 1 and len(tl) > 30
+
+        disk_cache_file = CACHE_DIR / f"breadth_contrib_{cache_key}.json"
+        if has_valid_breadth:
+            _BREADTH_CONTRIB_CACHE[cache_key] = {"data": data, "_cached_at": time.time()}
+            try:
+                CACHE_DIR.mkdir(parents=True, exist_ok=True)
+                with open(disk_cache_file, "w", encoding="utf-8") as df:
+                    json.dump(data, df)
+            except Exception:
+                pass
+        return data
+    except Exception as exc:
+        print(f"[breadth_contrib] background compute error: {exc}")
+        return {}
+    finally:
+        with _BREADTH_RECOMPUTE_LOCK:
+            _BREADTH_RECOMPUTING.discard(cache_key)
+
+
 def get_cached_breadth_contribution(idx: str, date_param: str, force_refresh: bool = False):
+    """
+    Sub-millisecond Stale-While-Revalidate Breadth Contribution endpoint:
+    - If cache is fresh, returns immediately (<1ms).
+    - If cache is stale (>30s), returns existing cache immediately and triggers background thread to update.
+    - Eliminates 20+ second delays for algo engines and browser clients.
+    """
     effective_date = date_param or now_ist().strftime("%Y-%m-%d")
     cache_key = f"{(idx or 'nifty50').lower()}_{effective_date}"
     cache_ttl = 30.0 if is_market_open() else 3600.0
 
     # 1. In-memory hot cache
-    if not force_refresh:
-        cached = _BREADTH_CONTRIB_CACHE.get(cache_key)
-        if cached and (time.time() - cached.get("_cached_at", 0)) < cache_ttl:
+    cached = _BREADTH_CONTRIB_CACHE.get(cache_key)
+    if cached and not force_refresh:
+        age = time.time() - cached.get("_cached_at", 0)
+        if age < cache_ttl:
             return cached["data"]
+        # Stale cache: trigger background refresh if not already running
+        with _BREADTH_RECOMPUTE_LOCK:
+            if cache_key not in _BREADTH_RECOMPUTING:
+                _BREADTH_RECOMPUTING.add(cache_key)
+                threading.Thread(
+                    target=_compute_breadth_contribution_task,
+                    args=(idx, effective_date),
+                    daemon=True,
+                ).start()
+        return cached["data"]
 
-        # 2. On-disk persistent cache (sub-millisecond load on repeat visits)
-        disk_cache_file = CACHE_DIR / f"breadth_contrib_{cache_key}.json"
-        if disk_cache_file.exists():
-            try:
-                file_age = time.time() - disk_cache_file.stat().st_mtime
-                if file_age < cache_ttl or not is_market_open():
-                    with open(disk_cache_file, "r", encoding="utf-8") as df:
-                        disk_data = json.load(df)
-                        if disk_data.get("ok"):
-                            # Validate disk_data has real breadth (not a corrupt 50.0% flat line)
-                            tl = disk_data.get("timeline") or []
-                            vals = set(p.get("breadth") for p in tl if p.get("breadth") is not None)
-                            if len(vals) > 1 and len(tl) > 30:
-                                _BREADTH_CONTRIB_CACHE[cache_key] = {"data": disk_data, "_cached_at": time.time()}
-                                return disk_data
-            except Exception:
-                pass
-
-    is_bank = "bank" in (idx or "").lower()
-    norm_idx = "banknifty" if is_bank else "nifty50"
-    live_quotes = get_live_market_index_quotes()
-    live_q = live_quotes.get(norm_idx)
-
-    b_broker_src = "broker" if is_active_broker_configured() else "sample"
-    n_broker_src = "angel" if is_active_broker_configured() else "sample"
-
-    # Parallel Execution: Build breadth timeline & Nifty spot candles concurrently
-    b_res = {}
-    n_res = {}
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        future_b = pool.submit(build_breadth, {
-            "date": effective_date,
-            "endDate": effective_date,
-            "dataSource": b_broker_src,
-            "universe": norm_idx,
-            "interval": "ONE_MINUTE",
-            "chartMode": "carry",
-            "warmupSessions": 2,
-            "pnfBasis": "hl",
-            "boxPercent": 0.15,
-            "reversalBoxes": 3,
-            "maxSymbols": 12 if is_bank else 50,
-            "maWindow": 20,
-            "fastRefresh": True,
-            "symbols": "",
-            "startTime": "09:15",
-            "endTime": "15:30"
-        })
-        future_n = pool.submit(build_nifty, {
-            "date": effective_date,
-            "dataSource": n_broker_src,
-            "index": norm_idx,
-            "interval": "ONE_MINUTE",
-            "includeOptionChain": False,
-            "fastRefresh": True,
-            "startTime": "09:15",
-            "endTime": "15:30"
-        })
-        try:
-            b_res = future_b.result(timeout=60)
-        except Exception as exc:
-            print(f"[breadth_contrib] build_breadth error: {exc}")
-        try:
-            n_res = future_n.result(timeout=60)
-        except Exception as exc:
-            print(f"[breadth_contrib] build_nifty error: {exc}")
-
-    raw_b = b_res.get("timeline") or []
-    real_b = [
-        pt for pt in raw_b
-        if str(pt.get("time", pt.get("date", "")))[:10] == effective_date
-        and "09:15" <= str(pt.get("time", ""))[11:16] <= "15:30"
-    ]
-    if not real_b:
-        real_b = [pt for pt in raw_b if effective_date in str(pt.get("time", ""))]
-
-    if real_b:
-        first_today = real_b[0]
-        last_today = real_b[-1]
-        real_b_summary = {
-            "latestBreadth": last_today.get("breadth"),
-            "openBreadth": first_today.get("breadth"),
-            "breadthChange": round((last_today.get("breadth") or 0) - (first_today.get("breadth") or 0), 2),
-            "latestTime": last_today.get("time"),
-            "latestX": last_today.get("x", 0),
-            "latestO": last_today.get("o", 0),
-            "x": last_today.get("x", 0),
-            "o": last_today.get("o", 0),
-            "totalSymbols": b_res.get("universeCount", 50),
-            "loadedSymbols": b_res.get("symbolsLoaded", 50),
-        }
-    else:
-        real_b_summary = b_res.get("summary") or {}
-
-    raw_n = n_res.get("points") or []
-    real_n = [
-        pt for pt in raw_n
-        if str(pt.get("time", pt.get("date", "")))[:10] == effective_date
-        and "09:15" <= str(pt.get("time", ""))[11:16] <= "15:30"
-    ]
-    if not real_n:
-        real_n = [pt for pt in raw_n if effective_date in str(pt.get("time", ""))]
-
-    constituents_list = (
-        breadth_contribution_engine.BANKNIFTY_CONSTITUENTS
-        if is_bank
-        else breadth_contribution_engine.NIFTY50_CONSTITUENTS
-    )
-    symbols = [s["symbol"] for s in constituents_list]
-    live_stock_quotes = get_live_constituent_quotes(symbols)
-
-    data = breadth_contribution_engine.compute_breadth_contribution(
-        index_key=norm_idx,
-        date_str=effective_date,
-        real_breadth_timeline=real_b,
-        real_nifty_points=real_n,
-        breadth_summary=real_b_summary,
-        real_index_quote=live_q,
-        live_stock_quotes=live_stock_quotes
-    )
-
-    # Save to in-memory cache and on-disk cache if valid
-    tl = data.get("timeline") or []
-    vals = set(p.get("breadth") for p in tl if p.get("breadth") is not None)
-    has_valid_breadth = len(vals) > 1 and len(tl) > 30
-
+    # 2. On-disk persistent cache
     disk_cache_file = CACHE_DIR / f"breadth_contrib_{cache_key}.json"
-    if has_valid_breadth:
-        _BREADTH_CONTRIB_CACHE[cache_key] = {"data": data, "_cached_at": time.time()}
-        try:
-            CACHE_DIR.mkdir(parents=True, exist_ok=True)
-            with open(disk_cache_file, "w", encoding="utf-8") as df:
-                json.dump(data, df)
-        except Exception:
-            pass
-    elif not force_refresh and disk_cache_file.exists():
+    if disk_cache_file.exists() and not force_refresh:
         try:
             with open(disk_cache_file, "r", encoding="utf-8") as df:
-                prev_data = json.load(df)
-                if prev_data.get("ok"):
-                    return prev_data
+                disk_data = json.load(df)
+                if disk_data.get("ok"):
+                    file_age = time.time() - disk_cache_file.stat().st_mtime
+                    _BREADTH_CONTRIB_CACHE[cache_key] = {"data": disk_data, "_cached_at": time.time() - file_age}
+                    if file_age >= cache_ttl and is_market_open():
+                        with _BREADTH_RECOMPUTE_LOCK:
+                            if cache_key not in _BREADTH_RECOMPUTING:
+                                _BREADTH_RECOMPUTING.add(cache_key)
+                                threading.Thread(
+                                    target=_compute_breadth_contribution_task,
+                                    args=(idx, effective_date),
+                                    daemon=True,
+                                ).start()
+                    return disk_data
         except Exception:
             pass
 
-    return data
+    # 3. Cold start or force_refresh: compute synchronously once
+    with _BREADTH_RECOMPUTE_LOCK:
+        _BREADTH_RECOMPUTING.add(cache_key)
+    return _compute_breadth_contribution_task(idx, effective_date)
+
 
 
 def sanitize_for_json(obj):
