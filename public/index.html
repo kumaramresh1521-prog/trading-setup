@@ -2752,12 +2752,18 @@
           <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
               <h3 style="margin:0; font-size:15px; font-weight:800; color:var(--text-primary);">📋 Participant-Wise Open Interest Matrix</h3>
+              <span id="poiSourceBadge" style="font-size:10px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25); border-radius:4px; padding:2px 8px; font-weight:700;">🟢 Official NSE Regulatory</span>
               <span id="poiLastUpdated" style="font-size:10px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.25); border-radius:4px; padding:2px 8px; font-weight:700;">Loading...</span>
-              <span id="poiAutoRefreshBadge" style="font-size:10px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25); border-radius:4px; padding:2px 7px; font-weight:700; display:none;">🔄 Live</span>
+              <span id="poiAutoRefreshBadge" style="font-size:10px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25); border-radius:4px; padding:2px 7px; font-weight:700; display:none;">🔄 Live Sync</span>
             </div>
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <button type="button" id="poiToggleChangeBtn" class="ctrl-btn" style="font-size:11.5px; padding:6px 14px; font-weight:700; cursor:pointer;">📈 Show Day Change &amp; %</button>
-              <button type="button" id="poiRefreshBtn" class="ctrl-btn primary" style="font-size:12px; padding:7px 16px;">🔄 Refresh Now</button>
+              <!-- View Mode Segmented Controls -->
+              <div class="btn-group" style="display:inline-flex; border-radius:6px; overflow:hidden; border:1px solid var(--border-default); background:var(--bg-subtle);">
+                <button type="button" id="poiBtnModeDayChange" class="ctrl-btn active" style="font-size:11px; padding:6px 12px; font-weight:800; cursor:pointer; background:var(--primary); color:#ffffff; border:none; border-radius:0;">⚡ Intraday Day Change</button>
+                <button type="button" id="poiBtnModeCumulative" class="ctrl-btn" style="font-size:11px; padding:6px 12px; font-weight:800; cursor:pointer; background:transparent; color:var(--text-secondary); border:none; border-radius:0;">📊 Cumulative EOD</button>
+                <button type="button" id="poiBtnModeDetailed" class="ctrl-btn" style="font-size:11px; padding:6px 12px; font-weight:800; cursor:pointer; background:transparent; color:var(--text-secondary); border:none; border-radius:0;">📈 Detailed (with %)</button>
+              </div>
+              <button type="button" id="poiRefreshBtn" class="ctrl-btn primary" style="font-size:11.5px; padding:6px 14px; font-weight:700;">🔄 Refresh Now</button>
             </div>
           </div>
 

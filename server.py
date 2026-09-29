@@ -5549,6 +5549,11 @@ def build_smart_money(payload: dict) -> dict:
 
     return {
         "ok": True,
+        "quality": "official_regulatory",
+        "source": "NSE Official Derivatives Archive (fao_participant_oi)",
+        "asOf": resolved_dt.isoformat(),
+        "coverage": "Client, DII, FII, Pro, Total",
+        "isSimulated": False,
         "date": resolved_dt.strftime("%d %b %Y"),
         "dateIso": resolved_dt.isoformat(),
         "isLiveEod": True,

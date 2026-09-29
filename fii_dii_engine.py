@@ -524,6 +524,10 @@ def get_fii_derivatives_flow(target_date: Optional[datetime] = None) -> Dict[str
             with open(date_file, "r", encoding="utf-8") as f:
                 cached = json.load(f)
                 if cached.get("ok"):
+                    cached.setdefault("quality", "official_regulatory")
+                    cached.setdefault("source", "NSE Official Derivatives Archive (fao_participant_vol & fii_stats)")
+                    cached.setdefault("coverage", "All 4 Market Participants (Client, DII, FII, Pro)")
+                    cached.setdefault("isSimulated", False)
                     return cached
         except Exception:
             pass
@@ -534,6 +538,10 @@ def get_fii_derivatives_flow(target_date: Optional[datetime] = None) -> Dict[str
             with open(DERIVATIVES_FLOW_CACHE_FILE, "r", encoding="utf-8") as f:
                 cached = json.load(f)
                 if cached.get("dateKey") == date_key and cached.get("ok"):
+                    cached.setdefault("quality", "official_regulatory")
+                    cached.setdefault("source", "NSE Official Derivatives Archive (fao_participant_vol & fii_stats)")
+                    cached.setdefault("coverage", "All 4 Market Participants (Client, DII, FII, Pro)")
+                    cached.setdefault("isSimulated", False)
                     return cached
         except Exception:
             pass
@@ -553,6 +561,11 @@ def get_fii_derivatives_flow(target_date: Optional[datetime] = None) -> Dict[str
     if fii_stats or part_vol:
         result = {
             "ok": True,
+            "quality": "official_regulatory",
+            "source": "NSE Official Derivatives Archive (fao_participant_vol & fii_stats)",
+            "asOf": now.strftime("%d %b %Y"),
+            "coverage": "All 4 Market Participants (Client, DII, FII, Pro)",
+            "isSimulated": False,
             "date": now.strftime("%d %b %Y"),
             "dateKey": date_key,
             "fiiStats": fii_stats or {},
@@ -576,6 +589,9 @@ def get_fii_derivatives_flow(target_date: Optional[datetime] = None) -> Dict[str
             with open(DERIVATIVES_FLOW_CACHE_FILE, "r", encoding="utf-8") as f:
                 cached = json.load(f)
                 if cached.get("ok"):
+                    cached["quality"] = "cached"
+                    cached["source"] = "NSE Official Derivatives Archive (Cached)"
+                    cached["isSimulated"] = False
                     # Cache under requested date so we don't retry remote fetch again
                     try:
                         cache_dir.mkdir(parents=True, exist_ok=True)
@@ -589,6 +605,9 @@ def get_fii_derivatives_flow(target_date: Optional[datetime] = None) -> Dict[str
 
     fallback_obj = {
         "ok": False,
+        "quality": "failed",
+        "source": "Unavailable",
+        "isSimulated": False,
         "date": now.strftime("%d %b %Y"),
         "dateKey": date_key,
         "fiiStats": {},

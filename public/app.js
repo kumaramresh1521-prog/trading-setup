@@ -3521,22 +3521,35 @@ function _renderPoiSignalCards(data, fiiM, trapRadar) {
   `;
 }
 
-let _poiShowDayChange = false; // By default: compact view without Change & Change %
+let _poiViewMode = "dayChange"; // "dayChange" (default: Trendlyne Intraday Day Change) | "cumulative" (EOD Positions) | "detailed" (with %)
 
 /* ─── Trendlyne-style transposed matrix ────────────────────────────────────
    ROWS  = instrument types  (Future Index Long, Short, Net, ...)
    COLS  = participants      (CLIENT, DII, FII, PRO, TOTAL)
-   Default: Clean 6-column EOD layout (Change & Change % removed as requested)
-   Toggleable: Full 16-column detailed view with Day Change & Day Change %
+   Modes:
+   - dayChange: Clean 6-column layout showing today's intraday OI shift in contracts (+/-)
+   - cumulative: Clean 6-column layout showing total cumulative open interest
+   - detailed: Full 16-column view with Absolute, Day Change, and Day Change %
    ─────────────────────────────────────────────────────────────────────────*/
 function _renderPoiTrendlyneMatrix(lookup) {
   const thead = document.getElementById("poiMainTableHead");
   const tbody = document.getElementById("poiMainTableBody");
   const table = document.getElementById("poiMainTable");
+  const subHeading = document.getElementById("poiTableSubheading");
   if (!thead || !tbody) return;
 
   if (table) {
-    table.style.minWidth = _poiShowDayChange ? "1150px" : "100%";
+    table.style.minWidth = _poiViewMode === "detailed" ? "1150px" : "100%";
+  }
+
+  if (subHeading) {
+    if (_poiViewMode === "dayChange") {
+      subHeading.textContent = "Official NSE bhav copy · Intraday Participant Position Shifts (Today's Net Day Change in Contracts)";
+    } else if (_poiViewMode === "cumulative") {
+      subHeading.textContent = "Official NSE bhav copy · Cumulative Open Interest Contracts across Market Participants";
+    } else {
+      subHeading.textContent = "Official NSE bhav copy · Absolute OI | Day Δ | Day Δ%";
+    }
   }
 
   // Participant columns in exact Trendlyne order
@@ -3648,10 +3661,8 @@ function _renderPoiTrendlyneMatrix(lookup) {
     },
   ];
 
-  // Divider lines after Index Fut, Stock Fut, Index Call, Index Put, Stock Call, Stock Put
   const dividerIndices = new Set([2, 5, 8, 11, 14, 17]);
 
-  // Formatters
   const fmtVal = (v) => {
     if (v === null || v === undefined) return "0";
     return Number(v).toLocaleString("en-IN");
@@ -3670,8 +3681,8 @@ function _renderPoiTrendlyneMatrix(lookup) {
   const mono = "font-family:'JetBrains Mono',monospace;";
 
   // ── THEAD Construction ──────────────────────────────────────────────────
-  if (!_poiShowDayChange) {
-    // Clean Compact 6-column header
+  if (_poiViewMode !== "detailed") {
+    // Clean Compact 6-column header (for both Day Change and Cumulative)
     let trHead = `<tr>
       <th style="padding:10px 14px; text-align:left; min-width:200px; color:var(--text-secondary); background:var(--bg-card); position:sticky; left:0; z-index:3; border-right:1px solid var(--table-border); font-size:12px; font-weight:800;">CLIENT TYPE</th>`;
     PARTS.forEach((pd, idx) => {
@@ -3716,23 +3727,30 @@ function _renderPoiTrendlyneMatrix(lookup) {
 
     PARTS.forEach((pd, pIdx) => {
       const p = lookup[pd.key] || {};
-      const val = getNum(p, rd.keys, rd.calc);
       const borderLeft = pIdx > 0 ? "border-left:1px solid rgba(255,255,255,0.06);" : "";
 
-      if (!_poiShowDayChange) {
-        // Clean single column per participant
+      if (_poiViewMode === "dayChange") {
+        // Mode 1: Clean 6-column Day Change (Today's Net Intraday Shift in Contracts)
+        const chg = getNum(p, rd.chgKeys);
+        let chgColor = "var(--text-primary)";
+        if (isNet || rd.isLong) {
+          chgColor = chg > 0 ? "#10b981" : (chg < 0 ? "#ef4444" : "var(--text-muted)");
+        } else if (rd.isLong === false) {
+          // Adding shorts (positive short chg) is bearish (#ef4444); unwinding shorts is bullish (#10b981)
+          chgColor = chg > 0 ? "#ef4444" : (chg < 0 ? "#10b981" : "var(--text-muted)");
+        }
+        tds += `<td style="padding:9px 14px; ${mono} font-size:12px; text-align:right; color:${chgColor}; font-weight:${isNet ? "800" : "600"}; ${borderLeft}">${fmtChg(chg)}</td>`;
+      } else if (_poiViewMode === "cumulative") {
+        // Mode 2: Clean 6-column Cumulative EOD Contracts
+        const val = getNum(p, rd.keys, rd.calc);
         let valColor = "var(--text-primary)";
         if (isNet) {
           valColor = val > 0 ? "#10b981" : (val < 0 ? "#ef4444" : "var(--text-muted)");
-        } else if (rd.isLong) {
-          valColor = "var(--text-primary)";
-        } else if (rd.isLong === false) {
-          valColor = "var(--text-primary)";
         }
-
         tds += `<td style="padding:9px 14px; ${mono} font-size:12px; text-align:right; color:${valColor}; font-weight:${isNet ? "800" : "500"}; ${borderLeft}">${fmtVal(val)}</td>`;
       } else {
-        // Detailed 3 sub-columns per participant
+        // Mode 3: Detailed 3 sub-columns per participant
+        const val = getNum(p, rd.keys, rd.calc);
         const chg = getNum(p, rd.chgKeys);
         const pct = getNum(p, rd.pctKeys);
 
@@ -3761,7 +3779,7 @@ function _renderPoiTrendlyneMatrix(lookup) {
     // Section separator line
     if (dividerIndices.has(rIdx)) {
       const sep = document.createElement("tr");
-      const colSpanCount = _poiShowDayChange ? 16 : 6;
+      const colSpanCount = _poiViewMode === "detailed" ? 16 : 6;
       sep.innerHTML = `<td colspan="${colSpanCount}" style="height:3px; background:rgba(255,255,255,0.04); border-bottom:1px solid var(--table-border);"></td>`;
       tbody.appendChild(sep);
     }
@@ -3790,28 +3808,42 @@ function _renderPoiDivergenceRadar(data, trapRadar, fiiM) {
   if (desc)  desc.textContent  = trapRadar.desc || "--";
 }
 
-// Refresh & Toggle button wiring
+// Refresh & View Mode buttons wiring
 (function _wirePoiButtons() {
   const refBtn = document.getElementById("poiRefreshBtn");
   if (refBtn) {
     refBtn.addEventListener("click", () => loadPoiDeskData(true));
   }
 
-  const toggleBtn = document.getElementById("poiToggleChangeBtn");
-  if (toggleBtn) {
-    toggleBtn.addEventListener("click", () => {
-      _poiShowDayChange = !_poiShowDayChange;
-      toggleBtn.textContent = _poiShowDayChange ? "📊 Compact View (EOD Only)" : "📈 Show Day Change & %";
-      toggleBtn.className = _poiShowDayChange ? "ctrl-btn primary" : "ctrl-btn";
-      const sub = document.getElementById("poiTableSubheading");
-      if (sub) {
-        sub.textContent = _poiShowDayChange 
-          ? "Official NSE bhav copy · Absolute OI | Day Δ | Day Δ%" 
-          : "Official NSE bhav copy · Cumulative open interest contracts across Market Participants";
+  const btnDayChange = document.getElementById("poiBtnModeDayChange");
+  const btnCumulative = document.getElementById("poiBtnModeCumulative");
+  const btnDetailed = document.getElementById("poiBtnModeDetailed");
+
+  function setPoiViewMode(mode) {
+    _poiViewMode = mode;
+    const modeBtns = [
+      { btn: btnDayChange, mode: "dayChange" },
+      { btn: btnCumulative, mode: "cumulative" },
+      { btn: btnDetailed, mode: "detailed" },
+    ];
+    modeBtns.forEach(({ btn, mode: m }) => {
+      if (!btn) return;
+      if (m === mode) {
+        btn.classList.add("active");
+        btn.style.background = "var(--primary)";
+        btn.style.color = "#ffffff";
+      } else {
+        btn.classList.remove("active");
+        btn.style.background = "transparent";
+        btn.style.color = "var(--text-secondary)";
       }
-      if (_poiData) renderPoiDesk(_poiData);
     });
+    if (_poiData) renderPoiDesk(_poiData);
   }
+
+  if (btnDayChange) btnDayChange.addEventListener("click", () => setPoiViewMode("dayChange"));
+  if (btnCumulative) btnCumulative.addEventListener("click", () => setPoiViewMode("cumulative"));
+  if (btnDetailed) btnDetailed.addEventListener("click", () => setPoiViewMode("detailed"));
 })();
 
 function renderFiiDerivativesFlow(flowData) {
